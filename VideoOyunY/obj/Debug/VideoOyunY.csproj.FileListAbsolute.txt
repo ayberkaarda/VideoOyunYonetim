@@ -1,0 +1,27 @@
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.AssemblyReference.cache
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.Form1.resources
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunEkleForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunListeleForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunOneriForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.Properties.Resources.resources
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.GenerateResource.cache
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.CoreCompileInputs.cache
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.exe.config
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.exe
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.pdb
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.exe
+C:\Users\umuty\OneDrive\Masaüstü\proje c#\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.pdb
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.exe.config
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.exe
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\bin\Debug\VideoOyunY.pdb
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.AssemblyReference.cache
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.Form1.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunDegerlendirForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunEkleForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunListeleForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.OyunOneriForm.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.Properties.Resources.resources
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.GenerateResource.cache
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.csproj.CoreCompileInputs.cache
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.exe
+C:\Users\umuty\OneDrive\Masaüstü\yeni projeler ayberk\VideoOyunY\VideoOyunY\obj\Debug\VideoOyunY.pdb
