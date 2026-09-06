@@ -10,5 +10,11 @@ namespace VideoGameManager.Views
 
         /// <summary>Renders the pick, or clears the panel when passed <c>null</c>.</summary>
         void ShowGame(Game game);
+
+        /// <summary>
+        /// Replaces the pick panel with a readable status message, for example when no
+        /// recommendation could be fetched. The screen stays open and usable; nothing pops up.
+        /// </summary>
+        void ShowLoadError(string message);
     }
 }

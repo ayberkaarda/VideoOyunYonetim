@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 
 namespace VideoGameManager.Services
@@ -17,6 +18,7 @@ namespace VideoGameManager.Services
     {
         private readonly IReadOnlyList<IRecommendationStrategy> _strategies;
         private readonly IReadOnlyList<string> _names;
+        private readonly ILogger<RecommendationService> _logger;
 
         /// <summary>
         /// Creates the service.
@@ -24,16 +26,21 @@ namespace VideoGameManager.Services
         /// <param name="strategies">
         /// Every available strategy. The first one registered is the default.
         /// </param>
-        /// <exception cref="ArgumentNullException"><paramref name="strategies"/> is <c>null</c>.</exception>
+        /// <param name="logger">Logger an empty pick is recorded on.</param>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="strategies"/> or <paramref name="logger"/> is <c>null</c>.
+        /// </exception>
         /// <exception cref="ArgumentException">
         /// No strategy was registered, or two strategies share a name.
         /// </exception>
-        public RecommendationService(IEnumerable<IRecommendationStrategy> strategies)
+        public RecommendationService(IEnumerable<IRecommendationStrategy> strategies, ILogger<RecommendationService> logger)
         {
             if (strategies == null)
             {
                 throw new ArgumentNullException(nameof(strategies));
             }
+
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             List<IRecommendationStrategy> ordered = new List<IRecommendationStrategy>(strategies);
 
@@ -79,10 +86,18 @@ namespace VideoGameManager.Services
         /// No strategy carries <paramref name="strategyName"/>. The caller chooses from
         /// <see cref="AvailableStrategies"/>, so an unknown name is a defect and not user input.
         /// </exception>
-        public Task<Game> RecommendAsync(string strategyName = null, CancellationToken ct = default)
+        public async Task<Game> RecommendAsync(string strategyName = null, CancellationToken ct = default)
         {
             IRecommendationStrategy strategy = Select(strategyName);
-            return strategy.PickAsync(ct);
+            Game recommendation = await strategy.PickAsync(ct).ConfigureAwait(false);
+
+            if (recommendation == null)
+            {
+                _logger.LogInformation(
+                    "Recommendation strategy {Strategy} found no matching game.", strategy.Name);
+            }
+
+            return recommendation;
         }
 
         private IRecommendationStrategy Select(string strategyName)

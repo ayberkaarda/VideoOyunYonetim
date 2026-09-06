@@ -7,6 +7,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using VideoGameManager.UI.Controls;
 
 namespace VideoGameManager.UI
@@ -34,21 +36,43 @@ namespace VideoGameManager.UI
             new ConcurrentDictionary<string, Image>(StringComparer.OrdinalIgnoreCase);
 
         private readonly string _diskCacheDirectory;
+        private readonly ILogger<CachedCoverImageProvider> _logger;
 
         /// <summary>Initialises a provider that caches under the user's local application data folder.</summary>
         public CachedCoverImageProvider()
-            : this(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "VideoGameManager",
-                "covers"))
+            : this(DefaultDiskCacheDirectory(), NullLogger<CachedCoverImageProvider>.Instance)
+        {
+        }
+
+        /// <summary>Initialises a provider that caches under the user's local application data folder and logs to <paramref name="logger"/>.</summary>
+        /// <param name="logger">Receives a warning whenever fetching or caching a cover fails.</param>
+        public CachedCoverImageProvider(ILogger<CachedCoverImageProvider> logger)
+            : this(DefaultDiskCacheDirectory(), logger)
         {
         }
 
         /// <summary>Initialises a provider that caches under an explicit directory. Exposed for testing.</summary>
         /// <param name="diskCacheDirectory">Directory the disk cache files are written to.</param>
         public CachedCoverImageProvider(string diskCacheDirectory)
+            : this(diskCacheDirectory, NullLogger<CachedCoverImageProvider>.Instance)
+        {
+        }
+
+        /// <summary>Initialises a provider that caches under an explicit directory and logs to <paramref name="logger"/>. Exposed for testing.</summary>
+        /// <param name="diskCacheDirectory">Directory the disk cache files are written to.</param>
+        /// <param name="logger">Receives a warning whenever fetching or caching a cover fails.</param>
+        public CachedCoverImageProvider(string diskCacheDirectory, ILogger<CachedCoverImageProvider> logger)
         {
             _diskCacheDirectory = diskCacheDirectory;
+            _logger = logger ?? NullLogger<CachedCoverImageProvider>.Instance;
+        }
+
+        private static string DefaultDiskCacheDirectory()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "VideoGameManager",
+                "covers");
         }
 
         /// <inheritdoc/>
@@ -101,11 +125,13 @@ namespace VideoGameManager.UI
                 // "cancelled" and "failed".
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Network failure, disk I/O failure or a malformed image: none of these
                 // should crash the UI thread. The caller falls back to its placeholder
-                // state, exactly as it would for a missing cover.
+                // state, exactly as it would for a missing cover, but the detail is not
+                // thrown away -- it goes to the log instead.
+                _logger.LogWarning(ex, "Fetching cover art failed for {CoverReference}", coverReference);
                 return null;
             }
         }

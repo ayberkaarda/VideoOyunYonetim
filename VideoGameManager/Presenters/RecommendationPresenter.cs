@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 using VideoGameManager.Services;
 using VideoGameManager.Views;
@@ -8,23 +9,31 @@ using VideoGameManager.Views;
 namespace VideoGameManager.Presenters
 {
     /// <summary>
-    /// Drives <see cref="IRecommendationView"/>. The picking rule lives in
-    /// <see cref="IRecommendationService"/>, so Phase 5 can add a genre-weighted strategy
-    /// without touching this class or the form.
+    /// Drives <see cref="IRecommendationView"/>. The picking rule lives behind
+    /// <see cref="IRecommendationService"/>, so a future strategy change does not touch this
+    /// class or the form.
     /// </summary>
     public sealed class RecommendationPresenter
     {
         private readonly IRecommendationView _view;
         private readonly IRecommendationService _recommendations;
+        private readonly ILogger<RecommendationPresenter> _logger;
 
-        public RecommendationPresenter(IRecommendationView view, IRecommendationService recommendations)
+        public RecommendationPresenter(
+            IRecommendationView view,
+            IRecommendationService recommendations,
+            ILogger<RecommendationPresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
             _recommendations = recommendations ?? throw new ArgumentNullException(nameof(recommendations));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _view.RecommendationRequested += OnRecommendationRequested;
         }
 
+        // A failed pick renders inline where the pick is normally shown, rather than as a
+        // dialog: the button can be clicked repeatedly while the database is unreachable,
+        // and a dialog on every click would repeat with it.
         private async void OnRecommendationRequested(object sender, EventArgs e)
         {
             try
@@ -33,7 +42,8 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _view.ShowError(Messages.ForUser(ex));
+                _logger.LogError(ex, "Fetching a recommendation failed on {Screen}", nameof(VideoGameManager.RecommendationForm));
+                _view.ShowLoadError(Messages.ForUser(ex));
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Data;
 using VideoGameManager.Domain;
 using VideoGameManager.Services;
@@ -21,12 +22,18 @@ namespace VideoGameManager.Presenters
         private readonly IReviewGameView _view;
         private readonly IGameService _games;
         private readonly IReviewService _reviews;
+        private readonly ILogger<ReviewGamePresenter> _logger;
 
-        public ReviewGamePresenter(IReviewGameView view, IGameService games, IReviewService reviews)
+        public ReviewGamePresenter(
+            IReviewGameView view,
+            IGameService games,
+            IReviewService reviews,
+            ILogger<ReviewGamePresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
             _games = games ?? throw new ArgumentNullException(nameof(games));
             _reviews = reviews ?? throw new ArgumentNullException(nameof(reviews));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _view.Loaded += OnLoaded;
             _view.SaveRequested += OnSaveRequested;
@@ -40,6 +47,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Loading the game picker failed on {Screen}", nameof(VideoGameManager.ReviewGameForm));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
@@ -52,6 +60,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Saving a review failed on {Screen}", nameof(VideoGameManager.ReviewGameForm));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }

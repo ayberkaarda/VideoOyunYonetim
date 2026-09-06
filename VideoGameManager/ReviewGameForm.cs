@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 using VideoGameManager.Views;
 
@@ -18,6 +19,7 @@ namespace VideoGameManager
         private readonly ErrorProvider _errors;
 
         private readonly Presenters.ReviewGamePresenter _presenter;
+        private readonly ILogger<ReviewGameForm> _logger;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public ReviewGameForm()
@@ -28,9 +30,15 @@ namespace VideoGameManager
         }
 
         /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
-        public ReviewGameForm(Services.IGameService games, Services.IReviewService reviews) : this()
+        public ReviewGameForm(
+            Services.IGameService games,
+            Services.IReviewService reviews,
+            ILogger<Presenters.ReviewGamePresenter> presenterLogger,
+            ILogger<ReviewGameForm> logger)
+            : this()
         {
-            _presenter = new Presenters.ReviewGamePresenter(this, games, reviews);
+            _presenter = new Presenters.ReviewGamePresenter(this, games, reviews, presenterLogger);
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public event EventHandler Loaded;
@@ -75,8 +83,31 @@ namespace VideoGameManager
 
         public void ShowFieldError(string field, string message)
         {
-            Control target = field == nameof(Review.Body) ? frameComment : (Control)frameGames;
+            Control target = ControlFor(field);
+            if (target is null)
+            {
+                _logger?.LogWarning(
+                    "Validation reported the field {Field} on {Screen}, which has no matching control; showing a general error instead",
+                    field,
+                    nameof(ReviewGameForm));
+                ShowError(message);
+                return;
+            }
+
             _errors.SetError(target, message);
+        }
+
+        /// <summary>
+        /// Maps a domain property name onto the control that holds it. This screen has no
+        /// input for <see cref="Review.Score"/>, so a validation error naming it falls
+        /// through to the general error display rather than being pinned to an unrelated
+        /// control.
+        /// </summary>
+        private Control ControlFor(string field)
+        {
+            if (field == nameof(Review.Body)) return frameComment;
+            if (field == nameof(Review.GameId)) return frameGames;
+            return null;
         }
 
         public void ClearFieldErrors()

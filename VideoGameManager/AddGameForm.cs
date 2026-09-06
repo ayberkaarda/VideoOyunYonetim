@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 using VideoGameManager.Views;
 
@@ -18,6 +19,7 @@ namespace VideoGameManager
         private readonly ErrorProvider _errors;
 
         private readonly Presenters.AddGamePresenter _presenter;
+        private readonly ILogger<AddGameForm> _logger;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public AddGameForm()
@@ -28,9 +30,14 @@ namespace VideoGameManager
         }
 
         /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
-        public AddGameForm(Services.IGameService games) : this()
+        public AddGameForm(
+            Services.IGameService games,
+            ILogger<Presenters.AddGamePresenter> presenterLogger,
+            ILogger<AddGameForm> logger)
+            : this()
         {
-            _presenter = new Presenters.AddGamePresenter(this, games);
+            _presenter = new Presenters.AddGamePresenter(this, games, presenterLogger);
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public event EventHandler SaveRequested;
@@ -73,6 +80,10 @@ namespace VideoGameManager
             Control target = ControlFor(field);
             if (target is null)
             {
+                _logger?.LogWarning(
+                    "Validation reported the field {Field} on {Screen}, which has no matching control; showing a general error instead",
+                    field,
+                    nameof(AddGameForm));
                 ShowError(message);
                 return;
             }
