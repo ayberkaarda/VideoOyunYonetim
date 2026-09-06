@@ -37,6 +37,10 @@ namespace VideoGameManager
         private const string DatabaseUnreachable =
             "The database is not reachable, so the game library cannot be loaded.";
 
+        private const string MigrationFailure =
+            "The database schema could not be updated. Video Game Manager will not run " +
+            "against an outdated schema, so the application will now close.";
+
         private const string SettingsUnreadable =
             "Video Game Manager cannot start because its settings file is missing or " +
             "cannot be read.";
@@ -129,7 +133,13 @@ namespace VideoGameManager
 
                 using (ServiceProvider provider = BuildContainer(configuration))
                 {
-                    if (!ConfirmDatabase(provider, configuration))
+                    DatabaseAvailability availability = ConfirmDatabase(provider, configuration);
+                    if (availability == DatabaseAvailability.Quit)
+                    {
+                        return;
+                    }
+
+                    if (availability == DatabaseAvailability.Reachable && !ApplyMigrations(provider))
                     {
                         return;
                     }
@@ -220,21 +230,38 @@ namespace VideoGameManager
         // ------------------------------------------------------------------
 
         /// <summary>
+        /// What the startup database check settled on, once the user has been asked
+        /// anything there was to ask. Distinct from a plain <see cref="bool"/> because the
+        /// caller treats "reachable" and "unreachable, continuing anyway" differently:
+        /// only the former is a database worth running migrations against.
+        /// </summary>
+        private enum DatabaseAvailability
+        {
+            /// <summary>The database answered, either on the first try or on a retry.</summary>
+            Reachable,
+
+            /// <summary>The user chose to open the main window with no reachable database.</summary>
+            Unavailable,
+
+            /// <summary>The user closed the connection dialog instead of retrying or continuing.</summary>
+            Quit
+        }
+
+        /// <summary>
         /// Checks that the database answers before the first window opens, and asks the
         /// user what to do when it does not.
         /// </summary>
         /// <param name="provider">The container, used to open a scope per check.</param>
         /// <param name="configuration">Where the connection string is read from, so the
         /// dialog can name the target.</param>
-        /// <returns><see langword="true"/> to open the main window.</returns>
-        private static bool ConfirmDatabase(IServiceProvider provider, IConfiguration configuration)
+        private static DatabaseAvailability ConfirmDatabase(IServiceProvider provider, IConfiguration configuration)
         {
             DatabaseStatus status = ProbeDatabase(provider);
 
             if (status != null && status.IsReachable)
             {
                 Log.Information("Database answered the startup check.");
-                return true;
+                return DatabaseAvailability.Reachable;
             }
 
             string reported = status == null ? null : status.Message;
@@ -254,18 +281,62 @@ namespace VideoGameManager
                 if (choice == DialogResult.OK)
                 {
                     Log.Information("The database answered a retry; opening the main window.");
-                    return true;
+                    return DatabaseAvailability.Reachable;
                 }
 
                 if (choice == DialogResult.Continue)
                 {
                     Log.Warning("Opening the main window with no reachable database, at the user's request.");
-                    return true;
+                    return DatabaseAvailability.Unavailable;
                 }
 
                 Log.Information("Startup ended at the connection dialog.");
-                return false;
+                return DatabaseAvailability.Quit;
             }
+        }
+
+        /// <summary>
+        /// Applies any pending schema migrations, now that the database is known to be
+        /// reachable. Runs before the message loop starts, the same as
+        /// <see cref="ProbeDatabase"/>.
+        /// </summary>
+        /// <returns><see langword="true"/> to continue opening the main window.</returns>
+        private static bool ApplyMigrations(IServiceProvider provider)
+        {
+            Data.MigrationOutcome outcome;
+
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                Services.IDatabaseMigrationService migrations =
+                    scope.ServiceProvider.GetRequiredService<Services.IDatabaseMigrationService>();
+
+                // The message loop has not started yet, so there is neither a UI thread
+                // waiting on this call nor a captured synchronization context to deadlock
+                // against; the same reasoning as ProbeDatabase's bypass just above.
+                outcome = Task.Run(() => migrations.ApplyPendingAsync()).GetAwaiter().GetResult(); // error-guard: bypass-ok no message loop and no synchronization context exist yet, so neither side of the deadlock is present
+            }
+
+            if (outcome.Log != null && outcome.Log.Count > 0)
+            {
+                Log.Debug("Migration runner log: {Lines}", string.Join(" | ", outcome.Log));
+            }
+
+            if (outcome.Succeeded)
+            {
+                if (outcome.AppliedScripts != null && outcome.AppliedScripts.Count > 0)
+                {
+                    Log.Information(
+                        "Applied {Count} pending database migration(s): {Scripts}",
+                        outcome.AppliedScripts.Count,
+                        string.Join(", ", outcome.AppliedScripts));
+                }
+
+                return true;
+            }
+
+            Log.Fatal(outcome.Failure, "Applying pending database migrations failed.");
+            ShowUserMessage(WithLogHint(MigrationFailure));
+            return false;
         }
 
         private static DatabaseStatus ProbeDatabase(IServiceProvider provider)

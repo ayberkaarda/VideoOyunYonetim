@@ -1,12 +1,15 @@
+using System.Collections.Generic;
+
 namespace VideoGameManager.Domain
 {
     /// <summary>
     /// A single entry in the game catalogue.
     /// </summary>
     /// <remarks>
-    /// <see cref="Genre"/> and <see cref="Platform"/> are plain strings for now. They become
-    /// lookup tables later; the repository contract does not change when they do, because it
-    /// already exposes them as strings here.
+    /// <see cref="Genre"/> and <see cref="Platforms"/> are plain strings even though the database
+    /// keeps them in lookup tables. The name is what the screens show and what the user types, so
+    /// the translation between a name and a lookup identity belongs to the repository and never
+    /// leaks into this entity or into the repository contract.
     /// </remarks>
     public sealed class Game
     {
@@ -26,9 +29,15 @@ namespace VideoGameManager.Domain
         public string Genre { get; set; }
 
         /// <summary>
-        /// Platform the game is played on, such as <c>PC</c> or <c>Switch</c>. Required.
+        /// Platforms the game is played on, such as <c>PC</c> or <c>Switch</c>. At least one is
+        /// required, and the same name may not appear twice.
         /// </summary>
-        public string Platform { get; set; }
+        /// <remarks>
+        /// A game read from the repository always carries a list here, never <c>null</c>: a game
+        /// that is attached to no platform at all comes back with an empty list. Callers may
+        /// therefore enumerate this without a null check.
+        /// </remarks>
+        public IReadOnlyList<string> Platforms { get; set; }
 
         /// <summary>
         /// Rating between <see cref="ScoreRange.Min"/> and <see cref="ScoreRange.Max"/>,
@@ -42,8 +51,14 @@ namespace VideoGameManager.Domain
         public string CoverUrl { get; set; }
 
         /// <summary>
-        /// Free text review left by the owner of the catalogue. Optional.
+        /// Text of the most recent review written for this game, or <c>null</c> when it has none.
         /// </summary>
-        public string Comment { get; set; }
+        /// <remarks>
+        /// Read-only projection. Reviews live in a table of their own, and this property is only
+        /// ever filled in by the query that reads a game; no insert or update carries it back to
+        /// the database. Writing a review goes through the review repository instead, which is
+        /// the only place that can record its score and the moment it was written.
+        /// </remarks>
+        public string LatestReview { get; init; }
     }
 }

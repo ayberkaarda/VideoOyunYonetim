@@ -71,9 +71,14 @@ when you cannot decide what to play.
 
 ## Tech stack
 
-- **C# / Windows Forms** on **.NET 10** (SDK-style project)
+- **C# / Windows Forms** on **.NET 10** (SDK-style project), layered into Domain / Data /
+  Services / WinForms with the screens on the Model-View-Presenter pattern
 - **SQL Server** for storage — the repository ships a Docker Compose file
-- **ADO.NET** via [`Microsoft.Data.SqlClient`](https://github.com/dotnet/SqlClient) with parameterised commands
+- **[Dapper](https://github.com/DapperLib/Dapper)** over
+  [`Microsoft.Data.SqlClient`](https://github.com/dotnet/SqlClient), every statement a
+  constant with bound parameters
+- **[DbUp](https://dbup.readthedocs.io/)** for schema migrations, applied at startup
+- **[Serilog](https://serilog.net/)** behind `Microsoft.Extensions.Logging`, rolling file sink
 
 ## Getting started
 
@@ -101,37 +106,60 @@ server name in the commands below.
 
 ### 2. Create the database
 
-The database is created from version-controlled SQL scripts. Both are idempotent, so
-re-running them is safe.
+The tables are created by migration scripts, not by hand. `db/schema.sql` only creates the
+empty database; `VideoGameManager.Migrator` brings the schema up to date. Every step here
+is idempotent, so re-running any of them is safe.
 
 ```powershell
 $sa = (Get-Content db/.env | Select-String 'MSSQL_SA_PASSWORD=(.*)').Matches.Groups[1].Value
+$cs = "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=$sa;TrustServerCertificate=True"
 
-# schema — creates the VideoGameManager database and the Game table
+# 1. the database itself, with the collation the application expects
 sqlcmd -S localhost,1433 -U sa -P $sa -C -i db/schema.sql
 
-# sample data — 15 games, only inserts rows that are missing
-sqlcmd -S localhost,1433 -U sa -P $sa -C -i db/seed.sql
+# 2. the schema — applies every migration the database has not seen yet
+dotnet run --project VideoGameManager.Migrator -- $cs
+
+# 3. sample data — 15 games, only inserts rows that are missing
+#    -f 65001 is required: the file is UTF-8 and sqlcmd does not assume it
+sqlcmd -S localhost,1433 -U sa -P $sa -C -f 65001 -d VideoGameManager -i db/seed.sql
 
 # verify
 sqlcmd -S localhost,1433 -U sa -P $sa -C -d VideoGameManager -Q "SELECT COUNT(*) FROM dbo.Game"   # 15
 ```
 
-Prefer a GUI? Open both files in SQL Server Management Studio or Azure Data Studio and
-execute them in that order.
+Step 2 is optional in practice — the application applies pending migrations itself when it
+starts, as soon as the database answers. The migrator exists so that a database can be
+prepared without launching the desktop application, and so that a build agent can stand one
+up from nothing: given a connection string naming a database that does not exist yet, it
+creates it with the right collation first.
+
+> **Migrations are the only way the schema changes.** There is no `ALTER TABLE` by hand and
+> no backup to restore. A correction is a new script in
+> `VideoGameManager.Data/Migrations/`, never an edit to one that has already run — DbUp
+> identifies a script by its name and will not notice that the contents changed.
 
 ### 3. Point the app at your server
 
-Open [`VideoGameManager/DatabaseHelper.cs`](VideoGameManager/DatabaseHelper.cs) and set the
-connection string:
+The connection string lives in configuration, not in the code. `appsettings.json` is
+committed with a placeholder; put the real one in `appsettings.Development.json`, which is
+git-ignored:
 
-```csharp
-private static string connectionString =
-    "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;";
+```jsonc
+// VideoGameManager/appsettings.Development.json
+{
+  "ConnectionStrings": {
+    "VideoGameManager": "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True"
+  }
+}
 ```
 
-> The connection string is currently hard-coded. Moving it to `appsettings.json` is
-> tracked as Phase 2 of the [roadmap](#roadmap).
+`TrustServerCertificate=True` is not optional against a local server: `Microsoft.Data.SqlClient`
+encrypts by default, and a container presents a certificate it signed itself, so the
+connection fails during the handshake without it.
+
+Environment variables work too, prefixed `VIDEOGAMEMANAGER_` — for example
+`VIDEOGAMEMANAGER_ConnectionStrings__VideoGameManager`.
 
 ### 4. Build and run
 
@@ -157,37 +185,62 @@ dotnet run --project VideoGameManager -- --gallery
 ├── db/
 │   ├── docker-compose.yml       # local SQL Server 2022 container
 │   ├── .env.example             # template for the SA password
-│   ├── schema.sql               # database + table definition (idempotent)
+│   ├── schema.sql               # creates the empty database (idempotent)
 │   └── seed.sql                 # 15 sample games (idempotent)
+├── docs/
+│   ├── architecture.md          # layer contract: interfaces, rules, schema
+│   └── adr/                     # architecture decision records
 ├── screenshots/                 # images used by this README
-├── VideoGameManager/
-│   ├── Program.cs               # entry point
+├── VideoGameManager.Domain/     # entities and validation, no dependencies
+├── VideoGameManager.Data/       # Dapper repositories, connection factory
+│   └── Migrations/              # DbUp scripts, embedded in the assembly
+├── VideoGameManager.Services/   # business rules, recommendation strategies
+├── VideoGameManager.Migrator/   # console entry point for applying migrations
+├── VideoGameManager/            # WinForms host
+│   ├── Program.cs               # entry point, DI container, startup checks
+│   ├── Views/                   # view interfaces, no WinForms types
+│   ├── Presenters/              # screen logic, no WinForms types
+│   ├── UI/                      # shared control library and theme
 │   ├── MainForm.cs              # main menu
 │   ├── AddGameForm.cs           # add a game
 │   ├── BrowseGamesForm.cs       # browse the catalogue
 │   ├── RecommendationForm.cs    # random recommendation
-│   ├── ReviewGameForm.cs        # write a review
-│   ├── DatabaseHelper.cs        # ADO.NET helper
-│   ├── Game.cs                  # game model
-│   ├── GameStore.cs             # in-memory store (unused; removed in Phase 1)
-│   └── Player.cs                # player model (unused; removed in Phase 1)
+│   └── ReviewGameForm.cs        # write a review
 └── VideoGameManager.sln
 ```
 
+Dependencies run one way: WinForms → Services → Data → Domain. Domain has no dependencies
+at all, and only the WinForms project targets Windows, so the layers below it build and
+test on a Linux agent. [`docs/architecture.md`](docs/architecture.md) is the contract.
+
 ### Database schema
 
-`dbo.Game`, collated `Latin1_General_100_CI_AI` so that `LIKE '%fifa%'` matches `FIFA 24`
-and `pokemon` matches `Pokémon`.
+Collated `Latin1_General_100_CI_AI` so that `LIKE '%fifa%'` matches `FIFA 24` and `pokemon`
+matches `Pokémon`. The collation is not a detail: under a Turkish collation `I` and `i` are
+different letters, so that first search returns nothing at all — with no error.
 
-| Column | Type | Notes |
+```mermaid
+erDiagram
+    Genre    ||--o{ Game         : "classifies"
+    Game     ||--o{ GamePlatform : "runs on"
+    Platform ||--o{ GamePlatform : "hosts"
+    Game     ||--o{ Review       : "has"
+```
+
+| Table | Columns | Notes |
 |---|---|---|
-| `Id` | `INT IDENTITY` | Primary key |
-| `Name` | `NVARCHAR(100)` | Game name |
-| `Genre` | `NVARCHAR(50)` | Action, RPG, Strategy, … |
-| `Platform` | `NVARCHAR(50)` | PC / PlayStation / PS5 / Xbox / Switch |
-| `Score` | `FLOAT` | Score, 1–10 |
-| `CoverUrl` | `NVARCHAR(MAX)` | Cover image URL |
-| `Comment` | `NVARCHAR(MAX)` | User review |
+| `dbo.Game` | `Id`, `Name`, `GenreId`, `Score`, `CoverUrl` | `Score` is `FLOAT NULL`, `CHECK` 0–10 |
+| `dbo.Genre` | `Id`, `Name` | `Name` unique — Action, RPG, Strategy, … |
+| `dbo.Platform` | `Id`, `Name` | `Name` unique — PC / PlayStation / PS5 / Xbox / Switch |
+| `dbo.GamePlatform` | `GameId`, `PlatformId` | Composite key; cascades when a game is deleted |
+| `dbo.Review` | `Id`, `GameId`, `Score`, `Body`, `CreatedAt` | `CHECK` 0–10; cascades with the game |
+| `dbo.SchemaVersions` | — | Migration journal, maintained by DbUp |
+
+A game carries a set of platforms rather than one, so the schema can hold a title that
+ships on more than one. The add screen offers a single platform today, which is why every
+seeded row has exactly one.
+
+Reviews live in their own table with a timestamp. The detail screen shows the newest one.
 
 ## Roadmap
 
@@ -197,9 +250,9 @@ in numbered phases:
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repository hygiene — `.gitignore`, SQL scripts instead of a `.bak`, SDK-style .NET 10 project, English-only codebase | ✅ done |
-| 1 | Layered architecture — Domain / Data / Services / WinForms, MVP, dependency injection | ⏳ planned |
-| 2 | Configuration & error handling — `appsettings.json`, Serilog, validation, `async/await` | ⏳ planned |
-| 3 | Database — normalisation, indexes, migrations | ⏳ planned |
+| 1 | Layered architecture — Domain / Data / Services / WinForms, MVP, dependency injection | ✅ done |
+| 2 | Configuration & error handling — `appsettings.json`, Serilog, validation, `async/await` | ✅ done |
+| 3 | Database — normalisation, indexes, migrations | ✅ done |
 | 4 | Tests — xUnit, FluentAssertions, NSubstitute | ⏳ planned |
 | 5 | Features — search, paging, smarter recommendations, image cache, export, statistics | ⏳ planned |
 | 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ⏳ planned |

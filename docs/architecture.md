@@ -21,6 +21,10 @@ VideoGameManager.Domain     net10.0           Entities, enums, validation. No de
 
 `VideoGameManager.Tests` (net10.0) references all four.
 
+`VideoGameManager.Migrator` (net10.0) is a console entry point that references Data alone.
+It exists so that a database can be created and brought up to date without starting the
+desktop application - from a build agent, or against a throwaway database in a test.
+
 The arrow is one-way and enforced by project references plus the `layer-guard` hook. Only
 the WinForms project targets Windows, so Domain, Data and Services can run their tests on
 a Linux CI agent.
@@ -35,10 +39,10 @@ public sealed class Game
     public int Id { get; init; }
     public string Name { get; set; }
     public string Genre { get; set; }
-    public string Platform { get; set; }
+    public IReadOnlyList<string> Platforms { get; set; }
     public double? Score { get; set; }
     public string CoverUrl { get; set; }
-    public string Comment { get; set; }
+    public string LatestReview { get; init; }
 }
 
 public sealed class Review
@@ -51,9 +55,26 @@ public sealed class Review
 }
 ```
 
-`Genre` and `Platform` stay strings in Phase 1. They become lookup tables in Phase 3; the
-repository interface does not change when they do, because it already exposes them as
-strings on `Game`.
+`Genre` and `Platform` were strings in Phase 1 and became lookup tables in Phase 3. The
+repository interface did not change, because it already exposed them by name rather than
+by key - but the entity did, in two places:
+
+- `Platforms` replaced `Platform`. The bridge table `dbo.GamePlatform` is a genuine
+  many-to-many, and a single string cannot represent it. Mirroring a set as one value is
+  the kind of mismatch that corrupts silently: read two platforms as `"PC, Xbox"`, write
+  it back, and the catalogue gains a platform by that name. The list is never `null`; a
+  game with no platform row reads as an empty list. The add screen still offers one
+  platform, so every row written today has exactly one.
+- `LatestReview` replaced `Comment`. It is a read-only projection of the newest row in
+  `dbo.Review` (`ORDER BY CreatedAt DESC, Id DESC`), filled by an `OUTER APPLY` in the
+  repository's `SELECT` and written by nothing. The only way to record a review is
+  `IReviewRepository`.
+
+`Game.Score` is the game's own rating and stays on `dbo.Game`. It is not derived from
+review scores: a game can be scored without ever being reviewed, which is what the add
+screen does, and sorting, the score filter and the recommendation threshold all read it.
+Adding a review with a score still updates the game's score, as the application has always
+done; adding one without a score leaves it alone.
 
 ### Validation
 
@@ -98,7 +119,8 @@ presenter maps it to a control for `ErrorProvider`.
 
 ## Data
 
-References Domain, `Dapper`, `Microsoft.Data.SqlClient`, `Microsoft.Extensions.Configuration.Abstractions`.
+References Domain, `Dapper`, `Microsoft.Data.SqlClient`, `dbup-sqlserver` and
+`Microsoft.Extensions.Configuration.Abstractions`.
 
 ```csharp
 public interface IDbConnectionFactory
@@ -139,12 +161,51 @@ public interface IReviewRepository
 }
 ```
 
-> **There is no `dbo.Review` table yet.** `db/schema.sql` creates only `dbo.Game`, and
-> schema changes belong to the Phase 3 migrations. Until then `ReviewRepository` is backed
-> by `dbo.Game.Comment`, which is where the application has always written its one review
-> per game. The consequences are documented on the class: `Review.Id == Review.GameId`,
-> `GetForGameAsync` returns zero or one item, and `CreatedAt` has no column to come from.
-> When Phase 3 adds the table, only that class changes - the interface does not.
+### Schema
+
+Phase 3 normalised the single table into five, and every change to them goes through a
+migration script (see below).
+
+```
+dbo.Genre         Id, Name (unique)
+dbo.Platform      Id, Name (unique)
+dbo.Game          Id, Name, GenreId -> dbo.Genre, Score, CoverUrl
+dbo.GamePlatform  GameId -> dbo.Game, PlatformId -> dbo.Platform     (composite key)
+dbo.Review        Id, GameId -> dbo.Game, Score, Body, CreatedAt
+dbo.SchemaVersions                                            (migration journal)
+```
+
+Both `Score` columns carry `CHECK (Score IS NULL OR (Score >= 0 AND Score <= 10))`, which
+is the same range `ScoreRange` enforces in the domain. The rule lives in the domain and
+the constraint is the backstop for anything that reaches the database another way.
+
+`GamePlatform.GameId` and `Review.GameId` cascade on delete, so deleting a game stays the
+single statement it was.
+
+Indexes: `IX_Game_Name`, `IX_Game_Score (Score DESC, Id)`, `IX_Game_GenreId`,
+`IX_GamePlatform_PlatformId (PlatformId, GameId)` and
+`IX_Review_GameId_CreatedAt (GameId, CreatedAt DESC, Id DESC)`.
+
+For the sort indexes to be usable the listing query is written as four fixed statements -
+name ascending, name descending, score ascending, score descending - chosen by a `switch`.
+The single statement it replaced ordered by `CASE WHEN @SortByScore = 0 THEN Name END`,
+which is parameterised and safe but leaves the server no ordered index to read from, so
+every page cost a sort of the whole table.
+
+Search is `LIKE '%term%'`, which cannot seek. `IX_Game_Name` still helps: the scan reads a
+narrow index instead of the clustered table, and the same index serves name ordering.
+
+### Migrations
+
+`VideoGameManager.Data/Migrations/*.sql`, embedded in the assembly and applied in name
+order by DbUp, journalled in `dbo.SchemaVersions`. The application applies pending scripts
+at startup once the database has answered; `VideoGameManager.Migrator` applies the same
+scripts from the command line, and creates the database when it is missing. See
+[ADR 0005](adr/0005-dbup-for-schema-migrations.md).
+
+Every script is written to be safe to re-run. DbUp normally runs a script once, but a
+database that was in use before the journal existed replays the whole chain on its first
+migration, so `0001` recreates the original single-table schema only when it is absent.
 
 The connection string is read from configuration under the key
 `ConnectionStrings:VideoGameManager`. The WinForms `appsettings.json` must use the same
@@ -156,10 +217,16 @@ Rules:
 - SQL is a `const string` with a Dapper parameter object. String concatenation or
   interpolation to build SQL is forbidden (`sql-guard` blocks it).
 - Column lists are explicit; no `SELECT *`. Schema is qualified (`dbo.Game`).
-- `Platform` is always bracketed as `[Platform]`.
-- Rows are addressed by `Id`, never by `Name`. Two games may share a name; today's
-  `UPDATE dbo.Game SET Comment = @c WHERE Name = @n` writes to the wrong row and reports
-  success.
+- `Platform` is a table now, not a column, and is written schema-qualified as
+  `dbo.Platform`. The rule that a bare `Platform` must be bracketed still stands for any
+  statement that names it unqualified.
+- Rows are addressed by `Id`, never by `Name`. Two games may share a name; the original
+  `UPDATE dbo.Game SET Comment = @c WHERE Name = @n` wrote to the wrong row and reported
+  success. Genre and platform names are the exception - they are unique by constraint, and
+  the lookup upsert matches on them under `UPDLOCK, HOLDLOCK` so that two writers adding
+  the same new name cannot race into a unique-key violation.
+- A write that touches more than one table runs in a transaction: adding a game inserts
+  the game, upserts its genre and platform names, and writes the bridge rows as one unit.
 - Repositories do not catch. `SqlException` surfaces to the service layer, which wraps it.
 
 ## Services

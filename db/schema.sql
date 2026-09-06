@@ -1,18 +1,34 @@
 /*
- * Video Game Manager - database schema
- * ------------------------------------
- * This script is idempotent: it can be run more than once.
+ * Video Game Manager - database creation
+ * --------------------------------------
+ * This script only creates the empty database. It is idempotent: it can be run
+ * more than once.
+ *
+ * Tables, columns, constraints and indexes are NOT defined here. They are
+ * created by the migration scripts that ship inside the data layer, and running
+ * the migrator is the only supported way to change the schema. A hand-made
+ * ALTER leaves a database that no clean install can be rebuilt to match.
  *
  * Usage:
- *   sqlcmd -S localhost,1433 -U sa -P <password> -C -i db/schema.sql
  *
- * The schema was reverse-engineered from the SQL Server backup that used to
- * live in this repository.
+ *   1. Create the database:
+ *        sqlcmd -S localhost,1433 -U sa -P <password> -C -i db/schema.sql
  *
- * Intentional deviations from that backup:
+ *   2. Create the tables (this step also creates the database if you skipped
+ *      step 1, so step 1 is only useful when you want it created by hand):
+ *        dotnet run --project VideoGameManager.Migrator -- \
+ *          "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=<password>;TrustServerCertificate=True"
  *
- *   1. `Comment` is NVARCHAR(MAX). The backup declared it as `TEXT`, a
- *      deprecated non-Unicode type that mangled non-ASCII characters.
+ *   3. Load the example catalogue:
+ *        sqlcmd -S localhost,1433 -U sa -P <password> -C -d VideoGameManager -f 65001 -i db/seed.sql
+ *
+ * The original schema was reverse-engineered from the SQL Server backup that
+ * used to live in this repository. Three deviations from that backup were
+ * deliberate and still hold:
+ *
+ *   1. Review text is NVARCHAR(MAX). The backup declared the equivalent column
+ *      as `TEXT`, a deprecated non-Unicode type that mangled non-ASCII
+ *      characters. The text now lives in its own Review table.
  *
  *   2. The collation is Latin1_General_100_CI_AI, not Turkish_CI_AS. Under a
  *      Turkish collation `I` and `i` are different letters, so
@@ -21,9 +37,6 @@
  *      'pokemon' matches 'Pokemon'.
  *
  *   3. Identifiers are English. The backup used Turkish ones.
- *
- * Table names are singular so they line up with the normalised schema that
- * replaces this one later: Genre, Platform, Review, GamePlatform.
  */
 
 IF DB_ID(N'VideoGameManager') IS NULL
@@ -37,37 +50,5 @@ ELSE
     PRINT N'Database VideoGameManager already exists.';
 GO
 
-USE [VideoGameManager];
-GO
-
-IF OBJECT_ID(N'dbo.Game', N'U') IS NULL
-BEGIN
-    PRINT N'Creating table dbo.Game...';
-
-    CREATE TABLE dbo.Game
-    (
-        Id         INT            IDENTITY(1, 1) NOT NULL,
-        Name       NVARCHAR(100)  NULL,
-        Genre      NVARCHAR(50)   NULL,
-        [Platform] NVARCHAR(50)   NULL,
-        Score      FLOAT          NULL,
-        CoverUrl   NVARCHAR(MAX)  NULL,
-        Comment    NVARCHAR(MAX)  NULL,
-        CONSTRAINT PK_Game PRIMARY KEY CLUSTERED (Id)
-    );
-END
-ELSE
-    PRINT N'Table dbo.Game already exists.';
-GO
-
-/* Backfill columns that older installations may be missing. */
-IF COL_LENGTH(N'dbo.Game', N'CoverUrl') IS NULL
-    ALTER TABLE dbo.Game ADD CoverUrl NVARCHAR(MAX) NULL;
-GO
-
-IF COL_LENGTH(N'dbo.Game', N'Comment') IS NULL
-    ALTER TABLE dbo.Game ADD Comment NVARCHAR(MAX) NULL;
-GO
-
-PRINT N'Schema ready.';
+PRINT N'Database ready. Run the migrator next to create the tables.';
 GO

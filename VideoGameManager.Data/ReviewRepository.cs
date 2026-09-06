@@ -9,39 +9,59 @@ using VideoGameManager.Domain;
 namespace VideoGameManager.Data
 {
     /// <summary>
-    /// Dapper implementation of <see cref="IReviewRepository"/>.
+    /// Dapper implementation of <see cref="IReviewRepository"/> over the <c>dbo.Review</c> table.
     /// </summary>
     /// <remarks>
-    /// The current schema has no review table. A game carries a single review in
-    /// <c>dbo.Game.Comment</c>, which is what the application has always written, so a review
-    /// is read from and written to that column and the game identity doubles as the review
-    /// identity. There is no column for the moment a review was written, so
-    /// <see cref="Review.CreatedAt"/> is left at its default on the way out and ignored on the
-    /// way in. When reviews move into a table of their own this class changes and the interface
-    /// does not.
+    /// Reviews are rows of their own, so a game keeps every review ever written for it and each
+    /// one carries its own identity, its own score and the moment it was written.
     /// <para>
-    /// The row is addressed by identity. The statement this replaced matched on the title, so
-    /// two games sharing a name meant the review landed on the wrong row and the application
-    /// still reported success.
+    /// Writing a review also refreshes the rating on the game when the review carries a score,
+    /// which is the behaviour the review screen has always had. The two writes are one
+    /// transaction: a stored review whose score never reached the game would leave the catalogue
+    /// showing a rating nothing supports.
+    /// </para>
+    /// <para>
+    /// Rows are addressed by identity. The statement this replaced matched a game on its title, so
+    /// two games sharing a name meant the review landed on the wrong row and the application still
+    /// reported success.
     /// </para>
     /// </remarks>
     public sealed class ReviewRepository : IReviewRepository
     {
+        /// <summary>
+        /// Every review written for one game, newest first. Two reviews written inside the same
+        /// millisecond are separated by their identity, so the order never wobbles between runs.
+        /// </summary>
         private const string SelectSql = @"
-SELECT Id, Score, Comment
+SELECT   Id, GameId, Score, Body, CreatedAt
+FROM     dbo.Review
+WHERE    GameId = @GameId
+ORDER BY CreatedAt DESC, Id DESC;";
+
+        /// <summary>
+        /// Whether the game a review points at still exists. Checked inside the transaction so
+        /// that a review for a game deleted meanwhile is reported as a missing game rather than
+        /// surfacing as a foreign key violation the user cannot read.
+        /// </summary>
+        private const string GameExistsSql = @"
+SELECT COUNT(1)
 FROM   dbo.Game
 WHERE  Id = @GameId;";
 
+        private const string InsertSql = @"
+INSERT INTO dbo.Review (GameId, Score, Body, CreatedAt)
+OUTPUT INSERTED.Id
+VALUES (@GameId, @Score, @Body, @CreatedAt);";
+
         /// <summary>
-        /// Writes the review text and, when the review carries a score, the score as well.
-        /// A review without a score leaves the existing rating untouched, which is how the
-        /// review screen has always behaved.
+        /// Copies the score of the new review onto the game. A review without a score leaves the
+        /// existing rating untouched, which is what the review screen has always done, so the
+        /// statement matches nothing at all when no score was given.
         /// </summary>
-        private const string UpsertSql = @"
+        private const string SyncScoreSql = @"
 UPDATE dbo.Game
-SET    Comment = @Body,
-       Score   = COALESCE(@Score, Score)
-WHERE  Id = @GameId;";
+SET    Score = @Score
+WHERE  Id = @GameId AND @Score IS NOT NULL;";
 
         private readonly IDbConnectionFactory _connections;
 
@@ -62,26 +82,10 @@ WHERE  Id = @GameId;";
             {
                 await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                StoredReview stored = await connection
-                    .QuerySingleOrDefaultAsync<StoredReview>(
+                return (await connection
+                    .QueryAsync<Review>(
                         new CommandDefinition(SelectSql, new { GameId = gameId }, cancellationToken: ct))
-                    .ConfigureAwait(false);
-
-                if (stored == null || string.IsNullOrWhiteSpace(stored.Comment))
-                {
-                    return new Review[0];
-                }
-
-                return new[]
-                {
-                    new Review
-                    {
-                        Id = stored.Id,
-                        GameId = stored.Id,
-                        Score = stored.Score,
-                        Body = stored.Comment,
-                    },
-                };
+                    .ConfigureAwait(false)).AsList();
             }
         }
 
@@ -99,30 +103,45 @@ WHERE  Id = @GameId;";
                 GameId = review.GameId,
                 Body = review.Body,
                 Score = review.Score,
+
+                // The moment comes from the caller rather than from a column default, so the value
+                // that was validated is the value that is stored.
+                CreatedAt = review.CreatedAt,
             };
 
             using (DbConnection connection = _connections.Create())
             {
                 await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                int affected = await connection
-                    .ExecuteAsync(new CommandDefinition(UpsertSql, parameters, cancellationToken: ct))
-                    .ConfigureAwait(false);
+                using (DbTransaction transaction = await connection.BeginTransactionAsync(ct).ConfigureAwait(false))
+                {
+                    int games = await connection
+                        .ExecuteScalarAsync<int>(
+                            new CommandDefinition(GameExistsSql, new { GameId = review.GameId }, transaction, cancellationToken: ct))
+                        .ConfigureAwait(false);
 
-                return affected > 0 ? review.GameId : 0;
+                    if (games == 0)
+                    {
+                        // Nothing to attach the review to. Leaving the transaction uncommitted
+                        // undoes nothing here, and zero is the answer the contract asks for.
+                        return 0;
+                    }
+
+                    int id = await connection
+                        .ExecuteScalarAsync<int>(
+                            new CommandDefinition(InsertSql, parameters, transaction, cancellationToken: ct))
+                        .ConfigureAwait(false);
+
+                    await connection
+                        .ExecuteAsync(
+                            new CommandDefinition(SyncScoreSql, parameters, transaction, cancellationToken: ct))
+                        .ConfigureAwait(false);
+
+                    await transaction.CommitAsync(ct).ConfigureAwait(false);
+
+                    return id;
+                }
             }
-        }
-
-        /// <summary>
-        /// Shape of the row that holds a review in the current schema.
-        /// </summary>
-        private sealed class StoredReview
-        {
-            public int Id { get; set; }
-
-            public double? Score { get; set; }
-
-            public string Comment { get; set; }
         }
     }
 }

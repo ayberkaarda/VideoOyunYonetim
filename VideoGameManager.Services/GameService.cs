@@ -166,16 +166,53 @@ namespace VideoGameManager.Services
         /// that a stray space typed into a form does not become part of the stored title and an
         /// untouched cover box does not store an empty string.
         /// </summary>
+        /// <remarks>
+        /// The text of the newest review is not carried over. It is a projection the repository
+        /// fills in when it reads a game; a review is written through the review service, so
+        /// letting it travel back down a write path here would be a second, silent way to change
+        /// it.
+        /// </remarks>
         private static Game Normalise(Game game) => new Game
         {
             Id = game.Id,
             Name = Trim(game.Name),
             Genre = Trim(game.Genre),
-            Platform = Trim(game.Platform),
+            Platforms = TrimPlatforms(game.Platforms),
             Score = game.Score,
             CoverUrl = Trim(game.CoverUrl),
-            Comment = Trim(game.Comment),
         };
+
+        /// <summary>
+        /// Copies a platform list with each name trimmed, blank entries dropped and repeats
+        /// removed without regard to case, keeping the order the caller gave them in.
+        /// </summary>
+        /// <remarks>
+        /// A list that was never supplied stays missing rather than becoming an empty one, so the
+        /// validator sees the difference between "the caller sent nothing" and "the caller sent an
+        /// empty list". Both are rejected with the same message.
+        /// </remarks>
+        private static IReadOnlyList<string> TrimPlatforms(IReadOnlyList<string> platforms)
+        {
+            if (platforms == null)
+            {
+                return null;
+            }
+
+            List<string> kept = new List<string>(platforms.Count);
+            HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string platform in platforms)
+            {
+                string trimmed = Trim(platform);
+
+                if (trimmed != null && seen.Add(trimmed))
+                {
+                    kept.Add(trimmed);
+                }
+            }
+
+            return kept;
+        }
 
         private static string Trim(string value) =>
             string.IsNullOrWhiteSpace(value) ? null : value.Trim();

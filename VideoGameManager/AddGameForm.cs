@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
@@ -46,7 +47,22 @@ namespace VideoGameManager
 
         public string Genre => Selected(cmbGenre, GenrePlaceholder);
 
-        public string Platform => Selected(cmbPlatform, PlatformPlaceholder);
+        /// <summary>
+        /// The combo box below is single-select because today's catalogue holds one
+        /// platform per game, even though the schema and the domain model can hold more
+        /// than one. Wrapping the single selection in a list keeps this view honest about
+        /// that shape without adding a multi-select control in this pass: no selection
+        /// (placeholder) yields an empty list, not <c>null</c>, so the validator reports a
+        /// missing field the same way it would for any other required value.
+        /// </summary>
+        public IReadOnlyList<string> Platforms
+        {
+            get
+            {
+                string selected = Selected(cmbPlatform, PlatformPlaceholder);
+                return selected is null ? Array.Empty<string>() : new[] { selected };
+            }
+        }
 
         public string ScoreText => Selected(cmbScore, ScorePlaceholder);
 
@@ -116,7 +132,7 @@ namespace VideoGameManager
         {
             if (field == nameof(Game.Name)) return frameName;
             if (field == nameof(Game.Genre)) return frameGenre;
-            if (field == nameof(Game.Platform)) return framePlatform;
+            if (field == nameof(Game.Platforms)) return framePlatform;
             if (field == nameof(Game.Score)) return frameScore;
             if (field == nameof(Game.CoverUrl)) return frameCoverUrl;
             return null;

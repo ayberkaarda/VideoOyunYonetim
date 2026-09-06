@@ -23,8 +23,10 @@ namespace VideoGameManager.Services
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IDatabaseProbe, SqlDatabaseProbe>();
+            services.AddScoped<IDatabaseMigrator, DatabaseMigrator>();
 
             services.AddScoped<IGameService, GameService>();
+            services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
 

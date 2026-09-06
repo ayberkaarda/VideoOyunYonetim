@@ -77,9 +77,9 @@ namespace VideoGameManager
 
             lblName.Text = game.Name;
             lblGenre.Text = game.Genre;
-            lblPlatform.Text = game.Platform;
+            lblPlatform.Text = JoinPlatforms(game.Platforms);
             badgeScore.Score = game.Score;
-            lblComment.Text = game.Comment;
+            lblComment.Text = game.LatestReview;
 
             // LoadCoverAsync cancels a load still in flight for a previous selection, so
             // arrowing through the list quickly can never leave a stale cover on screen.
@@ -138,6 +138,19 @@ namespace VideoGameManager
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Joins a game's platforms for display in one label. A game can carry more than
+        /// one platform; today's catalogue has exactly one per game, so the joined text
+        /// looks the same as before. A missing or empty list renders as an empty string
+        /// rather than a null-reference failure.
+        /// </summary>
+        private static string JoinPlatforms(IReadOnlyList<string> platforms)
+        {
+            return platforms is null || platforms.Count == 0
+                ? string.Empty
+                : string.Join(", ", platforms);
+        }
+
         /// <summary>Adapts a <see cref="Game"/> to the two-line row the list draws.</summary>
         private sealed class GameRow : IGameListItem
         {
@@ -151,7 +164,7 @@ namespace VideoGameManager
 
             public string SecondaryText => string.Join(
                 "  -  ",
-                Parts(_game.Platform, _game.Genre));
+                Parts(JoinPlatforms(_game.Platforms), _game.Genre));
 
             public double? Score => _game.Score;
 

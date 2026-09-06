@@ -21,6 +21,18 @@ namespace VideoGameManager.Domain
         public const int MaxNameLength = 100;
 
         /// <summary>
+        /// Longest accepted <see cref="Game.Genre"/>. Matches the width of the name column in the
+        /// genre lookup table, so a genre that passes validation cannot be truncated on the way in.
+        /// </summary>
+        public const int MaxGenreLength = 50;
+
+        /// <summary>
+        /// Longest accepted entry in <see cref="Game.Platforms"/>. Matches the width of the name
+        /// column in the platform lookup table, for the same reason.
+        /// </summary>
+        public const int MaxPlatformLength = 50;
+
+        /// <summary>
         /// Checks every rule and returns all of the broken ones.
         /// </summary>
         /// <param name="game">Game to check.</param>
@@ -56,11 +68,17 @@ namespace VideoGameManager.Domain
             {
                 errors.Add(new ValidationError(nameof(Game.Genre), "Genre is required."));
             }
-
-            if (string.IsNullOrWhiteSpace(game.Platform))
+            else if (game.Genre.Trim().Length > MaxGenreLength)
             {
-                errors.Add(new ValidationError(nameof(Game.Platform), "Platform is required."));
+                errors.Add(new ValidationError(
+                    nameof(Game.Genre),
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Genre must be {0} characters or fewer.",
+                        MaxGenreLength)));
             }
+
+            AddPlatformErrors(game.Platforms, errors);
 
             if (!ScoreRange.Contains(game.Score))
             {
@@ -81,6 +99,65 @@ namespace VideoGameManager.Domain
             }
 
             return errors.Count == 0 ? ValidationResult.Ok : new ValidationResult(errors);
+        }
+
+        /// <summary>
+        /// Checks the platform list and appends whatever it breaks.
+        /// </summary>
+        /// <remarks>
+        /// Each kind of problem is reported once rather than once per entry, because the screens
+        /// show a single message beside the platform field and a list of near-identical messages
+        /// would tell the user nothing extra.
+        /// </remarks>
+        /// <param name="platforms">Platform list to check.</param>
+        /// <param name="errors">List the broken rules are appended to.</param>
+        private static void AddPlatformErrors(IReadOnlyList<string> platforms, List<ValidationError> errors)
+        {
+            if (platforms == null || platforms.Count == 0)
+            {
+                errors.Add(new ValidationError(nameof(Game.Platforms), "At least one platform is required."));
+                return;
+            }
+
+            bool blankReported = false;
+            bool tooLongReported = false;
+            bool repeatReported = false;
+            HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (string platform in platforms)
+            {
+                if (string.IsNullOrWhiteSpace(platform))
+                {
+                    if (!blankReported)
+                    {
+                        blankReported = true;
+                        errors.Add(new ValidationError(nameof(Game.Platforms), "A platform name cannot be blank."));
+                    }
+
+                    continue;
+                }
+
+                string trimmed = platform.Trim();
+
+                if (trimmed.Length > MaxPlatformLength && !tooLongReported)
+                {
+                    tooLongReported = true;
+                    errors.Add(new ValidationError(
+                        nameof(Game.Platforms),
+                        string.Format(
+                            CultureInfo.InvariantCulture,
+                            "A platform name must be {0} characters or fewer.",
+                            MaxPlatformLength)));
+                }
+
+                if (!seen.Add(trimmed) && !repeatReported)
+                {
+                    repeatReported = true;
+                    errors.Add(new ValidationError(
+                        nameof(Game.Platforms),
+                        "The same platform cannot be listed twice."));
+                }
+            }
         }
 
         /// <summary>
