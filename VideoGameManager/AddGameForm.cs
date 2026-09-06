@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace VideoGameManager
 {
-    public partial class AddGameForm : Form
+    public partial class AddGameForm : VideoGameManager.UI.Controls.ChromelessForm
     {
         public AddGameForm()
         {
@@ -105,16 +105,6 @@ namespace VideoGameManager
                 cmbScore.Items.Add(i.ToString());
             }
             cmbScore.SelectedIndex = 0;
-        }
-
-        private void btnCloseWindow_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e)
-        {
-            this.WindowState = FormWindowState.Minimized;
         }
     }
 }
