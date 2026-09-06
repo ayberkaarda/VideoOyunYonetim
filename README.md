@@ -143,6 +143,13 @@ dotnet run --project VideoGameManager
 
 Or open `VideoGameManager.sln` in Visual Studio and press <kbd>F5</kbd>.
 
+To review the shared control library on its own - every control in every state, no database
+needed:
+
+```powershell
+dotnet run --project VideoGameManager -- --gallery
+```
+
 ## Repository layout
 
 ```
