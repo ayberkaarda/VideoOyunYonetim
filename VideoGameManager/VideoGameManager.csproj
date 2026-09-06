@@ -4,36 +4,37 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-    <RootNamespace>VideoOyunY</RootNamespace>
-    <AssemblyName>VideoOyunY</AssemblyName>
+    <RootNamespace>VideoGameManager</RootNamespace>
+    <AssemblyName>VideoGameManager</AssemblyName>
     <ApplicationIcon>icon.ico</ApplicationIcon>
-    <!-- .NET Framework 4.7.2 varsayılanı DPI-unaware idi; formlar sabit boyutlu ve
-         piksel hizalı olduğu için aynı davranış korunuyor. -->
+    <!-- .NET Framework 4.7.2 defaulted to DPI-unaware. The forms are fixed size
+         and pixel aligned, so the same behaviour is kept here. -->
     <ApplicationHighDpiMode>DpiUnaware</ApplicationHighDpiMode>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <!-- Eski Properties\AssemblyInfo.cs yerine derleme meta verisi burada. -->
+  <!-- Assembly metadata, previously in Properties\AssemblyInfo.cs. -->
   <PropertyGroup>
-    <Product>VideoOyunY</Product>
-    <AssemblyTitle>VideoOyunY</AssemblyTitle>
-    <Copyright>Copyright © 2025-2026 Ayberk Arda</Copyright>
+    <Product>Video Game Manager</Product>
+    <AssemblyTitle>Video Game Manager</AssemblyTitle>
+    <Copyright>Copyright (c) 2025-2026 Ayberk Arda</Copyright>
     <Version>1.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- System.Data.SqlClient .NET 10 BCL'inde yok ve artık bakım almıyor.
-         Microsoft.Data.SqlClient güncel, desteklenen sağlayıcıdır. -->
+    <!-- System.Data.SqlClient is absent from the .NET 10 BCL and no longer
+         maintained. Microsoft.Data.SqlClient is the supported provider. -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Properties\Resources.resx, Resources.cs adında bir dosyaya bağlı olmadığı için
-         DependentUpon kuralı dışında bırakılıp açıkça tanımlanıyor. -->
+    <!-- Properties\Resources.resx has no matching Resources.cs, so it falls
+         outside the DependentUpon convention and is declared explicitly. The
+         manifest name must stay VideoGameManager.Properties.Resources. -->
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

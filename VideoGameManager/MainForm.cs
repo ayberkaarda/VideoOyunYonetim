@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace VideoOyunY
+namespace VideoGameManager
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -21,28 +21,28 @@ namespace VideoOyunY
             this.MinimumSize = this.Size;
         }
 
-        private void btnOyunEkle_Click(object sender, EventArgs e)
+        private void btnAddGame_Click(object sender, EventArgs e)
         {
-            new OyunEkleForm().ShowDialog();
+            new AddGameForm().ShowDialog();
         }
 
-        private void btnListele_Click(object sender, EventArgs e)
+        private void btnBrowseGames_Click(object sender, EventArgs e)
         {
-            new OyunListeleForm().ShowDialog();
+            new BrowseGamesForm().ShowDialog();
         }
 
-        private void btnOneri_Click(object sender, EventArgs e)
+        private void btnRecommend_Click(object sender, EventArgs e)
         {
-           OyunOneriForm oyunOneriForm = new OyunOneriForm();
-            oyunOneriForm.ShowDialog();
+           RecommendationForm recommendationForm = new RecommendationForm();
+            recommendationForm.ShowDialog();
         }
 
-        private void btnCikis_Click(object sender, EventArgs e)
+        private void btnExit_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void MainForm_Load(object sender, EventArgs e)
         {
             this.FormBorderStyle = FormBorderStyle.None;
             this.ControlBox = false;
@@ -51,20 +51,20 @@ namespace VideoOyunY
 
         }
 
-        private void btnkapat_Click(object sender, EventArgs e)
+        private void btnCloseWindow_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void btnasagial_Click(object sender, EventArgs e)
+        private void btnMinimize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
         }
 
-        private void btnDegerlendir_Click(object sender, EventArgs e)
+        private void btnReview_Click(object sender, EventArgs e)
         {
-            OyunDegerlendirForm oyunDegerlendirForm = new OyunDegerlendirForm();
-            oyunDegerlendirForm.ShowDialog();
+            ReviewGameForm reviewGameForm = new ReviewGameForm();
+            reviewGameForm.ShowDialog();
 
         }
     }

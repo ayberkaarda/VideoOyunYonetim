@@ -1,67 +1,73 @@
-﻿/*
- * VideoOyunYonetim — veritabanı şeması / database schema
- * -----------------------------------------------------
- * Bu script idempotenttir: birden fazla kez çalıştırılabilir.
+/*
+ * Video Game Manager - database schema
+ * ------------------------------------
  * This script is idempotent: it can be run more than once.
  *
- * Kullanım / Usage:
- *   sqlcmd -S <sunucu\instance> -E -i db/schema.sql
+ * Usage:
+ *   sqlcmd -S localhost,1433 -U sa -P <password> -C -i db/schema.sql
  *
- * Not: Şema, depoda daha önce bulunan VideoOyun.bak yedeğinden çıkarılmıştır.
- * Note: The schema was reverse-engineered from the VideoOyun.bak backup that
- *       used to live in this repository.
+ * The schema was reverse-engineered from the SQL Server backup that used to
+ * live in this repository.
  *
- * Bilinçli sapma / Intentional deviation:
- *   Orijinal yedekte `Yorum` sütunu `TEXT` tipindeydi. `TEXT` kullanımdan
- *   kaldırılmış ve Unicode desteklemeyen bir tiptir; Türkçe karakterler
- *   veritabanı kod sayfasına göre bozulabiliyordu. Burada NVARCHAR(MAX)
- *   kullanıldı — uygulama kodunda değişiklik gerektirmez.
- *   The original backup declared `Yorum` as `TEXT`, a deprecated non-Unicode
- *   type that mangled Turkish characters. It is NVARCHAR(MAX) here; no
- *   application change is required.
+ * Intentional deviations from that backup:
+ *
+ *   1. `Comment` is NVARCHAR(MAX). The backup declared it as `TEXT`, a
+ *      deprecated non-Unicode type that mangled non-ASCII characters.
+ *
+ *   2. The collation is Latin1_General_100_CI_AI, not Turkish_CI_AS. Under a
+ *      Turkish collation `I` and `i` are different letters, so
+ *      `Name LIKE '%fifa%'` does NOT match 'FIFA 24' -- search silently
+ *      returns nothing, with no error. Accent insensitivity is a bonus:
+ *      'pokemon' matches 'Pokemon'.
+ *
+ *   3. Identifiers are English. The backup used Turkish ones.
+ *
+ * Table names are singular so they line up with the normalised schema that
+ * replaces this one later: Genre, Platform, Review, GamePlatform.
  */
 
-IF DB_ID(N'VideoOyun') IS NULL
+IF DB_ID(N'VideoGameManager') IS NULL
 BEGIN
-    PRINT N'VideoOyun veritabanı oluşturuluyor... / Creating database VideoOyun...';
-    EXEC (N'CREATE DATABASE [VideoOyun] COLLATE Turkish_CI_AS;');
+    PRINT N'Creating database VideoGameManager...';
+    EXEC (N'CREATE DATABASE [VideoGameManager] COLLATE Latin1_General_100_CI_AI;');
 END
+ELSE IF CONVERT(NVARCHAR(128), DATABASEPROPERTYEX(N'VideoGameManager', 'Collation')) <> N'Latin1_General_100_CI_AI'
+    RAISERROR(N'VideoGameManager already exists with a different collation. Drop it (docker compose -f db/docker-compose.yml down -v) and run this script again.', 16, 1);
 ELSE
-    PRINT N'VideoOyun veritabanı zaten mevcut. / Database VideoOyun already exists.';
+    PRINT N'Database VideoGameManager already exists.';
 GO
 
-USE [VideoOyun];
+USE [VideoGameManager];
 GO
 
-IF OBJECT_ID(N'dbo.Oyunlar', N'U') IS NULL
+IF OBJECT_ID(N'dbo.Game', N'U') IS NULL
 BEGIN
-    PRINT N'dbo.Oyunlar tablosu oluşturuluyor... / Creating table dbo.Oyunlar...';
+    PRINT N'Creating table dbo.Game...';
 
-    CREATE TABLE dbo.Oyunlar
+    CREATE TABLE dbo.Game
     (
-        Id        INT            IDENTITY(1, 1) NOT NULL,
-        Ad        NVARCHAR(100)  NULL,
-        Tur       NVARCHAR(50)   NULL,
-        [Platform] NVARCHAR(50)  NULL,
-        Puan      FLOAT          NULL,
-        ResimLink NVARCHAR(MAX)  NULL,
-        Yorum     NVARCHAR(MAX)  NULL,
-        CONSTRAINT PK_Oyunlar PRIMARY KEY CLUSTERED (Id)
+        Id         INT            IDENTITY(1, 1) NOT NULL,
+        Name       NVARCHAR(100)  NULL,
+        Genre      NVARCHAR(50)   NULL,
+        [Platform] NVARCHAR(50)   NULL,
+        Score      FLOAT          NULL,
+        CoverUrl   NVARCHAR(MAX)  NULL,
+        Comment    NVARCHAR(MAX)  NULL,
+        CONSTRAINT PK_Game PRIMARY KEY CLUSTERED (Id)
     );
 END
 ELSE
-    PRINT N'dbo.Oyunlar tablosu zaten mevcut. / Table dbo.Oyunlar already exists.';
+    PRINT N'Table dbo.Game already exists.';
 GO
 
-/* Eski kurulumlar için eksik sütunları tamamla.
-   Backfill columns that older installations may be missing. */
-IF COL_LENGTH(N'dbo.Oyunlar', N'ResimLink') IS NULL
-    ALTER TABLE dbo.Oyunlar ADD ResimLink NVARCHAR(MAX) NULL;
+/* Backfill columns that older installations may be missing. */
+IF COL_LENGTH(N'dbo.Game', N'CoverUrl') IS NULL
+    ALTER TABLE dbo.Game ADD CoverUrl NVARCHAR(MAX) NULL;
 GO
 
-IF COL_LENGTH(N'dbo.Oyunlar', N'Yorum') IS NULL
-    ALTER TABLE dbo.Oyunlar ADD Yorum NVARCHAR(MAX) NULL;
+IF COL_LENGTH(N'dbo.Game', N'Comment') IS NULL
+    ALTER TABLE dbo.Game ADD Comment NVARCHAR(MAX) NULL;
 GO
 
-PRINT N'Şema hazır. / Schema ready.';
+PRINT N'Schema ready.';
 GO
