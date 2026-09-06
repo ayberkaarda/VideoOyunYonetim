@@ -1,65 +1,113 @@
 using System;
-using System.Data;
+using System.Collections.Generic;
 using System.Windows.Forms;
-using Microsoft.Data.SqlClient;
+using VideoGameManager.Domain;
+using VideoGameManager.Views;
 
 namespace VideoGameManager
 {
-    public partial class ReviewGameForm : VideoGameManager.UI.Controls.ChromelessForm
+    /// <summary>
+    /// Passive view for the "review a game" screen. The picker holds
+    /// <see cref="GameListItem"/> objects, so the presenter writes against the selected id
+    /// instead of matching a title.
+    /// </summary>
+    public partial class ReviewGameForm : VideoGameManager.UI.Controls.ChromelessForm, IReviewGameView
     {
+        private const string GamePlaceholder = "Select a game";
+
+        private readonly ErrorProvider _errors;
+
+        private readonly Presenters.ReviewGamePresenter _presenter;
+
+        /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public ReviewGameForm()
         {
             InitializeComponent();
+
+            _errors = new ErrorProvider { ContainerControl = this, BlinkStyle = ErrorBlinkStyle.NeverBlink };
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+        /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
+        public ReviewGameForm(Services.IGameService games, Services.IReviewService reviews) : this()
         {
-            if (cmbGames.SelectedIndex <= 0)
-            {
-                MessageBox.Show("Please select a game.");
-                return;
-            }
-
-            string selectedName = cmbGames.Text;
-            string comment = txtComment.Text;
-
-            string query = "UPDATE dbo.Game SET Comment = @comment WHERE Name = @name";
-            SqlParameter[] parameters = {
-        new SqlParameter("@comment", comment),
-        new SqlParameter("@name", selectedName)
-    };
-
-            try
-            {
-                DatabaseHelper.ExecuteNonQuery(query, parameters);
-                MessageBox.Show("Review saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message);
-            }
-
+            _presenter = new Presenters.ReviewGamePresenter(this, games, reviews);
         }
 
-        private void ReviewGameForm_Load(object sender, EventArgs e)
-        {
-            string query = "SELECT Name FROM dbo.Game ORDER BY Name ASC";
-            DataTable dt = DatabaseHelper.ExecuteQuery(query);
+        public event EventHandler Loaded;
 
+        public event EventHandler SaveRequested;
+
+        public int? SelectedGameId => cmbGames.SelectedItem is GameListItem item ? item.Id : (int?)null;
+
+        public string ReviewText => txtComment.Text;
+
+        bool Views.IView.IsBusy
+        {
+            set
+            {
+                btnSave.Enabled = !value;
+                Cursor = value ? Cursors.WaitCursor : Cursors.Default;
+            }
+        }
+
+        public void SetGames(IReadOnlyList<GameListItem> games)
+        {
             cmbGames.Items.Clear();
 
             // A DropDownList with no selection paints its whole item area with the
             // selection colour once it takes focus, which reads as a broken control. The
-            // placeholder at index 0 keeps something selected, and btnSave_Click rejects
-            // it, so nothing can be saved against it.
-            cmbGames.Items.Add("Select a game");
+            // placeholder keeps something selected; it is not a GameListItem, so
+            // SelectedGameId stays null until a real game is chosen.
+            cmbGames.Items.Add(GamePlaceholder);
 
-            foreach (DataRow row in dt.Rows)
+            foreach (GameListItem game in games)
             {
-                cmbGames.Items.Add(row["Name"].ToString());
+                cmbGames.Items.Add(game);
             }
 
             cmbGames.SelectedIndex = 0;
+        }
+
+        public void ClearReviewText()
+        {
+            txtComment.Clear();
+        }
+
+        public void ShowFieldError(string field, string message)
+        {
+            Control target = field == nameof(Review.Body) ? frameComment : (Control)frameGames;
+            _errors.SetError(target, message);
+        }
+
+        public void ClearFieldErrors()
+        {
+            _errors.Clear();
+        }
+
+        public void ShowError(string message)
+        {
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        public void ShowInfo(string message)
+        {
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        public bool Confirm(string message)
+        {
+            return MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                   == DialogResult.Yes;
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            SaveRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ReviewGameForm_Load(object sender, EventArgs e)
+        {
+            Loaded?.Invoke(this, EventArgs.Empty);
         }
     }
 }

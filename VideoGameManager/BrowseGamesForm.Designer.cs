@@ -1,4 +1,4 @@
-﻿namespace VideoGameManager
+namespace VideoGameManager
 {
     partial class BrowseGamesForm
     {
@@ -29,253 +29,277 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseGamesForm));
-            this.picCover = new System.Windows.Forms.PictureBox();
+            this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
+            this.lstGames = new VideoGameManager.UI.Controls.GameListBox();
+            this.coverCard = new VideoGameManager.UI.Controls.RoundedPanel();
+            this.picCover = new VideoGameManager.UI.Controls.CoverImageBox();
+            this.detailsCard = new VideoGameManager.UI.Controls.RoundedPanel();
+            this.layoutDetails = new VideoGameManager.UI.Controls.LayoutGrid();
             this.lblNameCaption = new System.Windows.Forms.Label();
-            this.lblGenreCaption = new System.Windows.Forms.Label();
-            this.lblPlatformCaption = new System.Windows.Forms.Label();
-            this.btnClose = new System.Windows.Forms.Button();
-            this.lstGames = new System.Windows.Forms.ListBox();
-            this.lblScoreCaption = new System.Windows.Forms.Label();
-            this.lblScore = new System.Windows.Forms.Label();
-            this.lblPlatform = new System.Windows.Forms.Label();
-            this.lblGenre = new System.Windows.Forms.Label();
             this.lblName = new System.Windows.Forms.Label();
-            this.btnMinimize = new System.Windows.Forms.Button();
-            this.btnCloseWindow = new System.Windows.Forms.Button();
+            this.lblGenreCaption = new System.Windows.Forms.Label();
+            this.lblGenre = new System.Windows.Forms.Label();
+            this.lblPlatformCaption = new System.Windows.Forms.Label();
+            this.lblPlatform = new System.Windows.Forms.Label();
+            this.lblScoreCaption = new System.Windows.Forms.Label();
+            this.badgeScore = new VideoGameManager.UI.Controls.RatingBadge();
             this.lblCommentCaption = new System.Windows.Forms.Label();
             this.lblComment = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.picCover)).BeginInit();
+            this.panelActions = new System.Windows.Forms.FlowLayoutPanel();
+            this.btnClose = new VideoGameManager.UI.Controls.FlatButton();
+            this.layoutRoot.SuspendLayout();
+            this.coverCard.SuspendLayout();
+            this.detailsCard.SuspendLayout();
+            this.layoutDetails.SuspendLayout();
+            this.panelActions.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
+            // layoutRoot
+            //
+            this.layoutRoot.ColumnCount = 3;
+            this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+            this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 260F));
+            this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutRoot.Controls.Add(this.lstGames, 0, 0);
+            this.layoutRoot.Controls.Add(this.coverCard, 1, 0);
+            this.layoutRoot.Controls.Add(this.detailsCard, 2, 0);
+            this.layoutRoot.Controls.Add(this.panelActions, 0, 1);
+            this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layoutRoot.Name = "layoutRoot";
+            this.layoutRoot.RowCount = 2;
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.layoutRoot.SetColumnSpan(this.panelActions, 3);
+            this.layoutRoot.TabIndex = 0;
+            //
+            // lstGames
+            //
+            this.lstGames.AccessibleName = "Games";
+            this.lstGames.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lstGames.FormattingEnabled = true;
+            this.lstGames.Name = "lstGames";
+            this.lstGames.TabIndex = 0;
+            this.lstGames.SelectedIndexChanged += new System.EventHandler(this.lstGames_SelectedIndexChanged);
+            //
+            // coverCard
+            //
+            this.coverCard.AccessibleName = "Cover artwork";
+            this.coverCard.Controls.Add(this.picCover);
+            this.coverCard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.coverCard.Name = "coverCard";
+            this.coverCard.Padding = new System.Windows.Forms.Padding(VideoGameManager.UI.Theming.Theme.Space.M);
+            this.coverCard.TabIndex = 1;
+            //
             // picCover
-            // 
-            this.picCover.Location = new System.Drawing.Point(408, 36);
-            this.picCover.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            //
+            this.picCover.AccessibleName = "Cover artwork";
+            this.picCover.Dock = System.Windows.Forms.DockStyle.Fill;
             this.picCover.Name = "picCover";
-            this.picCover.Size = new System.Drawing.Size(303, 366);
-            this.picCover.TabIndex = 1;
-            this.picCover.TabStop = false;
-            // 
+            this.picCover.TabIndex = 0;
+            //
+            // detailsCard
+            //
+            this.detailsCard.AccessibleName = "Game details";
+            this.detailsCard.Controls.Add(this.layoutDetails);
+            this.detailsCard.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.detailsCard.Name = "detailsCard";
+            this.detailsCard.TabIndex = 2;
+            //
+            // layoutDetails
+            //
+            this.layoutDetails.ColumnCount = 2;
+            this.layoutDetails.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this.layoutDetails.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutDetails.Controls.Add(this.lblNameCaption, 0, 0);
+            this.layoutDetails.Controls.Add(this.lblName, 1, 0);
+            this.layoutDetails.Controls.Add(this.lblGenreCaption, 0, 1);
+            this.layoutDetails.Controls.Add(this.lblGenre, 1, 1);
+            this.layoutDetails.Controls.Add(this.lblPlatformCaption, 0, 2);
+            this.layoutDetails.Controls.Add(this.lblPlatform, 1, 2);
+            this.layoutDetails.Controls.Add(this.lblScoreCaption, 0, 3);
+            this.layoutDetails.Controls.Add(this.badgeScore, 1, 3);
+            this.layoutDetails.Controls.Add(this.lblCommentCaption, 0, 4);
+            this.layoutDetails.Controls.Add(this.lblComment, 1, 4);
+            this.layoutDetails.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layoutDetails.Name = "layoutDetails";
+            this.layoutDetails.RowCount = 5;
+            this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.Input));
+            this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.Input));
+            this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.Input));
+            this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.Input));
+            this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutDetails.TabIndex = 0;
+            //
             // lblNameCaption
-            // 
+            //
             this.lblNameCaption.AutoSize = false;
-            this.lblNameCaption.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblNameCaption.Location = new System.Drawing.Point(715, 36);
-            this.lblNameCaption.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblNameCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblNameCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblNameCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
             this.lblNameCaption.Name = "lblNameCaption";
-            this.lblNameCaption.Size = new System.Drawing.Size(110, 21);
-            this.lblNameCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.lblNameCaption.TabIndex = 2;
+            this.lblNameCaption.TabIndex = 0;
             this.lblNameCaption.Text = "Name:";
-            // 
+            this.lblNameCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
+            // lblName
+            //
+            this.lblName.AutoEllipsis = true;
+            this.lblName.AutoSize = false;
+            this.lblName.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblName.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyLarge;
+            this.lblName.ForeColor = VideoGameManager.UI.Theming.Theme.TextPrimary;
+            this.lblName.Name = "lblName";
+            this.lblName.TabIndex = 1;
+            this.lblName.Text = "";
+            this.lblName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
             // lblGenreCaption
-            // 
+            //
             this.lblGenreCaption.AutoSize = false;
-            this.lblGenreCaption.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblGenreCaption.Location = new System.Drawing.Point(715, 76);
-            this.lblGenreCaption.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblGenreCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblGenreCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblGenreCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
             this.lblGenreCaption.Name = "lblGenreCaption";
-            this.lblGenreCaption.Size = new System.Drawing.Size(110, 21);
-            this.lblGenreCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.lblGenreCaption.TabIndex = 3;
+            this.lblGenreCaption.TabIndex = 2;
             this.lblGenreCaption.Text = "Genre:";
-            // 
+            this.lblGenreCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
+            // lblGenre
+            //
+            this.lblGenre.AutoEllipsis = true;
+            this.lblGenre.AutoSize = false;
+            this.lblGenre.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblGenre.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyLarge;
+            this.lblGenre.ForeColor = VideoGameManager.UI.Theming.Theme.TextPrimary;
+            this.lblGenre.Name = "lblGenre";
+            this.lblGenre.TabIndex = 3;
+            this.lblGenre.Text = "";
+            this.lblGenre.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
             // lblPlatformCaption
-            // 
+            //
             this.lblPlatformCaption.AutoSize = false;
-            this.lblPlatformCaption.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblPlatformCaption.Location = new System.Drawing.Point(715, 113);
-            this.lblPlatformCaption.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblPlatformCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblPlatformCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblPlatformCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
             this.lblPlatformCaption.Name = "lblPlatformCaption";
-            this.lblPlatformCaption.Size = new System.Drawing.Size(110, 21);
-            this.lblPlatformCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.lblPlatformCaption.TabIndex = 4;
             this.lblPlatformCaption.Text = "Platform:";
-            // 
-            // btnClose
-            // 
-            this.btnClose.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.btnClose.FlatAppearance.BorderSize = 0;
-            this.btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClose.Font = new System.Drawing.Font("Segoe UI Semibold", 12F, System.Drawing.FontStyle.Bold);
-            this.btnClose.ForeColor = System.Drawing.Color.White;
-            this.btnClose.Location = new System.Drawing.Point(1070, 369);
-            this.btnClose.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.btnClose.Name = "btnClose";
-            this.btnClose.Size = new System.Drawing.Size(161, 39);
-            this.btnClose.TabIndex = 5;
-            this.btnClose.Text = "Close";
-            this.btnClose.UseVisualStyleBackColor = false;
-            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
-            // 
-            // lstGames
-            // 
-            this.lstGames.FormattingEnabled = true;
-            this.lstGames.ItemHeight = 16;
-            this.lstGames.Location = new System.Drawing.Point(16, 36);
-            this.lstGames.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.lstGames.Name = "lstGames";
-            this.lstGames.Size = new System.Drawing.Size(313, 372);
-            this.lstGames.TabIndex = 6;
-            this.lstGames.SelectedIndexChanged += new System.EventHandler(this.lstGames_SelectedIndexChanged);
-            // 
-            // lblScoreCaption
-            // 
-            this.lblScoreCaption.AutoSize = false;
-            this.lblScoreCaption.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblScoreCaption.Location = new System.Drawing.Point(715, 151);
-            this.lblScoreCaption.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblScoreCaption.Name = "lblScoreCaption";
-            this.lblScoreCaption.Size = new System.Drawing.Size(110, 21);
-            this.lblScoreCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.lblScoreCaption.TabIndex = 7;
-            this.lblScoreCaption.Text = "Score:";
-            // 
-            // lblScore
-            // 
-            this.lblScore.AutoSize = true;
-            this.lblScore.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblScore.Location = new System.Drawing.Point(840, 151);
-            this.lblScore.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblScore.Name = "lblScore";
-            this.lblScore.Size = new System.Drawing.Size(48, 21);
-            this.lblScore.TabIndex = 11;
-            this.lblScore.Text = "";
-            // 
+            this.lblPlatformCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
             // lblPlatform
-            // 
-            this.lblPlatform.AutoSize = true;
-            this.lblPlatform.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblPlatform.Location = new System.Drawing.Point(840, 114);
-            this.lblPlatform.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            //
+            this.lblPlatform.AutoEllipsis = true;
+            this.lblPlatform.AutoSize = false;
+            this.lblPlatform.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblPlatform.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyLarge;
+            this.lblPlatform.ForeColor = VideoGameManager.UI.Theming.Theme.TextPrimary;
             this.lblPlatform.Name = "lblPlatform";
-            this.lblPlatform.Size = new System.Drawing.Size(73, 21);
-            this.lblPlatform.TabIndex = 10;
+            this.lblPlatform.TabIndex = 5;
             this.lblPlatform.Text = "";
-            // 
-            // lblGenre
-            // 
-            this.lblGenre.AutoSize = true;
-            this.lblGenre.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblGenre.Location = new System.Drawing.Point(840, 79);
-            this.lblGenre.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblGenre.Name = "lblGenre";
-            this.lblGenre.Size = new System.Drawing.Size(36, 21);
-            this.lblGenre.TabIndex = 9;
-            this.lblGenre.Text = "";
-            // 
-            // lblName
-            // 
-            this.lblName.AutoSize = true;
-            this.lblName.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblName.Location = new System.Drawing.Point(840, 38);
-            this.lblName.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblName.Name = "lblName";
-            this.lblName.Size = new System.Drawing.Size(32, 21);
-            this.lblName.TabIndex = 8;
-            this.lblName.Text = "";
-            // 
-            // btnMinimize
-            // 
-            this.btnMinimize.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.btnMinimize.FlatAppearance.BorderSize = 0;
-            this.btnMinimize.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnMinimize.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.btnMinimize.ForeColor = System.Drawing.Color.White;
-            this.btnMinimize.Location = new System.Drawing.Point(1107, -1);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(77, 33);
-            this.btnMinimize.TabIndex = 24;
-            this.btnMinimize.Text = "-";
-            this.btnMinimize.UseVisualStyleBackColor = false;
-            this.btnMinimize.Click += new System.EventHandler(this.btnMinimize_Click);
-            // 
-            // btnCloseWindow
-            // 
-            this.btnCloseWindow.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.btnCloseWindow.FlatAppearance.BorderSize = 0;
-            this.btnCloseWindow.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnCloseWindow.ForeColor = System.Drawing.Color.White;
-            this.btnCloseWindow.Location = new System.Drawing.Point(1181, -1);
-            this.btnCloseWindow.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.btnCloseWindow.Name = "btnCloseWindow";
-            this.btnCloseWindow.Size = new System.Drawing.Size(77, 33);
-            this.btnCloseWindow.TabIndex = 23;
-            this.btnCloseWindow.Text = "X";
-            this.btnCloseWindow.UseVisualStyleBackColor = false;
-            this.btnCloseWindow.Click += new System.EventHandler(this.btnCloseWindow_Click);
-            // 
+            this.lblPlatform.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            //
+            // lblScoreCaption
+            //
+            this.lblScoreCaption.AutoSize = false;
+            this.lblScoreCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblScoreCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblScoreCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
+            this.lblScoreCaption.Name = "lblScoreCaption";
+            this.lblScoreCaption.TabIndex = 6;
+            this.lblScoreCaption.Text = "Score:";
+            this.lblScoreCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
+            // badgeScore
+            //
+            this.badgeScore.AccessibleName = "Score";
+            this.badgeScore.Dock = System.Windows.Forms.DockStyle.Left;
+            this.badgeScore.Name = "badgeScore";
+            this.badgeScore.TabIndex = 7;
+            //
             // lblCommentCaption
-            // 
+            //
             this.lblCommentCaption.AutoSize = false;
-            this.lblCommentCaption.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblCommentCaption.Location = new System.Drawing.Point(675, 190);
-            this.lblCommentCaption.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblCommentCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblCommentCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblCommentCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
             this.lblCommentCaption.Name = "lblCommentCaption";
-            this.lblCommentCaption.Size = new System.Drawing.Size(150, 21);
-            this.lblCommentCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.lblCommentCaption.TabIndex = 25;
+            this.lblCommentCaption.Padding = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.S, 0, 0);
+            this.lblCommentCaption.TabIndex = 8;
             this.lblCommentCaption.Text = "Your Review:";
-            // 
+            this.lblCommentCaption.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            //
             // lblComment
-            // 
-            this.lblComment.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(162)));
-            this.lblComment.Location = new System.Drawing.Point(840, 190);
-            this.lblComment.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            //
+            this.lblComment.AutoSize = false;
+            this.lblComment.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblComment.Font = VideoGameManager.UI.Theming.Theme.Fonts.Body;
+            this.lblComment.ForeColor = VideoGameManager.UI.Theming.Theme.TextPrimary;
             this.lblComment.Name = "lblComment";
-            this.lblComment.Size = new System.Drawing.Size(325, 168);
-            this.lblComment.TabIndex = 26;
+            this.lblComment.Padding = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.S, 0, 0);
+            this.lblComment.TabIndex = 9;
             this.lblComment.Text = "";
-            // 
+            this.lblComment.TextAlign = System.Drawing.ContentAlignment.TopLeft;
+            //
+            // panelActions
+            //
+            this.panelActions.AutoSize = true;
+            this.panelActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.panelActions.BackColor = System.Drawing.Color.Transparent;
+            this.panelActions.Controls.Add(this.btnClose);
+            this.panelActions.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panelActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            this.panelActions.Margin = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.M, 0, 0);
+            this.panelActions.Name = "panelActions";
+            this.panelActions.TabIndex = 3;
+            this.panelActions.WrapContents = false;
+            //
+            // btnClose
+            //
+            this.btnClose.AccessibleName = "Close";
+            this.btnClose.Kind = VideoGameManager.UI.Controls.ButtonKind.Secondary;
+            this.btnClose.Name = "btnClose";
+            this.btnClose.TabIndex = 0;
+            this.btnClose.Text = "Close";
+            this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
+            //
             // BrowseGamesForm
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
-            this.ClientSize = new System.Drawing.Size(1259, 434);
-            this.Controls.Add(this.lblComment);
-            this.Controls.Add(this.lblCommentCaption);
-            this.Controls.Add(this.btnMinimize);
-            this.Controls.Add(this.btnCloseWindow);
-            this.Controls.Add(this.lblScore);
-            this.Controls.Add(this.lblPlatform);
-            this.Controls.Add(this.lblGenre);
-            this.Controls.Add(this.lblName);
-            this.Controls.Add(this.lblScoreCaption);
-            this.Controls.Add(this.lstGames);
-            this.Controls.Add(this.btnClose);
-            this.Controls.Add(this.lblPlatformCaption);
-            this.Controls.Add(this.lblGenreCaption);
-            this.Controls.Add(this.lblNameCaption);
-            this.Controls.Add(this.picCover);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            //
+            this.CancelButton = this.btnClose;
+            this.ClientSize = new System.Drawing.Size(1040, 560);
+            this.Controls.Add(this.layoutRoot);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "BrowseGamesForm";
             this.Text = "Video Game Manager | Browse Games";
             this.Load += new System.EventHandler(this.BrowseGamesForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.picCover)).EndInit();
+            this.layoutRoot.ResumeLayout(false);
+            this.layoutRoot.PerformLayout();
+            this.coverCard.ResumeLayout(false);
+            this.detailsCard.ResumeLayout(false);
+            this.layoutDetails.ResumeLayout(false);
+            this.panelActions.ResumeLayout(false);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
-        private System.Windows.Forms.PictureBox picCover;
+        private VideoGameManager.UI.Controls.LayoutGrid layoutRoot;
+        private VideoGameManager.UI.Controls.GameListBox lstGames;
+        private VideoGameManager.UI.Controls.RoundedPanel coverCard;
+        private VideoGameManager.UI.Controls.CoverImageBox picCover;
+        private VideoGameManager.UI.Controls.RoundedPanel detailsCard;
+        private VideoGameManager.UI.Controls.LayoutGrid layoutDetails;
         private System.Windows.Forms.Label lblNameCaption;
-        private System.Windows.Forms.Label lblGenreCaption;
-        private System.Windows.Forms.Label lblPlatformCaption;
-        private System.Windows.Forms.Button btnClose;
-        private System.Windows.Forms.ListBox lstGames;
-        private System.Windows.Forms.Label lblScoreCaption;
-        private System.Windows.Forms.Label lblScore;
-        private System.Windows.Forms.Label lblPlatform;
-        private System.Windows.Forms.Label lblGenre;
         private System.Windows.Forms.Label lblName;
-        private System.Windows.Forms.Button btnMinimize;
-        private System.Windows.Forms.Button btnCloseWindow;
+        private System.Windows.Forms.Label lblGenreCaption;
+        private System.Windows.Forms.Label lblGenre;
+        private System.Windows.Forms.Label lblPlatformCaption;
+        private System.Windows.Forms.Label lblPlatform;
+        private System.Windows.Forms.Label lblScoreCaption;
+        private VideoGameManager.UI.Controls.RatingBadge badgeScore;
         private System.Windows.Forms.Label lblCommentCaption;
         private System.Windows.Forms.Label lblComment;
+        private System.Windows.Forms.FlowLayoutPanel panelActions;
+        private VideoGameManager.UI.Controls.FlatButton btnClose;
     }
 }
