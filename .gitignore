@@ -1,0 +1,95 @@
+## Visual Studio / .NET
+## https://github.com/github/gitignore/blob/main/VisualStudio.gitignore (kısaltılmış / trimmed)
+
+# Visual Studio kullanıcı ve önbellek dosyaları
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.rsuser
+
+# Derleme çıktıları
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Test sonuçları ve kapsam raporları
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+TestResults/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+project.lock.json
+project.fragment.lock.json
+
+# ReSharper / Rider
+_ReSharper*/
+*.[Rr]e[Ss]harper
+.idea/
+
+# Roslyn / IDE
+*.ide/
+.editorconfig.user
+
+# Yayınlama
+publish/
+*.[Pp]ublish.xml
+*.pubxml
+*.pubxml.user
+*.azurePubxml
+
+# Uygulama yapılandırması — gizli bilgi içerir, repoda tutulmaz
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.env
+.env
+.env.*
+!db/.env.example
+
+# Veritabanı yedekleri ve dökümleri
+*.bak
+*.mdf
+*.ldf
+*.ndf
+*.dacpac
+*.bacpac
+
+# Serilog / uygulama günlükleri
+[Ll]ogs/*.txt
+*.log
+
+# İşletim sistemi
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
