@@ -1,7 +1,7 @@
 ## Visual Studio / .NET
-## https://github.com/github/gitignore/blob/main/VisualStudio.gitignore (kısaltılmış / trimmed)
+## Trimmed from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-# Visual Studio kullanıcı ve önbellek dosyaları
+# Visual Studio user and cache files
 .vs/
 *.suo
 *.user
@@ -10,7 +10,7 @@
 *.userprefs
 *.rsuser
 
-# Derleme çıktıları
+# Build output
 [Bb]in/
 [Oo]bj/
 [Ll]og/
@@ -31,7 +31,7 @@ msbuild.log
 msbuild.err
 msbuild.wrn
 
-# Test sonuçları ve kapsam raporları
+# Test results and coverage reports
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
 coverage*.json
@@ -54,18 +54,14 @@ _ReSharper*/
 *.[Rr]e[Ss]harper
 .idea/
 
-# Roslyn / IDE
-*.ide/
-.editorconfig.user
-
-# Yayınlama
+# Publish output
 publish/
 *.[Pp]ublish.xml
 *.pubxml
 *.pubxml.user
 *.azurePubxml
 
-# Uygulama yapılandırması — gizli bilgi içerir, repoda tutulmaz
+# Application configuration - holds secrets, never committed
 appsettings.Development.json
 appsettings.Local.json
 appsettings.*.local.json
@@ -75,7 +71,7 @@ secrets.json
 .env.*
 !db/.env.example
 
-# Veritabanı yedekleri ve dökümleri
+# Database backups and dumps
 *.bak
 *.mdf
 *.ldf
@@ -83,11 +79,11 @@ secrets.json
 *.dacpac
 *.bacpac
 
-# Serilog / uygulama günlükleri
+# Serilog / application logs
 [Ll]ogs/*.txt
 *.log
 
-# İşletim sistemi
+# Operating system
 Thumbs.db
 ehthumbs.db
 Desktop.ini

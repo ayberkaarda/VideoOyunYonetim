@@ -5,11 +5,11 @@ using Microsoft.Data.SqlClient;
 
 public class DatabaseHelper
 {
-    // MSSQL bağlantı cümlesi
-    private static string connectionString = "Server=MONSTER\\SQLEXPRESS;Database=VideoOyun;Trusted_Connection=True;TrustServerCertificate=True;";
+    // Connection string. Phase 2 moves this into appsettings.json.
+    private static string connectionString = "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;";
 
     /// <summary>
-    /// INSERT, UPDATE, DELETE gibi sorguları çalıştırır.
+    /// Runs a statement that does not return rows, such as INSERT, UPDATE or DELETE.
     /// </summary>
     public static void ExecuteNonQuery(string query, params SqlParameter[] parameters)
     {
@@ -25,7 +25,7 @@ public class DatabaseHelper
     }
 
     /// <summary>
-    /// SELECT sorgularını çalıştırır ve sonucu DataTable olarak döner.
+    /// Runs a SELECT statement and returns the result as a DataTable.
     /// </summary>
     public static DataTable ExecuteQuery(string query, params SqlParameter[] parameters)
     {

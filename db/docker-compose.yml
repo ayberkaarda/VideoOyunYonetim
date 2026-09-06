@@ -4,21 +4,27 @@
 #   docker compose -f db/docker-compose.yml up -d
 #   docker compose -f db/docker-compose.yml ps
 #
-# Data lives in the named volume `videooyun-data`, so `down` keeps it and
-# `down -v` destroys it.
+# Data lives in the named volume `vgm-data`, so `down` keeps it and `down -v`
+# destroys it.
+#
+# MSSQL_COLLATION sets the *server* collation, which tempdb inherits. It is
+# applied only when the volume is first initialised; changing it later requires
+# `down -v`. The database itself sets its own collation in db/schema.sql, and
+# matching the two avoids collation conflicts when a query joins a temp table.
 
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: videooyun-db
+    container_name: vgm-db
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in db/.env}
       MSSQL_PID: Express
+      MSSQL_COLLATION: Latin1_General_100_CI_AI
     ports:
       - "1433:1433"
     volumes:
-      - videooyun-data:/var/opt/mssql
+      - vgm-data:/var/opt/mssql
     healthcheck:
       test:
         - CMD-SHELL
@@ -30,4 +36,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  videooyun-data:
+  vgm-data:

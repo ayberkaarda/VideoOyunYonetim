@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 VideoOyunYonetim
+# 🎮 Video Game Manager
 
 **A Windows desktop app for cataloguing, rating and discovering video games.**
 
@@ -9,9 +9,7 @@
 [![Database](https://img.shields.io/badge/database-SQL%20Server-CC2927)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**English** · [Türkçe](README.tr.md)
-
-<img src="screenshots/anasayfa.png" alt="Main menu" width="620">
+<img src="screenshots/main_menu.png" alt="Main menu" width="620">
 
 </div>
 
@@ -19,13 +17,10 @@
 
 ## Overview
 
-VideoOyunYonetim is a Windows Forms application backed by SQL Server. You add games to a
+Video Game Manager is a Windows Forms application backed by SQL Server. You add games to a
 personal catalogue with a genre, a platform, a score and a cover image, browse the
 catalogue with full details, leave a written review on any game, and get a random pick
 when you cannot decide what to play.
-
-> **Note** — The user interface is in Turkish. This README is the English entry point;
-> the Turkish one lives in [README.tr.md](README.tr.md).
 
 ## Features
 
@@ -43,32 +38,32 @@ when you cannot decide what to play.
 <tr>
 <td width="50%">
 
-**Add a game** — `OyunEkleForm`
+**Add a game** — `AddGameForm`
 
-<img src="screenshots/oyun_ekle.png" alt="Add game screen" width="100%">
+<img src="screenshots/add_game.png" alt="Add game screen" width="100%">
 
 </td>
 <td width="50%">
 
-**Browse games** — `OyunListeleForm`
+**Browse games** — `BrowseGamesForm`
 
-<img src="screenshots/oyunlari_listele.png" alt="Game list screen" width="100%">
+<img src="screenshots/browse_games.png" alt="Browse games screen" width="100%">
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-**Recommendation** — `OyunOneriForm`
+**Recommendation** — `RecommendationForm`
 
-<img src="screenshots/oyun_oneri.png" alt="Recommendation screen" width="100%">
+<img src="screenshots/recommendation.png" alt="Recommendation screen" width="100%">
 
 </td>
 <td width="50%">
 
-**Review a game** — `OyunDegerlendirForm`
+**Review a game** — `ReviewGameForm`
 
-<img src="screenshots/oyun_degerlendir.png" alt="Review screen" width="100%">
+<img src="screenshots/review_game.png" alt="Review screen" width="100%">
 
 </td>
 </tr>
@@ -112,28 +107,27 @@ re-running them is safe.
 ```powershell
 $sa = (Get-Content db/.env | Select-String 'MSSQL_SA_PASSWORD=(.*)').Matches.Groups[1].Value
 
-# schema — creates the VideoOyun database and the Oyunlar table
+# schema — creates the VideoGameManager database and the Game table
 sqlcmd -S localhost,1433 -U sa -P $sa -C -i db/schema.sql
 
 # sample data — 15 games, only inserts rows that are missing
-sqlcmd -S localhost,1433 -U sa -P $sa -C -d VideoOyun -i db/seed.sql -f 65001
+sqlcmd -S localhost,1433 -U sa -P $sa -C -i db/seed.sql
 
 # verify
-sqlcmd -S localhost,1433 -U sa -P $sa -C -d VideoOyun -Q "SELECT COUNT(*) FROM dbo.Oyunlar"   # 15
+sqlcmd -S localhost,1433 -U sa -P $sa -C -d VideoGameManager -Q "SELECT COUNT(*) FROM dbo.Game"   # 15
 ```
 
-The `-f 65001` flag tells `sqlcmd` that `seed.sql` is UTF-8, which keeps Turkish characters
-intact. Prefer a GUI? Open both files in SQL Server Management Studio or Azure Data Studio
-and execute them in that order.
+Prefer a GUI? Open both files in SQL Server Management Studio or Azure Data Studio and
+execute them in that order.
 
 ### 3. Point the app at your server
 
-Open [`VideoOyunY/DatabaseHelper.cs`](VideoOyunY/DatabaseHelper.cs) and set the connection
-string:
+Open [`VideoGameManager/DatabaseHelper.cs`](VideoGameManager/DatabaseHelper.cs) and set the
+connection string:
 
 ```csharp
 private static string connectionString =
-    "Server=localhost,1433;Database=VideoOyun;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;";
+    "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=YOUR_PASSWORD;TrustServerCertificate=True;";
 ```
 
 > The connection string is currently hard-coded. Moving it to `appsettings.json` is
@@ -143,46 +137,50 @@ private static string connectionString =
 
 ```powershell
 # from the repository root
-dotnet build VideoOyunY.sln
-dotnet run --project VideoOyunY
+dotnet build VideoGameManager.sln
+dotnet run --project VideoGameManager
 ```
 
-Or open `VideoOyunY.sln` in Visual Studio and press <kbd>F5</kbd>.
+Or open `VideoGameManager.sln` in Visual Studio and press <kbd>F5</kbd>.
 
 ## Repository layout
 
 ```
-VideoOyunYonetim/
+.
 ├── db/
-│   ├── docker-compose.yml    # local SQL Server 2022 container
-│   ├── .env.example          # template for the SA password
-│   ├── schema.sql            # database + table definition (idempotent)
-│   └── seed.sql              # 15 sample games (idempotent)
-├── screenshots/              # images used by the READMEs
-├── VideoOyunY/
-│   ├── Program.cs            # entry point
-│   ├── Form1.cs              # main menu
-│   ├── OyunEkleForm.cs       # add a game
-│   ├── OyunListeleForm.cs    # browse the catalogue
-│   ├── OyunOneriForm.cs      # random recommendation
-│   ├── OyunDegerlendirForm.cs# write a review
-│   ├── DatabaseHelper.cs     # ADO.NET helper
-│   ├── Oyun.cs               # game model
-│   └── Oyuncu.cs             # player model
-└── VideoOyunY.sln
+│   ├── docker-compose.yml       # local SQL Server 2022 container
+│   ├── .env.example             # template for the SA password
+│   ├── schema.sql               # database + table definition (idempotent)
+│   └── seed.sql                 # 15 sample games (idempotent)
+├── screenshots/                 # images used by this README
+├── VideoGameManager/
+│   ├── Program.cs               # entry point
+│   ├── MainForm.cs              # main menu
+│   ├── AddGameForm.cs           # add a game
+│   ├── BrowseGamesForm.cs       # browse the catalogue
+│   ├── RecommendationForm.cs    # random recommendation
+│   ├── ReviewGameForm.cs        # write a review
+│   ├── DatabaseHelper.cs        # ADO.NET helper
+│   ├── Game.cs                  # game model
+│   ├── GameStore.cs             # in-memory store (unused; removed in Phase 1)
+│   └── Player.cs                # player model (unused; removed in Phase 1)
+└── VideoGameManager.sln
 ```
 
 ### Database schema
 
+`dbo.Game`, collated `Latin1_General_100_CI_AI` so that `LIKE '%fifa%'` matches `FIFA 24`
+and `pokemon` matches `Pokémon`.
+
 | Column | Type | Notes |
 |---|---|---|
 | `Id` | `INT IDENTITY` | Primary key |
-| `Ad` | `NVARCHAR(100)` | Game name |
-| `Tur` | `NVARCHAR(50)` | Genre |
-| `Platform` | `NVARCHAR(50)` | PC / PlayStation / Xbox / Switch |
-| `Puan` | `FLOAT` | Score, 1–10 |
-| `ResimLink` | `NVARCHAR(MAX)` | Cover image URL |
-| `Yorum` | `NVARCHAR(MAX)` | User review |
+| `Name` | `NVARCHAR(100)` | Game name |
+| `Genre` | `NVARCHAR(50)` | Action, RPG, Strategy, … |
+| `Platform` | `NVARCHAR(50)` | PC / PlayStation / PS5 / Xbox / Switch |
+| `Score` | `FLOAT` | Score, 1–10 |
+| `CoverUrl` | `NVARCHAR(MAX)` | Cover image URL |
+| `Comment` | `NVARCHAR(MAX)` | User review |
 
 ## Roadmap
 
@@ -191,7 +189,7 @@ in numbered phases:
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Repository hygiene — `.gitignore`, SQL scripts instead of a `.bak`, SDK-style .NET 10 project | ✅ done |
+| 0 | Repository hygiene — `.gitignore`, SQL scripts instead of a `.bak`, SDK-style .NET 10 project, English-only codebase | ✅ done |
 | 1 | Layered architecture — Domain / Data / Services / WinForms, MVP, dependency injection | ⏳ planned |
 | 2 | Configuration & error handling — `appsettings.json`, Serilog, validation, `async/await` | ⏳ planned |
 | 3 | Database — normalisation, indexes, migrations | ⏳ planned |
