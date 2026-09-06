@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoGameManager.Data", "Vi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoGameManager.Services", "VideoGameManager.Services\VideoGameManager.Services.csproj", "{454B60DC-4F54-46B5-A10E-C0407AA438AD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoGameManager.Migrator", "VideoGameManager.Migrator\VideoGameManager.Migrator.csproj", "{492E5739-5C9D-43FC-87A0-AC4276AAAF97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{454B60DC-4F54-46B5-A10E-C0407AA438AD}.Release|x64.Build.0 = Release|Any CPU
 		{454B60DC-4F54-46B5-A10E-C0407AA438AD}.Release|x86.ActiveCfg = Release|Any CPU
 		{454B60DC-4F54-46B5-A10E-C0407AA438AD}.Release|x86.Build.0 = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|x64.Build.0 = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Debug|x86.Build.0 = Debug|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|x64.ActiveCfg = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|x64.Build.0 = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|x86.ActiveCfg = Release|Any CPU
+		{492E5739-5C9D-43FC-87A0-AC4276AAAF97}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

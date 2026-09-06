@@ -18,11 +18,22 @@
     <PackageReference Include="Dapper" Version="2.1.66" />
     <!-- System.Data.SqlClient is absent from the .NET 10 BCL and no longer maintained.
          Microsoft.Data.SqlClient is the supported provider; the version is kept in step
-         with the desktop project. -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+         with the desktop project. It is pinned at 6.1.4 because dbup-sqlserver 7.2.0
+         depends on at least that version, and a lower pin here fails the build outright
+         with NU1605 (package downgrade) rather than resolving upwards. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <!-- The migration runner. Schema changes only ever reach a database through the
+         scripts in Migrations/, so a clean database can be rebuilt from zero. -->
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
     <!-- Abstractions only: this layer reads a connection string, it does not decide where
          configuration comes from. The host builds the IConfiguration. -->
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The migration scripts travel inside the assembly, so the runner finds the same
+         scripts wherever it is deployed and cannot be pointed at a stale folder on disk. -->
+    <EmbeddedResource Include="Migrations\*.sql" />
   </ItemGroup>
 
 </Project>

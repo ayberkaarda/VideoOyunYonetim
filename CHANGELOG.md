@@ -7,6 +7,50 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Phase 3 - Database normalisation, indexes and migrations
+
+#### Added
+- A migration chain under `VideoGameManager.Data/Migrations/`, embedded in the assembly and
+  applied by DbUp in name order, journalled in `dbo.SchemaVersions` (ADR 0005). The
+  application applies what is pending at startup, once the database has answered.
+- `VideoGameManager.Migrator`, a console entry point that applies the same scripts to a
+  connection string given on the command line and creates the database - with the collation
+  the application needs - when it is not there yet.
+- `dbo.Genre` and `dbo.Platform` lookup tables, the `dbo.GamePlatform` link table, and
+  `dbo.Review` with its own score and `CreatedAt`.
+- `CHECK (Score IS NULL OR (Score >= 0 AND Score <= 10))` on both `dbo.Game` and
+  `dbo.Review`, matching the range the domain already enforced.
+- Indexes for the queries the application runs: `IX_Game_Name`, `IX_Game_Score`,
+  `IX_Game_GenreId`, `IX_GamePlatform_PlatformId` and `IX_Review_GameId_CreatedAt`.
+
+#### Changed
+- `Game.Platform` became `Game.Platforms`. The link table is a real many-to-many, and a
+  single string cannot represent one: read two platforms as `"PC, Xbox"`, write it back,
+  and the catalogue gains a platform by that name. The add screen still offers one
+  platform, so nothing on screen changes.
+- `Game.Comment` became `Game.LatestReview`, a read-only projection of the newest row in
+  `dbo.Review`. Nothing writes it back; a review is recorded through the review repository,
+  which is now the only place that can. Adding a review with a score still updates the
+  game's score, and adding one without a score leaves it alone, as before.
+- The listing query is four fixed statements chosen by a `switch` instead of one statement
+  ordering by `CASE WHEN @SortByScore = 0 THEN Name END`. The old shape was parameterised
+  and safe, but it left the server no ordered index to read, so every page sorted the whole
+  table and the new sort indexes would have gone unused.
+- Writes that touch more than one table now run in a transaction: adding a game inserts the
+  row, upserts its genre and platform names under `UPDLOCK, HOLDLOCK` so two writers cannot
+  race into a unique-key violation, and writes the link rows as one unit.
+- `db/schema.sql` now only creates the empty database with the required collation. Tables
+  are the migration chain's business. `db/seed.sql` targets the normalised tables and no
+  longer carries a `USE` statement, so it can seed a throwaway database through `-d`.
+- `Microsoft.Data.SqlClient` moved to 6.1.4, the lowest version `dbup-sqlserver` 7.2.0
+  resolves to; pinning the older one failed the build on a package downgrade.
+- Deleting a game now takes its link rows and its reviews with it, through the foreign keys.
+
+#### Fixed
+- `dbo.Game.Name` is `NOT NULL`. A nameless row could not be shown or searched for.
+- `GetGenresAsync` and `GetPlatformsAsync` read the lookup tables rather than collecting
+  `DISTINCT` values off every game row.
+
 ### Phase 2 - Configuration and error handling
 
 #### Added

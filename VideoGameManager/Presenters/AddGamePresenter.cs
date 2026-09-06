@@ -57,7 +57,7 @@ namespace VideoGameManager.Presenters
             {
                 Name = _view.GameName?.Trim(),
                 Genre = _view.Genre,
-                Platform = _view.Platform,
+                Platforms = _view.Platforms,
                 Score = score,
                 CoverUrl = string.IsNullOrWhiteSpace(_view.CoverUrl) ? null : _view.CoverUrl.Trim()
             };

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Forms;
@@ -64,7 +65,7 @@ namespace VideoGameManager
 
             lblName.Text = game.Name;
             lblGenre.Text = game.Genre;
-            lblPlatform.Text = game.Platform;
+            lblPlatform.Text = JoinPlatforms(game.Platforms);
             lblScore.Text = game.Score?.ToString("0.#", CultureInfo.CurrentCulture) ?? string.Empty;
 
             LoadCover(game.CoverUrl);
@@ -148,6 +149,19 @@ namespace VideoGameManager
         private void RecommendationForm_Load(object sender, EventArgs e)
         {
             picCover.SizeMode = PictureBoxSizeMode.Zoom;
+        }
+
+        /// <summary>
+        /// Joins a game's platforms for display in one label. A game can carry more than
+        /// one platform; today's catalogue has exactly one per game, so the joined text
+        /// looks the same as before. A missing or empty list renders as an empty string
+        /// rather than a null-reference failure.
+        /// </summary>
+        private static string JoinPlatforms(IReadOnlyList<string> platforms)
+        {
+            return platforms is null || platforms.Count == 0
+                ? string.Empty
+                : string.Join(", ", platforms);
         }
     }
 }
