@@ -368,3 +368,66 @@ Forms are resolved from the container, never constructed with `new` from another
 Domain → Data → Services → WinForms. Each layer builds and its tests pass before the next
 one starts. The UI control library under `VideoGameManager/UI/` is independent of this
 chain and can be built in parallel.
+
+## Tests
+
+One project, `VideoGameManager.Tests`, targeting `net10.0` and referencing Domain, Data
+and Services. The package choices and the reasoning behind them are in ADR 0006.
+
+```
+Domain/         validation rules, the score range, the result types
+Services/       every service, with the repository interfaces substituted
+TestDoubles/    the one helper that manufactures a provider exception
+Integration/    the repositories and the migration chain, against a real SQL Server
+```
+
+### Unit tests
+
+Domain and Services tests open no connection and start no container. Collaborators are
+substituted with NSubstitute, and a service is given `NullLogger<T>.Instance` unless the
+test is about logging.
+
+The service layer translates a provider failure into `DataAccessException`, which means a
+test has to be able to throw the provider's own exception type. That type has no
+reachable constructor - an instance normally exists only because the driver built one
+from a server response - so `TestDoubles/SqlExceptionFactory` allocates one without
+running a constructor. The instance is used purely as an identity to throw and then find
+again as an inner exception; nothing reads its message or its error list.
+
+The composition root is covered too: a test builds the real container over an in-memory
+configuration and resolves every registered service, so a registration that is missing or
+whose lifetime does not fit fails here rather than at startup. The connection string it
+supplies points at a host in the reserved `.invalid` namespace and carries no credential,
+so nothing can connect even by accident.
+
+### Integration tests
+
+The three integration classes share one xunit collection, so they run one after another
+against a single SQL Server container started once per test run. The container runs the
+same image tag as the development database and the build agent, and it is given the same
+collation - under a Turkish collation `I` and `i` are different letters, so a search for
+`fifa` would silently miss a row stored as `FIFA 24` and raise no error while doing it.
+
+The schema is never created by a test. The fixture runs the migration chain, which means
+every integration run also exercises the scripts in `VideoGameManager.Data/Migrations/`,
+and a script that breaks cannot pass. The database the fixture works in carries a
+generated name, so two runs on one machine cannot collide, and the tests never open a
+connection to the database used for development.
+
+Tables are emptied between tests rather than left to accumulate. The assertions that
+matter most here - a total row count, a page boundary, a sorted lookup list - are
+statements about a whole table, and they are only honest against a known starting point.
+Each delete carries an explicit predicate: a statement that could erase a real catalogue
+if it were ever pointed elsewhere does not belong in a suite, even one that only ever
+runs against a throwaway container.
+
+Where Docker is not available these tests fail rather than skip. A suite that reports
+green without having run is worse than a red one, because green is the result a reviewer
+trusts.
+
+### Coverage
+
+`dotnet test --collect:"XPlat Code Coverage"` writes a Cobertura report; the per-assembly
+`line-rate` for `VideoGameManager.Services` is the figure the >= 80% target is measured
+against. Presenters are not covered - they live in the desktop project, which targets
+`net10.0-windows`, and a `net10.0` test project cannot reference it.

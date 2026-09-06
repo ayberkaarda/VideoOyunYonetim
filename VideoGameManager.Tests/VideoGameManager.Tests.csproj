@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>VideoGameManager.Tests</RootNamespace>
+    <AssemblyName>VideoGameManager.Tests</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Tests are not a public API, so the missing-XML-comment warning that the other
+         projects treat as useful noise here would only be noise. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Pinned to the 7.x line on purpose: from 8.0 the package moved to a licence that
+         charges for commercial use, and this repository is published under MIT. 7.2.0 is
+         the last Apache-2.0 release and carries the assertions this suite needs. -->
+    <PackageReference Include="FluentAssertions" Version="7.2.0" />
+    <PackageReference Include="NSubstitute" Version="6.2.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Integration tests raise their own SQL Server container so they never touch the
+         database used for development. -->
+    <PackageReference Include="Testcontainers.MsSql" Version="4.15.0" />
+    <!-- NullLogger, so a service under test gets a logger without a logging framework. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <!-- The composition root is a service in its own right: these let a test build the
+         real container and prove every registration resolves. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VideoGameManager.Domain\VideoGameManager.Domain.csproj" />
+    <ProjectReference Include="..\VideoGameManager.Data\VideoGameManager.Data.csproj" />
+    <ProjectReference Include="..\VideoGameManager.Services\VideoGameManager.Services.csproj" />
+  </ItemGroup>
+
+</Project>
