@@ -85,6 +85,10 @@ public static class ScoreRange
 }
 ```
 
+`ReviewValidator` lives here too, for the same reason: `IReviewService.AddAsync` takes a
+score and a body that have to be checked, and putting that rule in Services would split
+validation across two layers.
+
 `ValidationError.Field` carries the domain property name (`nameof(Game.Name)`); the
 presenter maps it to a control for `ErrorProvider`.
 
@@ -134,6 +138,17 @@ public interface IReviewRepository
     Task<int> AddAsync(Review review, CancellationToken ct = default);
 }
 ```
+
+> **There is no `dbo.Review` table yet.** `db/schema.sql` creates only `dbo.Game`, and
+> schema changes belong to the Phase 3 migrations. Until then `ReviewRepository` is backed
+> by `dbo.Game.Comment`, which is where the application has always written its one review
+> per game. The consequences are documented on the class: `Review.Id == Review.GameId`,
+> `GetForGameAsync` returns zero or one item, and `CreatedAt` has no column to come from.
+> When Phase 3 adds the table, only that class changes - the interface does not.
+
+The connection string is read from configuration under the key
+`ConnectionStrings:VideoGameManager`. The WinForms `appsettings.json` must use the same
+key; this is the integration point between the two.
 
 Rules:
 
@@ -195,10 +210,16 @@ service validates before touching the repository, so an invalid `Game` never rea
 `RandomStrategy` is the Phase 1 implementation and reproduces today's behaviour:
 `SELECT TOP 1 ... ORDER BY NEWID()`, filtered by a configurable `MinimumScore`.
 
-`MinimumScore` defaults to **0.0**, which is exactly what the app does today. The original
-README claimed "random high-scoring game" while the query had no threshold at all; making
-the threshold configurable settles that mismatch without silently changing behaviour.
-Phase 5 adds `GenreWeightedStrategy` behind the same interface.
+`MinimumScore` defaults to **0.0**, which is what the app does today for every row that has
+a score. The original README claimed "random high-scoring game" while the query had no
+threshold at all; making the threshold configurable settles that mismatch without silently
+changing behaviour. Phase 5 adds `GenreWeightedStrategy` behind the same interface.
+
+> One latent difference: `Score >= 0` excludes rows whose score is `NULL`, while today's
+> unfiltered query would have offered them. All fifteen seeded rows have a score, so
+> nothing changes yet - but `Score` is nullable in the domain model, so a game added
+> without one would never be recommended. Revisit when Phase 5 introduces a wishlist or
+> backlog state, where an unscored game is the normal case.
 
 ## WinForms (MVP)
 
