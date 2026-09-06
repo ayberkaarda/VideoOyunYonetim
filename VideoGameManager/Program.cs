@@ -11,7 +11,7 @@ namespace VideoGameManager
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             // The UI is English-only, so formatting must not follow the machine's
             // regional settings: on a Turkish Windows a score of 8.6 would render
@@ -24,6 +24,16 @@ namespace VideoGameManager
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // --gallery opens the UI library's visual test page instead of the app. It
+            // touches no database, so the theme and the controls can be reviewed without
+            // a running SQL Server.
+            if (args.Length > 0 && args[0] == "--gallery")
+            {
+                Application.Run(new UI.DesignGallery());
+                return;
+            }
+
             Application.Run(new MainForm());
         }
     }
