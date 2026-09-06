@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+using System;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace VideoGameManager
 {
-    public partial class RecommendationForm : Form
+    public partial class RecommendationForm : VideoGameManager.UI.Controls.ChromelessForm
     {
         public RecommendationForm()
         {
@@ -52,16 +46,6 @@ namespace VideoGameManager
         private void RecommendationForm_Load(object sender, EventArgs e)
         {
             picCover.SizeMode = PictureBoxSizeMode.Zoom;
-        }
-
-        private void btnCloseWindow_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e)
-        {
-            this.WindowState = FormWindowState.Minimized;
         }
     }
 }

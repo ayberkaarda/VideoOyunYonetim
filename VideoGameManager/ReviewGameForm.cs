@@ -1,28 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+using System;
 using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Data.SqlClient;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace VideoGameManager
 {
-    public partial class ReviewGameForm : Form
+    public partial class ReviewGameForm : VideoGameManager.UI.Controls.ChromelessForm
     {
         public ReviewGameForm()
         {
             InitializeComponent();
-            
         }
-       
+
         private void btnSave_Click(object sender, EventArgs e)
         {
-            if (cmbGames.SelectedItem == null)
+            if (cmbGames.SelectedIndex <= 0)
             {
                 MessageBox.Show("Please select a game.");
                 return;
@@ -55,26 +47,19 @@ namespace VideoGameManager
             DataTable dt = DatabaseHelper.ExecuteQuery(query);
 
             cmbGames.Items.Clear();
+
+            // A DropDownList with no selection paints its whole item area with the
+            // selection colour once it takes focus, which reads as a broken control. The
+            // placeholder at index 0 keeps something selected, and btnSave_Click rejects
+            // it, so nothing can be saved against it.
+            cmbGames.Items.Add("Select a game");
+
             foreach (DataRow row in dt.Rows)
             {
                 cmbGames.Items.Add(row["Name"].ToString());
             }
-        }
 
-        private void label2_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnCloseWindow_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void btnMinimize_Click(object sender, EventArgs e)
-        {
-            
+            cmbGames.SelectedIndex = 0;
         }
     }
 }
-
