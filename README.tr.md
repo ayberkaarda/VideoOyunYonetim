@@ -7,6 +7,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#)
 [![Dil](https://img.shields.io/badge/C%23-.NET%2010-512BD4)](#)
 [![Veritabanı](https://img.shields.io/badge/veritaban%C4%B1-SQL%20Server-CC2927)](#)
+[![Lisans](https://img.shields.io/badge/lisans-MIT-green)](LICENSE)
 
 [English](README.md) · **Türkçe**
 
@@ -205,3 +206,7 @@ tutun ve PR açmadan önce solution'ın derlendiğinden emin olun.
 ## Geliştirici
 
 **Ayberk Arda** — [@ayberkaarda](https://github.com/ayberkaarda)
+
+## Lisans
+
+[MIT Lisansı](LICENSE) ile yayımlanmıştır.

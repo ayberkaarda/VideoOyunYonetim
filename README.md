@@ -7,6 +7,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#)
 [![Language](https://img.shields.io/badge/C%23-.NET%2010-512BD4)](#)
 [![Database](https://img.shields.io/badge/database-SQL%20Server-CC2927)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **English** · [Türkçe](README.tr.md)
 
@@ -206,3 +207,7 @@ sure the solution still builds before opening a PR.
 ## Author
 
 **Ayberk Arda** — [@ayberkaarda](https://github.com/ayberkaarda)
+
+## License
+
+Released under the [MIT License](LICENSE).
