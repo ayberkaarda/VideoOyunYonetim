@@ -33,6 +33,7 @@ namespace VideoGameManager
             this.coverCard = new VideoGameManager.UI.Controls.RoundedPanel();
             this.picCover = new System.Windows.Forms.PictureBox();
             this.layoutDetails = new VideoGameManager.UI.Controls.LayoutGrid();
+            this.lblStatus = new System.Windows.Forms.Label();
             this.lblNameCaption = new System.Windows.Forms.Label();
             this.lblName = new System.Windows.Forms.Label();
             this.lblGenreCaption = new System.Windows.Forms.Label();
@@ -57,6 +58,7 @@ namespace VideoGameManager
             this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 64F));
             this.layoutRoot.Controls.Add(this.coverCard, 0, 0);
             this.layoutRoot.Controls.Add(this.layoutDetails, 1, 0);
+            this.layoutRoot.Controls.Add(this.lblStatus, 1, 0);
             this.layoutRoot.Controls.Add(this.panelActions, 1, 1);
             this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutRoot.Name = "layoutRoot";
@@ -106,6 +108,20 @@ namespace VideoGameManager
             this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.Input));
             this.layoutDetails.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutDetails.TabIndex = 1;
+            //
+            // lblStatus
+            //
+            this.lblStatus.AccessibleName = "Recommendation status";
+            this.lblStatus.AutoSize = false;
+            this.lblStatus.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblStatus.Font = VideoGameManager.UI.Theming.Theme.Fonts.Body;
+            this.lblStatus.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Padding = new System.Windows.Forms.Padding(VideoGameManager.UI.Theming.Theme.Space.M);
+            this.lblStatus.TabIndex = 2;
+            this.lblStatus.Text = "";
+            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblStatus.Visible = false;
             //
             // lblNameCaption
             //
@@ -246,6 +262,7 @@ namespace VideoGameManager
         private VideoGameManager.UI.Controls.RoundedPanel coverCard;
         private System.Windows.Forms.PictureBox picCover;
         private VideoGameManager.UI.Controls.LayoutGrid layoutDetails;
+        private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Label lblNameCaption;
         private System.Windows.Forms.Label lblName;
         private System.Windows.Forms.Label lblGenreCaption;

@@ -22,9 +22,11 @@ namespace VideoGameManager.Services
 
             services.AddScoped<IGameRepository, GameRepository>();
             services.AddScoped<IReviewRepository, ReviewRepository>();
+            services.AddScoped<IDatabaseProbe, SqlDatabaseProbe>();
 
             services.AddScoped<IGameService, GameService>();
             services.AddScoped<IReviewService, ReviewService>();
+            services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
 
             // Registered as IEnumerable<IRecommendationStrategy>: Phase 5 adds the
             // genre-weighted strategy with one more line here and no other change.

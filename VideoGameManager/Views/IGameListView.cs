@@ -22,5 +22,17 @@ namespace VideoGameManager.Views
 
         /// <summary>Renders the detail panel, or empties it when passed <c>null</c>.</summary>
         void ShowDetails(Game game);
+
+        /// <summary>
+        /// Replaces the list with a readable status message, for example when the list could
+        /// not be loaded. The screen stays open and usable; nothing pops up.
+        /// </summary>
+        void ShowListUnavailable(string message);
+
+        /// <summary>
+        /// Replaces the detail panel with a readable status message, for example when the
+        /// selected row's details could not be fetched. The list itself is left alone.
+        /// </summary>
+        void ShowDetailsUnavailable(string message);
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Forms;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 using VideoGameManager.UI.Controls;
 using VideoGameManager.Views;
@@ -25,9 +26,14 @@ namespace VideoGameManager
         }
 
         /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
-        public BrowseGamesForm(Services.IGameService games) : this()
+        public BrowseGamesForm(
+            Services.IGameService games,
+            ILogger<Presenters.BrowseGamesPresenter> presenterLogger,
+            ILogger<VideoGameManager.UI.CachedCoverImageProvider> coverLogger)
+            : this()
         {
-            _presenter = new Presenters.BrowseGamesPresenter(this, games);
+            picCover.Provider = new VideoGameManager.UI.CachedCoverImageProvider(coverLogger);
+            _presenter = new Presenters.BrowseGamesPresenter(this, games, presenterLogger);
         }
 
         public event EventHandler Loaded;
@@ -38,6 +44,9 @@ namespace VideoGameManager
         {
             set
             {
+                lblListStatus.Visible = false;
+                lstGames.Visible = true;
+
                 lstGames.Items.Clear();
                 foreach (Game game in value)
                 {
@@ -76,6 +85,26 @@ namespace VideoGameManager
             // arrowing through the list quickly can never leave a stale cover on screen.
             // It drives IsLoading itself and swallows provider failures.
             _ = picCover.LoadCoverAsync(game.CoverUrl);
+        }
+
+        public void ShowListUnavailable(string message)
+        {
+            lstGames.Items.Clear();
+            lstGames.Visible = false;
+            lblListStatus.Text = message;
+            lblListStatus.Visible = true;
+
+            ShowDetails(null);
+        }
+
+        public void ShowDetailsUnavailable(string message)
+        {
+            lblName.Text = string.Empty;
+            lblGenre.Text = string.Empty;
+            lblPlatform.Text = string.Empty;
+            badgeScore.Score = null;
+            lblComment.Text = message;
+            _ = picCover.LoadCoverAsync(null);
         }
 
         public void ShowError(string message)

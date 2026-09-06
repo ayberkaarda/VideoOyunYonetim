@@ -6,7 +6,8 @@ namespace VideoGameManager.Presenters
     /// <summary>
     /// Turns an exception into something a user can read. The raw message never reaches
     /// the screen: it names servers, tables and drivers, which is both confusing and a
-    /// disclosure. Phase 2 adds Serilog so the detail is written to a log file instead.
+    /// disclosure. The technical detail is written to the application log instead, by
+    /// whichever caller catches the exception.
     /// </summary>
     internal static class Messages
     {

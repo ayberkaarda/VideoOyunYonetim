@@ -7,6 +7,40 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Phase 2 - Configuration and error handling
+
+#### Added
+- File logging with Serilog, behind `Microsoft.Extensions.Logging`: a daily rolling file
+  under `%LOCALAPPDATA%\VideoGameManager\logs`, seven files retained, configurable through
+  the `Serilog` section of `appsettings.json`. Only the desktop project references Serilog
+  (ADR 0004).
+- Handlers for the three ways a failure can escape a Windows Forms application: an
+  exception reaching the message loop, one reaching the application domain, and a
+  background task nobody awaited. Each is logged in full and reported to the user as a
+  sentence, never as exception text.
+- A startup connection check. When the database does not answer, the application opens a
+  dialog naming the server and database it tried - never the password - and offers Retry,
+  Continue anyway or Quit instead of failing to start.
+- `IDatabaseProbe` and `IDatabaseHealthService`: a `SELECT 1` with a five second connect
+  timeout, reported as a status object rather than thrown, so a caller can show a banner
+  without catching a provider exception.
+
+#### Changed
+- The browse and recommendation screens report an unreachable database inline, in the
+  space the list and the details normally occupy. A dialog on every selection change was
+  disruptive, and the row stayed selected, so it reopened on the next keystroke.
+- Services log a completed write at information level and a rejected input at warning
+  level. An exception is logged where it is swallowed - in a presenter or a global handler
+  - and nowhere else, so one failure produces one entry.
+
+#### Fixed
+- Cover image downloads no longer fail silently. A failed download is logged and the
+  placeholder is shown; the recommendation screen never observed the result of its own
+  load at all.
+- A validation error naming a field the screen has no control for is logged and reported
+  instead of being pinned to whichever control happened to be first. The review screen was
+  pointing the score rule at its game selector.
+
 ### Phase 1 - Layered architecture (in progress)
 
 #### Added

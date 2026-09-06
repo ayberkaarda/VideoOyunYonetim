@@ -31,6 +31,7 @@ namespace VideoGameManager
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseGamesForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.lstGames = new VideoGameManager.UI.Controls.GameListBox();
+            this.lblListStatus = new System.Windows.Forms.Label();
             this.coverCard = new VideoGameManager.UI.Controls.RoundedPanel();
             this.picCover = new VideoGameManager.UI.Controls.CoverImageBox();
             this.detailsCard = new VideoGameManager.UI.Controls.RoundedPanel();
@@ -61,6 +62,7 @@ namespace VideoGameManager
             this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 260F));
             this.layoutRoot.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutRoot.Controls.Add(this.lstGames, 0, 0);
+            this.layoutRoot.Controls.Add(this.lblListStatus, 0, 0);
             this.layoutRoot.Controls.Add(this.coverCard, 1, 0);
             this.layoutRoot.Controls.Add(this.detailsCard, 2, 0);
             this.layoutRoot.Controls.Add(this.panelActions, 0, 1);
@@ -80,6 +82,21 @@ namespace VideoGameManager
             this.lstGames.Name = "lstGames";
             this.lstGames.TabIndex = 0;
             this.lstGames.SelectedIndexChanged += new System.EventHandler(this.lstGames_SelectedIndexChanged);
+            //
+            // lblListStatus
+            //
+            this.lblListStatus.AccessibleName = "Games";
+            this.lblListStatus.AutoSize = false;
+            this.lblListStatus.BackColor = VideoGameManager.UI.Theming.Theme.SurfaceRaised;
+            this.lblListStatus.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblListStatus.Font = VideoGameManager.UI.Theming.Theme.Fonts.Body;
+            this.lblListStatus.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
+            this.lblListStatus.Name = "lblListStatus";
+            this.lblListStatus.Padding = new System.Windows.Forms.Padding(VideoGameManager.UI.Theming.Theme.Space.M);
+            this.lblListStatus.TabIndex = 4;
+            this.lblListStatus.Text = "";
+            this.lblListStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblListStatus.Visible = false;
             //
             // coverCard
             //
@@ -285,6 +302,7 @@ namespace VideoGameManager
         #endregion
         private VideoGameManager.UI.Controls.LayoutGrid layoutRoot;
         private VideoGameManager.UI.Controls.GameListBox lstGames;
+        private System.Windows.Forms.Label lblListStatus;
         private VideoGameManager.UI.Controls.RoundedPanel coverCard;
         private VideoGameManager.UI.Controls.CoverImageBox picCover;
         private VideoGameManager.UI.Controls.RoundedPanel detailsCard;

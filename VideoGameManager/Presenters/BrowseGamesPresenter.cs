@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Data;
 using VideoGameManager.Domain;
 using VideoGameManager.Services;
@@ -18,16 +19,22 @@ namespace VideoGameManager.Presenters
 
         private readonly IGameListView _view;
         private readonly IGameService _games;
+        private readonly ILogger<BrowseGamesPresenter> _logger;
 
-        public BrowseGamesPresenter(IGameListView view, IGameService games)
+        public BrowseGamesPresenter(IGameListView view, IGameService games, ILogger<BrowseGamesPresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
             _games = games ?? throw new ArgumentNullException(nameof(games));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _view.Loaded += OnLoaded;
             _view.SelectionChanged += OnSelectionChanged;
         }
 
+        // A failed load or a failed detail fetch renders inline, in the space the list or
+        // the details normally occupy, instead of a dialog: the database can drop out while
+        // the user is arrowing through the list, and a dialog on every keystroke would be
+        // both disruptive and, because the row stays selected, would reopen on the next one.
         private async void OnLoaded(object sender, EventArgs e)
         {
             try
@@ -36,7 +43,8 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _view.ShowError(Messages.ForUser(ex));
+                _logger.LogError(ex, "Loading the game list failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _view.ShowListUnavailable(Messages.ForUser(ex));
             }
         }
 
@@ -48,7 +56,8 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _view.ShowError(Messages.ForUser(ex));
+                _logger.LogError(ex, "Loading game details failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _view.ShowDetailsUnavailable(Messages.ForUser(ex));
             }
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Data;
 using VideoGameManager.Domain;
 
@@ -16,15 +17,20 @@ namespace VideoGameManager.Services
         private const string WriteFailed = "The review could not be saved.";
 
         private readonly IReviewRepository _reviews;
+        private readonly ILogger<ReviewService> _logger;
 
         /// <summary>
         /// Creates the service.
         /// </summary>
         /// <param name="reviews">Repository the service delegates to.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="reviews"/> is <c>null</c>.</exception>
-        public ReviewService(IReviewRepository reviews)
+        /// <param name="logger">Logger completed mutations and rejected writes are recorded on.</param>
+        /// <exception cref="ArgumentNullException">
+        /// <paramref name="reviews"/> or <paramref name="logger"/> is <c>null</c>.
+        /// </exception>
+        public ReviewService(IReviewRepository reviews, ILogger<ReviewService> logger)
         {
             _reviews = reviews ?? throw new ArgumentNullException(nameof(reviews));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <inheritdoc />
@@ -46,6 +52,9 @@ namespace VideoGameManager.Services
 
             if (!validation.IsValid)
             {
+                _logger.LogWarning(
+                    "Review add rejected: {ErrorCount} validation error(s) on game {GameId}.",
+                    validation.Errors.Count, gameId);
                 return Result.Invalid(validation);
             }
 
@@ -53,9 +62,14 @@ namespace VideoGameManager.Services
                 .RunAsync(() => _reviews.AddAsync(review, ct), WriteFailed)
                 .ConfigureAwait(false);
 
-            return id > 0
-                ? Result.Success()
-                : Result.Invalid(new ValidationError(nameof(Review.GameId), "That game no longer exists."));
+            if (id > 0)
+            {
+                _logger.LogInformation("Review added: {ReviewId} for game {GameId}", id, gameId);
+                return Result.Success();
+            }
+
+            _logger.LogWarning("Review add rejected: game {GameId} no longer exists.", gameId);
+            return Result.Invalid(new ValidationError(nameof(Review.GameId), "That game no longer exists."));
         }
     }
 }

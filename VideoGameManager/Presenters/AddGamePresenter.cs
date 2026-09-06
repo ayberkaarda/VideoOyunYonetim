@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
 using VideoGameManager.Services;
 using VideoGameManager.Views;
@@ -16,11 +17,13 @@ namespace VideoGameManager.Presenters
     {
         private readonly IAddGameView _view;
         private readonly IGameService _games;
+        private readonly ILogger<AddGamePresenter> _logger;
 
-        public AddGamePresenter(IAddGameView view, IGameService games)
+        public AddGamePresenter(IAddGameView view, IGameService games, ILogger<AddGamePresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
             _games = games ?? throw new ArgumentNullException(nameof(games));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             _view.SaveRequested += OnSaveRequested;
         }
@@ -35,6 +38,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Saving a new game failed on {Screen}", nameof(VideoGameManager.AddGameForm));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
