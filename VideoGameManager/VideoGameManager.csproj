@@ -26,9 +26,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- System.Data.SqlClient is absent from the .NET 10 BCL and no longer
-         maintained. Microsoft.Data.SqlClient is the supported provider. -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The dependency direction is one way: WinForms sees Services and Domain, never
+         Data. Data access reaches this project only through the service interfaces. -->
+    <ProjectReference Include="..\VideoGameManager.Domain\VideoGameManager.Domain.csproj" />
+    <ProjectReference Include="..\VideoGameManager.Services\VideoGameManager.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Git-ignored, holds the real password, overrides appsettings.json when present. -->
+    <None Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

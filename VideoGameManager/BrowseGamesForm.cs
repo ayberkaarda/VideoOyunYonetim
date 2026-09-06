@@ -1,92 +1,143 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using Microsoft.Data.SqlClient;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 using System.Windows.Forms;
+using VideoGameManager.Domain;
+using VideoGameManager.UI.Controls;
+using VideoGameManager.Views;
 
 namespace VideoGameManager
 {
-    public partial class BrowseGamesForm : Form
+    /// <summary>
+    /// Passive view for the "browse games" screen. It renders what it is given and reports
+    /// which row is highlighted; the queries live behind the presenter.
+    /// </summary>
+    public partial class BrowseGamesForm : VideoGameManager.UI.Controls.ChromelessForm, IGameListView
     {
+        private readonly Presenters.BrowseGamesPresenter _presenter;
+
+        /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public BrowseGamesForm()
         {
             InitializeComponent();
+
+            picCover.Provider = new VideoGameManager.UI.CachedCoverImageProvider();
         }
-        private void LoadGames()
+
+        /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
+        public BrowseGamesForm(Services.IGameService games) : this()
         {
-            lstGames.Items.Clear();
+            _presenter = new Presenters.BrowseGamesPresenter(this, games);
+        }
 
-            string query = "SELECT Name FROM dbo.Game ORDER BY Name";
-            DataTable games = DatabaseHelper.ExecuteQuery(query);
+        public event EventHandler Loaded;
 
-            foreach (DataRow row in games.Rows)
+        public event EventHandler SelectionChanged;
+
+        IReadOnlyList<Game> Views.IGameListView.Games
+        {
+            set
             {
-                lstGames.Items.Add(row["Name"].ToString());
-                
-            }
-        }
-
-        private void btnClose_Click(object sender, EventArgs e)
-        {
-            this.Close();
-        }
-
-        private void BrowseGamesForm_Load(object sender, EventArgs e)
-        {
-            LoadGames();
-            picCover.SizeMode = PictureBoxSizeMode.Zoom; // Keep the cover aspect ratio.
-            lblName.Text = "";
-            lblGenre.Text = "";
-            lblPlatform.Text = "";
-            lblScore.Text = "";
-            lblComment.Text = "";
-        }
-
-        private void lstGames_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (lstGames.SelectedItem != null)
-            {
-                string selectedName = lstGames.SelectedItem.ToString();
-
-                string query = "SELECT Name, Genre, [Platform], Score, CoverUrl, Comment FROM dbo.Game WHERE Name = @Name";
-                DataTable table = DatabaseHelper.ExecuteQuery(query, new SqlParameter("@Name", selectedName));
-
-                if (table.Rows.Count > 0)
+                lstGames.Items.Clear();
+                foreach (Game game in value)
                 {
-                    DataRow row = table.Rows[0];
-
-                    lblName.Text = row["Name"].ToString();
-                    lblGenre.Text = row["Genre"].ToString();
-                    lblPlatform.Text = row["Platform"].ToString();
-                    lblScore.Text = row["Score"].ToString();
-                    lblComment.Text = row["Comment"].ToString();
-
-                    // Load the cover art if the row has one.
-                    try
-                    {
-                        picCover.Load(row["CoverUrl"].ToString());
-                    }
-                    catch
-                    {
-                        picCover.Image = null;
-                    }
+                    lstGames.Items.Add(new GameRow(game));
                 }
             }
         }
 
-        private void btnCloseWindow_Click(object sender, EventArgs e)
+        public int? SelectedGameId => lstGames.SelectedItem is GameRow row ? row.Id : (int?)null;
+
+        bool Views.IView.IsBusy
         {
-            this.Close();
+            set => Cursor = value ? Cursors.WaitCursor : Cursors.Default;
         }
 
-        private void btnMinimize_Click(object sender, EventArgs e)
+        public void ShowDetails(Game game)
         {
-            this.WindowState = FormWindowState.Minimized;
+            if (game is null)
+            {
+                lblName.Text = string.Empty;
+                lblGenre.Text = string.Empty;
+                lblPlatform.Text = string.Empty;
+                badgeScore.Score = null;
+                lblComment.Text = string.Empty;
+                _ = picCover.LoadCoverAsync(null);
+                return;
+            }
+
+            lblName.Text = game.Name;
+            lblGenre.Text = game.Genre;
+            lblPlatform.Text = game.Platform;
+            badgeScore.Score = game.Score;
+            lblComment.Text = game.Comment;
+
+            // LoadCoverAsync cancels a load still in flight for a previous selection, so
+            // arrowing through the list quickly can never leave a stale cover on screen.
+            // It drives IsLoading itself and swallows provider failures.
+            _ = picCover.LoadCoverAsync(game.CoverUrl);
+        }
+
+        public void ShowError(string message)
+        {
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        public void ShowInfo(string message)
+        {
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        public bool Confirm(string message)
+        {
+            return MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                   == DialogResult.Yes;
+        }
+
+        private void btnClose_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        private void BrowseGamesForm_Load(object sender, EventArgs e)
+        {
+            Loaded?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void lstGames_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>Adapts a <see cref="Game"/> to the two-line row the list draws.</summary>
+        private sealed class GameRow : IGameListItem
+        {
+            private readonly Game _game;
+
+            public GameRow(Game game) => _game = game;
+
+            public int Id => _game.Id;
+
+            public string PrimaryText => _game.Name;
+
+            public string SecondaryText => string.Join(
+                "  -  ",
+                Parts(_game.Platform, _game.Genre));
+
+            public double? Score => _game.Score;
+
+            public override string ToString() => _game.Name;
+
+            private static IEnumerable<string> Parts(params string[] values)
+            {
+                foreach (string value in values)
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        yield return value;
+                    }
+                }
+            }
         }
     }
 }
