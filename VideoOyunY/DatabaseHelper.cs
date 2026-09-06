@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 public class DatabaseHelper
 {
     // MSSQL bağlantı cümlesi
-    private static string connectionString = "Server=MONSTER\\SQLEXPRESS;Database=VideoOyun;Trusted_Connection=True;";
+    private static string connectionString = "Server=MONSTER\\SQLEXPRESS;Database=VideoOyun;Trusted_Connection=True;TrustServerCertificate=True;";
 
     /// <summary>
     /// INSERT, UPDATE, DELETE gibi sorguları çalıştırır.
