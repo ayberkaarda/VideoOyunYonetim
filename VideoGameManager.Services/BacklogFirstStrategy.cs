@@ -79,9 +79,9 @@ namespace VideoGameManager.Services
         private double? ScoreFilter => MinimumScore > ScoreRange.Min ? MinimumScore : (double?)null;
 
         /// <inheritdoc />
-        public async Task<Game> PickAsync(CancellationToken ct = default)
+        public async Task<Game?> PickAsync(CancellationToken ct = default)
         {
-            Game fromBacklog = await PickAsync(PlayStatus.Backlog, ct).ConfigureAwait(false);
+            Game? fromBacklog = await PickAsync(PlayStatus.Backlog, ct).ConfigureAwait(false);
 
             if (fromBacklog != null)
             {
@@ -96,7 +96,7 @@ namespace VideoGameManager.Services
         /// <summary>
         /// Asks the repository for a random game, optionally confined to one play status.
         /// </summary>
-        private Task<Game> PickAsync(PlayStatus? status, CancellationToken ct) =>
+        private Task<Game?> PickAsync(PlayStatus? status, CancellationToken ct) =>
             DatabaseCall.RunAsync(
                 () => _games.GetRandomAsync(new GameFilter(MinScore: ScoreFilter, Status: status), ct),
                 FailureMessage);

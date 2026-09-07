@@ -1,11 +1,18 @@
 # Build, test and format check.
 #
 # The work is split across two runners because the solution is split across two target
-# frameworks. Domain, Data, Services, the migrator and the test project target `net10.0`
-# and run anywhere; the desktop project targets `net10.0-windows` and only builds on
-# Windows. The integration tests are the mirror image: they start a SQL Server container
-# from a Linux image, which a Windows runner cannot run. Neither runner can therefore do
-# the whole job on its own.
+# frameworks. Domain, Data, Services, Presentation, the migrator and the test project
+# target `net10.0` and run anywhere; the desktop project targets `net10.0-windows` and
+# only builds on Windows. The integration tests are the mirror image: they start a SQL
+# Server container from a Linux image, which a Windows runner cannot run. Neither runner
+# can therefore do the whole job on its own.
+#
+# The action versions below are the oldest ones that run on Node 24. GitHub is retiring
+# Node 20, and a runner that still sees a Node 20 action annotates every run with a
+# deprecation warning. checkout and setup-dotnet made the move in v5; upload-artifact did
+# not until v6, so that one is a major further along. Newer majors exist for all three and
+# can be taken when there is a reason to - these are chosen because their inputs are
+# identical to what this file already passed.
 
 name: CI
 
@@ -32,7 +39,7 @@ env:
   DOTNET_CLI_UI_LANGUAGE: en
 
 jobs:
-  # Everything that does not need Windows: the four cross-platform projects, the unit
+  # Everything that does not need Windows: the five cross-platform projects, the unit
   # tests and the integration tests, which raise their own SQL Server container.
   test:
     name: Build and test (Linux)
@@ -41,17 +48,17 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install the .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
       # The solution file is not used here: it contains the desktop project, and
       # restoring or building that on Linux fails on the Windows target framework.
-      # The test project references Domain, Data and Services, so those three come
-      # along with it; the migrator is the only other project left to name.
+      # The test project references Domain, Data, Services and Presentation, so those
+      # four come along with it; the migrator is the only other project left to name.
       - name: Restore
         run: |
           dotnet restore VideoGameManager.Tests/VideoGameManager.Tests.csproj
@@ -81,7 +88,7 @@ jobs:
 
       - name: Upload test results and coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results
           path: TestResults/
@@ -96,10 +103,10 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install the .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 

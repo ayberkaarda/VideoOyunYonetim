@@ -86,10 +86,10 @@ namespace VideoGameManager.Services
         /// No strategy carries <paramref name="strategyName"/>. The caller chooses from
         /// <see cref="AvailableStrategies"/>, so an unknown name is a defect and not user input.
         /// </exception>
-        public async Task<Game> RecommendAsync(string strategyName = null, CancellationToken ct = default)
+        public async Task<Game?> RecommendAsync(string? strategyName = null, CancellationToken ct = default)
         {
             IRecommendationStrategy strategy = Select(strategyName);
-            Game recommendation = await strategy.PickAsync(ct).ConfigureAwait(false);
+            Game? recommendation = await strategy.PickAsync(ct).ConfigureAwait(false);
 
             if (recommendation == null)
             {
@@ -100,7 +100,7 @@ namespace VideoGameManager.Services
             return recommendation;
         }
 
-        private IRecommendationStrategy Select(string strategyName)
+        private IRecommendationStrategy Select(string? strategyName)
         {
             if (string.IsNullOrWhiteSpace(strategyName))
             {

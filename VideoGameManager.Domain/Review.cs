@@ -25,7 +25,12 @@ namespace VideoGameManager.Domain
         /// <summary>
         /// Text of the review. Required.
         /// </summary>
-        public string Body { get; set; }
+        /// <remarks>
+        /// Empty until something fills it in, rather than absent. <see cref="ReviewValidator"/>
+        /// rejects a blank body, so an unset one is already refused and does not need a second,
+        /// nullable spelling of the same thing.
+        /// </remarks>
+        public string Body { get; set; } = string.Empty;
 
         /// <summary>
         /// Moment the review was written.

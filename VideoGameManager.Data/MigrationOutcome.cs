@@ -27,5 +27,5 @@ namespace VideoGameManager.Data
         bool Succeeded,
         IReadOnlyList<string> AppliedScripts,
         IReadOnlyList<string> Log,
-        Exception Failure);
+        Exception? Failure);
 }

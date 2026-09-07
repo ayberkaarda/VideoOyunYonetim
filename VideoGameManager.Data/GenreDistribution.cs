@@ -14,5 +14,5 @@ namespace VideoGameManager.Data
     /// Mean of the scores those games carry, or <c>null</c> when none of them is scored. Unscored
     /// games are left out of the mean but still counted by <paramref name="GameCount"/>.
     /// </param>
-    public sealed record GenreDistribution(string Genre, int GameCount, double? AverageScore);
+    public sealed record GenreDistribution(string? Genre, int GameCount, double? AverageScore);
 }

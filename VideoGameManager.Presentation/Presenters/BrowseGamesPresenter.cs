@@ -136,7 +136,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Loading the game list failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Loading the game list failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowListUnavailable(Messages.ForUser(ex));
             }
         }
@@ -149,7 +149,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Loading game details failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Loading game details failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowDetailsUnavailable(Messages.ForUser(ex));
             }
         }
@@ -165,7 +165,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Applying the game list filter failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Applying the game list filter failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowListUnavailable(Messages.ForUser(ex));
             }
         }
@@ -184,7 +184,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Paging the game list failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Paging the game list failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowListUnavailable(Messages.ForUser(ex));
             }
         }
@@ -203,7 +203,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Paging the game list failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Paging the game list failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowListUnavailable(Messages.ForUser(ex));
             }
         }
@@ -228,7 +228,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Editing a game failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Editing a game failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
@@ -241,7 +241,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Deleting a game failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Deleting a game failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
@@ -254,17 +254,17 @@ namespace VideoGameManager.Presenters
             }
             catch (IOException ex)
             {
-                _logger.LogError(ex, "Writing the export file failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Writing the export file failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowError(ExportFileFailed);
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogError(ex, "Writing the export file was refused on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Writing the export file was refused on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowError(ExportFileFailed);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exporting the game list failed on {Screen}", nameof(VideoGameManager.BrowseGamesForm));
+                _logger.LogError(ex, "Exporting the game list failed on {Screen}", nameof(BrowseGamesPresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }

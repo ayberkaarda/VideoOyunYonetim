@@ -24,7 +24,7 @@ namespace VideoGameManager.Data
         /// <param name="descending"><c>true</c> to order from high to low.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The page and the total number of matching rows.</returns>
-        Task<PagedResult<Game>> ListAsync(GameFilter filter, int page, int pageSize,
+        Task<PagedResult<Game>> ListAsync(GameFilter? filter, int page, int pageSize,
             GameSortField sort = GameSortField.Name, bool descending = false,
             CancellationToken ct = default);
 
@@ -34,7 +34,7 @@ namespace VideoGameManager.Data
         /// <param name="id">Identity of the game.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The game, or <c>null</c> when no row has that identity.</returns>
-        Task<Game> GetAsync(int id, CancellationToken ct = default);
+        Task<Game?> GetAsync(int id, CancellationToken ct = default);
 
         /// <summary>
         /// Stores a new game.
@@ -86,7 +86,7 @@ namespace VideoGameManager.Data
         /// <param name="filter">Which games may be picked. <c>null</c> allows every game.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A random matching game, or <c>null</c> when nothing matches.</returns>
-        Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default);
+        Task<Game?> GetRandomAsync(GameFilter? filter, CancellationToken ct = default);
 
         /// <summary>
         /// Reports, per genre, how many scored reviews the catalogue holds and what they average.

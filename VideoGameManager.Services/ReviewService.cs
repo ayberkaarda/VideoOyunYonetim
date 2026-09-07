@@ -44,7 +44,7 @@ namespace VideoGameManager.Services
             {
                 GameId = gameId,
                 Score = score,
-                Body = string.IsNullOrWhiteSpace(body) ? null : body.Trim(),
+                Body = string.IsNullOrWhiteSpace(body) ? string.Empty : body.Trim(),
                 CreatedAt = DateTimeOffset.UtcNow,
             };
 

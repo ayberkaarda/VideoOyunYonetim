@@ -10,9 +10,6 @@
     <!-- .NET Framework 4.7.2 defaulted to DPI-unaware. The forms are fixed size
          and pixel aligned, so the same behaviour is kept here. -->
     <ApplicationHighDpiMode>DpiUnaware</ApplicationHighDpiMode>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <!-- Assembly metadata, previously in Properties\AssemblyInfo.cs. -->
@@ -43,10 +40,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The dependency direction is one way: WinForms sees Services and Domain, never
-         Data. Data access reaches this project only through the service interfaces. -->
+    <!-- The dependency direction is one way and this project sits at the end of it:
+         Presentation -> Services -> Data -> Domain. Nothing references back.
+
+         No connection is opened and no SQL is written here - that stays behind the
+         service interfaces. The forms do name types declared in Data (GameFilter,
+         GameSortField, PagedResult, CatalogueStatistics), because the services return
+         them; those arrive transitively and are read as values, never used to reach a
+         database. -->
     <ProjectReference Include="..\VideoGameManager.Domain\VideoGameManager.Domain.csproj" />
     <ProjectReference Include="..\VideoGameManager.Services\VideoGameManager.Services.csproj" />
+    <!-- Presenters and view interfaces live outside this project so they can be tested
+         without a Windows target framework. The forms implement the interfaces. -->
+    <ProjectReference Include="..\VideoGameManager.Presentation\VideoGameManager.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

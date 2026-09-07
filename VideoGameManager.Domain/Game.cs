@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace VideoGameManager.Domain
@@ -21,12 +22,25 @@ namespace VideoGameManager.Domain
         /// <summary>
         /// Title of the game. Required, at most 100 characters.
         /// </summary>
-        public string Name { get; set; }
+        /// <remarks>
+        /// Empty until something fills it in, rather than absent. A game with no title is
+        /// rejected by <see cref="GameValidator"/>, which treats an empty string and a blank
+        /// one alike, so an unset title is already refused and does not need a second, nullable
+        /// spelling of the same thing.
+        /// </remarks>
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// Genre the game belongs to, such as <c>RPG</c> or <c>Racing</c>. Required.
+        /// Genre the game belongs to, such as <c>RPG</c> or <c>Racing</c>. Required to store a
+        /// game, but absent on one that was stored before the rule existed.
         /// </summary>
-        public string Genre { get; set; }
+        /// <remarks>
+        /// The one required field that is still allowed to be missing. The genre column accepts
+        /// no genre at all, so a catalogue kept before a genre was asked for still reads back,
+        /// with nothing where the genre would be rather than an invented one. Validation refuses
+        /// to write such a game, which is a different question from whether one can be read.
+        /// </remarks>
+        public string? Genre { get; set; }
 
         /// <summary>
         /// Platforms the game is played on, such as <c>PC</c> or <c>Switch</c>. At least one is
@@ -37,7 +51,7 @@ namespace VideoGameManager.Domain
         /// that is attached to no platform at all comes back with an empty list. Callers may
         /// therefore enumerate this without a null check.
         /// </remarks>
-        public IReadOnlyList<string> Platforms { get; set; }
+        public IReadOnlyList<string> Platforms { get; set; } = Array.Empty<string>();
 
         /// <summary>
         /// Rating between <see cref="ScoreRange.Min"/> and <see cref="ScoreRange.Max"/>,
@@ -48,7 +62,7 @@ namespace VideoGameManager.Domain
         /// <summary>
         /// Absolute http or https address of the cover image. Optional.
         /// </summary>
-        public string CoverUrl { get; set; }
+        public string? CoverUrl { get; set; }
 
         /// <summary>
         /// Text of the most recent review written for this game, or <c>null</c> when it has none.
@@ -59,7 +73,7 @@ namespace VideoGameManager.Domain
         /// the database. Writing a review goes through the review repository instead, which is
         /// the only place that can record its score and the moment it was written.
         /// </remarks>
-        public string LatestReview { get; init; }
+        public string? LatestReview { get; init; }
 
         /// <summary>
         /// How far the owner has got with this game. A game that has never been marked reads as

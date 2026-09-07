@@ -73,11 +73,11 @@ namespace VideoGameManager.Services
         {
             public int Id { get; set; }
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
-            public string Genre { get; set; }
+            public string? Genre { get; set; }
 
-            public IReadOnlyList<string> Platforms { get; set; }
+            public IReadOnlyList<string> Platforms { get; set; } = Array.Empty<string>();
 
             public double? Score { get; set; }
 
@@ -85,7 +85,7 @@ namespace VideoGameManager.Services
 
             public bool IsFavourite { get; set; }
 
-            public string CoverUrl { get; set; }
+            public string? CoverUrl { get; set; }
 
             public static ExportedGame From(Game game) => new ExportedGame
             {

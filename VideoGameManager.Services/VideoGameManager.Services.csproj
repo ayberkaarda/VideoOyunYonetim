@@ -4,10 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>VideoGameManager.Services</RootNamespace>
     <AssemblyName>VideoGameManager.Services</AssemblyName>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
-    <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The nullable reference context is switched on one project at a time, in the
+         direction the dependencies run. The entity project and the repository project
+         below this one are already annotated, so the service contracts here are written
+         against settled ones. The presentation, desktop and test projects still carry the
+         shared setting that turns the context off, and compile without nullable
+         diagnostics until their turn comes. -->
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

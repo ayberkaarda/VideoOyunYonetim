@@ -34,6 +34,11 @@ namespace VideoGameManager.Presenters
         /// </summary>
         private int? _editingId;
 
+        /// <summary>Wires the presenter to a view and the catalogue.</summary>
+        /// <param name="view">The screen to drive. Its events are subscribed to here.</param>
+        /// <param name="games">Where a game is read from and written to.</param>
+        /// <param name="logger">Where the technical detail of a failure is written.</param>
+        /// <exception cref="ArgumentNullException">Any argument is <c>null</c>.</exception>
         public AddGamePresenter(IAddGameView view, IGameService games, ILogger<AddGamePresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
@@ -60,7 +65,7 @@ namespace VideoGameManager.Presenters
                     ex,
                     "Loading game {GameId} for editing failed on {Screen}",
                     gameId,
-                    nameof(VideoGameManager.AddGameForm));
+                    nameof(AddGamePresenter));
                 _editingId = null;
                 _view.ShowLoadFailed(Messages.ForUser(ex));
             }
@@ -101,7 +106,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Saving a game failed on {Screen}", nameof(VideoGameManager.AddGameForm));
+                _logger.LogError(ex, "Saving a game failed on {Screen}", nameof(AddGamePresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }

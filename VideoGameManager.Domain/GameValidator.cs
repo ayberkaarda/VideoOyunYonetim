@@ -123,7 +123,7 @@ namespace VideoGameManager.Domain
         /// </remarks>
         /// <param name="platforms">Platform list to check.</param>
         /// <param name="errors">List the broken rules are appended to.</param>
-        private static void AddPlatformErrors(IReadOnlyList<string> platforms, List<ValidationError> errors)
+        private static void AddPlatformErrors(IReadOnlyList<string>? platforms, List<ValidationError> errors)
         {
             if (platforms == null || platforms.Count == 0)
             {
@@ -173,19 +173,19 @@ namespace VideoGameManager.Domain
         }
 
         /// <summary>
-        /// Tells whether a cover address is acceptable. An empty address is fine; a present one
-        /// must be an absolute http or https URI.
+        /// Tells whether a cover address is acceptable. An absent or empty address is fine; a
+        /// present one must be an absolute http or https URI.
         /// </summary>
-        /// <param name="coverUrl">Address to check.</param>
-        /// <returns><c>true</c> when the address is empty or a usable http/https URI.</returns>
-        public static bool IsAcceptableCoverUrl(string coverUrl)
+        /// <param name="coverUrl">Address to check. May be absent, since a cover is optional.</param>
+        /// <returns><c>true</c> when the address is absent, empty or a usable http/https URI.</returns>
+        public static bool IsAcceptableCoverUrl(string? coverUrl)
         {
             if (string.IsNullOrWhiteSpace(coverUrl))
             {
                 return true;
             }
 
-            if (!Uri.TryCreate(coverUrl.Trim(), UriKind.Absolute, out Uri uri))
+            if (!Uri.TryCreate(coverUrl.Trim(), UriKind.Absolute, out Uri? uri))
             {
                 return false;
             }
