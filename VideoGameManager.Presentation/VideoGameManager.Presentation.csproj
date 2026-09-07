@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Deliberately not net10.0-windows. Presenters and view interfaces carry no
+         WinForms type, so keeping them on the portable framework is what makes the
+         rule enforceable: a stray reference to Form, Control or MessageBox stops
+         compiling here instead of quietly slipping in. It also lets the presenter
+         tests run on a non-Windows machine. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Not VideoGameManager.Presentation. The namespaces are VideoGameManager.Presenters
+         and VideoGameManager.Views, and the forms refer to them by the short names
+         Presenters.X and Views.Y from inside the VideoGameManager namespace. Renaming the
+         root namespace to match the assembly would break every one of those references. -->
+    <RootNamespace>VideoGameManager</RootNamespace>
+    <AssemblyName>VideoGameManager.Presentation</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Presenters take an ILogger<T> from the container. Abstractions only: which sink
+         the log ends up in is a decision of the executable, not of this layer. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Domain for the entities and validation results a presenter renders, Services for
+         the interfaces it calls.
+
+         Data is not referenced directly, but it is used: GameFilter, GameSortField,
+         PagedResult and CatalogueStatistics are declared there and appear on the view
+         interfaces and in the presenters. They arrive transitively through Services,
+         which returns them from its own signatures. That is a real dependency on Data's
+         public types, not an accident of the build - naming it here would not change
+         what is compiled, only how honestly the file reads. -->
+    <ProjectReference Include="..\VideoGameManager.Domain\VideoGameManager.Domain.csproj" />
+    <ProjectReference Include="..\VideoGameManager.Services\VideoGameManager.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Messages is internal: it is an implementation detail of how presenters phrase a
+         failure, not an API for callers. The test project still needs to assert on the
+         exact wording. -->
+    <InternalsVisibleTo Include="VideoGameManager.Tests" />
+  </ItemGroup>
+
+</Project>

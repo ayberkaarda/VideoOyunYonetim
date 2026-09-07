@@ -7,19 +7,22 @@ against each other without guessing.
 ## Projects and dependency direction
 
 ```
-VideoGameManager.WinForms   net10.0-windows   Forms, Views, Presenters, composition root
+VideoGameManager.WinForms      net10.0-windows   Forms, control library, composition root
         |
         v
-VideoGameManager.Services   net10.0           Business rules, recommendation strategies
+VideoGameManager.Presentation  net10.0           IView interfaces, presenters
         |
         v
-VideoGameManager.Data       net10.0           Dapper repositories, connection factory, migrations
+VideoGameManager.Services      net10.0           Business rules, recommendation strategies
         |
         v
-VideoGameManager.Domain     net10.0           Entities, enums, validation. No dependencies.
+VideoGameManager.Data          net10.0           Dapper repositories, connection factory, migrations
+        |
+        v
+VideoGameManager.Domain        net10.0           Entities, enums, validation. No dependencies.
 ```
 
-`VideoGameManager.Tests` (net10.0) references all four.
+`VideoGameManager.Tests` (net10.0) references all of them except the desktop project.
 
 `VideoGameManager.Migrator` (net10.0) is a console entry point that references Data alone.
 It exists so that a database can be created and brought up to date without starting the
@@ -27,8 +30,13 @@ desktop application - from a build agent, or against a throwaway database in a t
 
 The arrow is one-way, and the project references are what enforce it: a reference in the
 other direction would not compile, so the rule cannot be broken by accident. Only
-the WinForms project targets Windows, so Domain, Data and Services can run their tests on
-a Linux CI agent.
+the WinForms project targets Windows, so every layer beneath it runs its tests on a Linux
+CI agent - including the presenters, which is the whole reason they live in a project of
+their own rather than beside the forms (ADR 0008).
+
+Presentation names types that belong to Data - `GameFilter`, `GameSortField`,
+`PagedResult<T>`, `CatalogueStatistics` - because the service layer exposes them in its own
+signatures. That is a transitive reference along the same arrow, not a new edge.
 
 ## Domain
 
@@ -512,5 +520,14 @@ trusts.
 
 `dotnet test --collect:"XPlat Code Coverage"` writes a Cobertura report; the per-assembly
 `line-rate` for `VideoGameManager.Services` is the figure the >= 80% target is measured
-against. Presenters are not covered - they live in the desktop project, which targets
-`net10.0-windows`, and a `net10.0` test project cannot reference it.
+against.
+
+The presenters are covered too, now that they live in `VideoGameManager.Presentation`
+rather than inside the desktop project (ADR 0008). A presenter is driven through its
+`IView` with a substituted view and substituted services, so a test can assert what the
+screen does - which message a rejected save shows, that deleting the last row of a page
+steps back a page - without a window ever being created.
+
+The only code with no automated coverage is the desktop project itself: the forms, the
+designer output and the owner-drawn control library. That is deliberate. What is left
+there is the part that has to be looked at to be judged.

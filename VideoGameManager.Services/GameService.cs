@@ -38,7 +38,7 @@ namespace VideoGameManager.Services
         /// <paramref name="page"/> or <paramref name="pageSize"/> is below one. The caller
         /// controls both, so a wrong value is a defect rather than user input.
         /// </exception>
-        public Task<PagedResult<Game>> SearchAsync(GameFilter filter, int page, int pageSize,
+        public Task<PagedResult<Game>> SearchAsync(GameFilter? filter, int page, int pageSize,
             GameSortField sort = GameSortField.Name, bool descending = false,
             CancellationToken ct = default)
         {
@@ -58,7 +58,7 @@ namespace VideoGameManager.Services
         }
 
         /// <inheritdoc />
-        public Task<Game> GetAsync(int id, CancellationToken ct = default) =>
+        public Task<Game?> GetAsync(int id, CancellationToken ct = default) =>
             DatabaseCall.RunAsync(() => _games.GetAsync(id, ct), ReadFailed);
 
         /// <inheritdoc />
@@ -186,7 +186,7 @@ namespace VideoGameManager.Services
         private static Game Normalise(Game game) => new Game
         {
             Id = game.Id,
-            Name = Trim(game.Name),
+            Name = Trim(game.Name) ?? string.Empty,
             Genre = Trim(game.Genre),
             Platforms = TrimPlatforms(game.Platforms),
             Score = game.Score,
@@ -200,15 +200,15 @@ namespace VideoGameManager.Services
         /// removed without regard to case, keeping the order the caller gave them in.
         /// </summary>
         /// <remarks>
-        /// A list that was never supplied stays missing rather than becoming an empty one, so the
-        /// validator sees the difference between "the caller sent nothing" and "the caller sent an
-        /// empty list". Both are rejected with the same message.
+        /// A list that was never supplied comes back empty rather than missing. The validator
+        /// rejects "the caller sent nothing" and "the caller sent an empty list" with the same
+        /// message, so the two say the same thing and a game only ever carries a list.
         /// </remarks>
-        private static IReadOnlyList<string> TrimPlatforms(IReadOnlyList<string> platforms)
+        private static IReadOnlyList<string> TrimPlatforms(IReadOnlyList<string>? platforms)
         {
             if (platforms == null)
             {
-                return null;
+                return Array.Empty<string>();
             }
 
             List<string> kept = new List<string>(platforms.Count);
@@ -216,7 +216,7 @@ namespace VideoGameManager.Services
 
             foreach (string platform in platforms)
             {
-                string trimmed = Trim(platform);
+                string? trimmed = Trim(platform);
 
                 if (trimmed != null && seen.Add(trimmed))
                 {
@@ -227,7 +227,7 @@ namespace VideoGameManager.Services
             return kept;
         }
 
-        private static string Trim(string value) =>
+        private static string? Trim(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

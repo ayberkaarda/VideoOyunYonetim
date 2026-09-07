@@ -22,9 +22,9 @@ namespace VideoGameManager.Data
     /// "only the ones that are not favourites".
     /// </param>
     public sealed record GameFilter(
-        string Name = null,
-        string Genre = null,
-        string Platform = null,
+        string? Name = null,
+        string? Genre = null,
+        string? Platform = null,
         double? MinScore = null,
         double? MaxScore = null,
         PlayStatus? Status = null,

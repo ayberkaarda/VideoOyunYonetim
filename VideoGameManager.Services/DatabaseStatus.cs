@@ -13,7 +13,7 @@ namespace VideoGameManager.Services
     {
         private static readonly DatabaseStatus ReachableStatus = new DatabaseStatus(true, string.Empty, null);
 
-        private DatabaseStatus(bool isReachable, string message, Exception failure)
+        private DatabaseStatus(bool isReachable, string message, Exception? failure)
         {
             IsReachable = isReachable;
             Message = message;
@@ -34,7 +34,7 @@ namespace VideoGameManager.Services
         /// The failure behind an unreachable result, kept for the log. <c>null</c> when
         /// <see cref="IsReachable"/> is <c>true</c>.
         /// </summary>
-        public Exception Failure { get; }
+        public Exception? Failure { get; }
 
         /// <summary>
         /// The outcome of a check that reached the database.

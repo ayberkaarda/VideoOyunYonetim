@@ -27,7 +27,7 @@ namespace VideoGameManager.Services
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The page and the total number of matching rows.</returns>
         /// <exception cref="DataAccessException">The database call failed.</exception>
-        Task<PagedResult<Game>> SearchAsync(GameFilter filter, int page, int pageSize,
+        Task<PagedResult<Game>> SearchAsync(GameFilter? filter, int page, int pageSize,
             GameSortField sort = GameSortField.Name, bool descending = false,
             CancellationToken ct = default);
 
@@ -38,7 +38,7 @@ namespace VideoGameManager.Services
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The game, or <c>null</c> when no game has that identity.</returns>
         /// <exception cref="DataAccessException">The database call failed.</exception>
-        Task<Game> GetAsync(int id, CancellationToken ct = default);
+        Task<Game?> GetAsync(int id, CancellationToken ct = default);
 
         /// <summary>
         /// Validates a game and stores it.

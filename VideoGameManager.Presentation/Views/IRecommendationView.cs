@@ -20,6 +20,10 @@ namespace VideoGameManager.Views
         /// <summary>Raised once the screen has finished loading, so the presenter can fill the picker.</summary>
         event EventHandler Loaded;
 
+        /// <summary>
+        /// The user asked for a pick using the currently selected strategy. Raised once per
+        /// press, so asking again with the same strategy may well return a different game.
+        /// </summary>
         event EventHandler RecommendationRequested;
 
         /// <summary>Renders the pick, or clears the panel when passed <c>null</c>.</summary>

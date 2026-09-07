@@ -11,6 +11,7 @@ namespace VideoGameManager.Views
     /// </summary>
     public interface IAddGameView : IValidatingView
     {
+        /// <summary>Title as typed, before trimming. Never <c>null</c>; empty when nothing was typed.</summary>
         string GameName { get; }
 
         /// <summary>Selected genre, or <c>null</c> while the placeholder is selected.</summary>
@@ -26,6 +27,10 @@ namespace VideoGameManager.Views
         /// <summary>Selected score as typed text, or <c>null</c> while the placeholder is selected.</summary>
         string ScoreText { get; }
 
+        /// <summary>
+        /// Cover image address as typed. Optional, so an empty value is valid; when one is
+        /// given the domain validator decides whether the address is usable.
+        /// </summary>
         string CoverUrl { get; }
 
         /// <summary>How far the owner has got with the game. Always one of the defined values.</summary>
@@ -34,6 +39,11 @@ namespace VideoGameManager.Views
         /// <summary>Whether the owner marked the game as a favourite.</summary>
         bool IsFavourite { get; }
 
+        /// <summary>
+        /// The user asked to save what is on screen. The view performs no checking of its
+        /// own: the presenter reads the fields, has the domain validate them, and either
+        /// writes the game or reports the failed fields back.
+        /// </summary>
         event EventHandler SaveRequested;
 
         /// <summary>
@@ -60,7 +70,7 @@ namespace VideoGameManager.Views
         /// </summary>
         void ShowLoadFailed(string message);
 
-        /// <summary>Closes the dialog with <see cref="System.Windows.Forms.DialogResult.OK"/>
+        /// <summary>Closes the dialog with <c>DialogResult.OK</c>
         /// after a successful update, so the caller knows to reload the row it just changed.</summary>
         void CloseAfterSave();
     }
@@ -69,6 +79,8 @@ namespace VideoGameManager.Views
     /// the presenter subscribes to.</summary>
     public sealed class GameEditRequestedEventArgs : EventArgs
     {
+        /// <summary>Creates the arguments.</summary>
+        /// <param name="gameId">Identity of the game the screen should load for editing.</param>
         public GameEditRequestedEventArgs(int gameId)
         {
             GameId = gameId;

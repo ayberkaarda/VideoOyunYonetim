@@ -25,6 +25,6 @@ namespace VideoGameManager.Services
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The suggested game, or <c>null</c> when nothing qualifies.</returns>
         /// <exception cref="DataAccessException">The database call failed.</exception>
-        Task<Game> RecommendAsync(string strategyName = null, CancellationToken ct = default);
+        Task<Game?> RecommendAsync(string? strategyName = null, CancellationToken ct = default);
     }
 }

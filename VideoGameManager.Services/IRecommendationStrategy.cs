@@ -24,6 +24,6 @@ namespace VideoGameManager.Services
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The chosen game, or <c>null</c> when nothing qualifies.</returns>
         /// <exception cref="DataAccessException">The database call failed.</exception>
-        Task<Game> PickAsync(CancellationToken ct = default);
+        Task<Game?> PickAsync(CancellationToken ct = default);
     }
 }

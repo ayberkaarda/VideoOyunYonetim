@@ -19,6 +19,11 @@ namespace VideoGameManager.Presenters
         private readonly IRecommendationService _recommendations;
         private readonly ILogger<RecommendationPresenter> _logger;
 
+        /// <summary>Wires the presenter to a view and the recommendation service.</summary>
+        /// <param name="view">The screen to drive. Its events are subscribed to here.</param>
+        /// <param name="recommendations">Supplies both the list of strategies and the picks.</param>
+        /// <param name="logger">Where the technical detail of a failure is written.</param>
+        /// <exception cref="ArgumentNullException">Any argument is <c>null</c>.</exception>
         public RecommendationPresenter(
             IRecommendationView view,
             IRecommendationService recommendations,
@@ -50,7 +55,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fetching a recommendation failed on {Screen}", nameof(VideoGameManager.RecommendationForm));
+                _logger.LogError(ex, "Fetching a recommendation failed on {Screen}", nameof(RecommendationPresenter));
                 _view.ShowLoadError(Messages.ForUser(ex));
             }
         }

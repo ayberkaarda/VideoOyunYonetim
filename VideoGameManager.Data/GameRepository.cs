@@ -307,7 +307,7 @@ WHERE  Id = @Id;";
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="page"/> or <paramref name="pageSize"/> is below one.
         /// </exception>
-        public async Task<PagedResult<Game>> ListAsync(GameFilter filter, int page, int pageSize,
+        public async Task<PagedResult<Game>> ListAsync(GameFilter? filter, int page, int pageSize,
             GameSortField sort = GameSortField.Name, bool descending = false,
             CancellationToken ct = default)
         {
@@ -343,13 +343,13 @@ WHERE  Id = @Id;";
         }
 
         /// <inheritdoc />
-        public async Task<Game> GetAsync(int id, CancellationToken ct = default)
+        public async Task<Game?> GetAsync(int id, CancellationToken ct = default)
         {
             using (DbConnection connection = _connections.Create())
             {
                 await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                Game game = await connection
+                Game? game = await connection
                     .QuerySingleOrDefaultAsync<Game>(new CommandDefinition(GetSql, new { Id = id }, cancellationToken: ct))
                     .ConfigureAwait(false);
 
@@ -482,13 +482,13 @@ WHERE  Id = @Id;";
             ReadStringsAsync(PlatformsSql, ct);
 
         /// <inheritdoc />
-        public async Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default)
+        public async Task<Game?> GetRandomAsync(GameFilter? filter, CancellationToken ct = default)
         {
             using (DbConnection connection = _connections.Create())
             {
                 await connection.OpenAsync(ct).ConfigureAwait(false);
 
-                Game game = await connection
+                Game? game = await connection
                     .QueryFirstOrDefaultAsync<Game>(
                         new CommandDefinition(RandomSql, ToArguments(filter), cancellationToken: ct))
                     .ConfigureAwait(false);
@@ -589,7 +589,7 @@ WHERE  Id = @Id;";
 
             foreach (PlatformLink link in links)
             {
-                if (!byGame.TryGetValue(link.GameId, out List<string> names))
+                if (!byGame.TryGetValue(link.GameId, out List<string>? names))
                 {
                     names = new List<string>();
                     byGame.Add(link.GameId, names);
@@ -600,7 +600,7 @@ WHERE  Id = @Id;";
 
             foreach (Game game in games)
             {
-                game.Platforms = byGame.TryGetValue(game.Id, out List<string> names)
+                game.Platforms = byGame.TryGetValue(game.Id, out List<string>? names)
                     ? names
                     : (IReadOnlyList<string>)Array.Empty<string>();
             }
@@ -615,7 +615,7 @@ WHERE  Id = @Id;";
         /// the column accepts no genre at all.
         /// </returns>
         private static async Task<int?> EnsureGenreAsync(DbConnection connection, DbTransaction transaction,
-            string genre, CancellationToken ct)
+            string? genre, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(genre))
             {
@@ -674,14 +674,14 @@ WHERE  Id = @Id;";
         /// Wraps a single game so that the one stitching routine serves the single-row reads too.
         /// A missing game becomes an empty list and nothing further is asked of the database.
         /// </summary>
-        private static IReadOnlyList<Game> ToList(Game game) =>
+        private static IReadOnlyList<Game> ToList(Game? game) =>
             game == null ? Array.Empty<Game>() : new[] { game };
 
         /// <summary>
         /// Trims a filter value and turns an empty one into <c>null</c>, so that an untouched
         /// search box switches its clause off instead of looking for the empty string.
         /// </summary>
-        private static string Normalise(string value) =>
+        private static string? Normalise(string? value) =>
             string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
         /// <summary>
@@ -689,9 +689,9 @@ WHERE  Id = @Id;";
         /// a title containing a percent sign is searched for literally rather than matching
         /// everything.
         /// </summary>
-        private static string ToContainsPattern(string value)
+        private static string? ToContainsPattern(string? value)
         {
-            string trimmed = Normalise(value);
+            string? trimmed = Normalise(value);
 
             if (trimmed == null)
             {
@@ -710,13 +710,13 @@ WHERE  Id = @Id;";
         /// <summary>
         /// Turns a filter into the bound values the shared predicate expects.
         /// </summary>
-        private static FilterArguments ToArguments(GameFilter filter) =>
+        private static FilterArguments ToArguments(GameFilter? filter) =>
             Fill(new FilterArguments(), filter);
 
         /// <summary>
         /// The same values, plus the window one page of the listing needs.
         /// </summary>
-        private static PageArguments ToArguments(GameFilter filter, int page, int pageSize)
+        private static PageArguments ToArguments(GameFilter? filter, int page, int pageSize)
         {
             PageArguments arguments = Fill(new PageArguments(), filter);
 
@@ -735,7 +735,7 @@ WHERE  Id = @Id;";
         /// comparing a number really does receive a number: an argument the provider has to guess
         /// the type of arrives as text and makes the server convert on every row.
         /// </remarks>
-        private static T Fill<T>(T arguments, GameFilter filter)
+        private static T Fill<T>(T arguments, GameFilter? filter)
             where T : FilterArguments
         {
             GameFilter effective = filter ?? GameFilter.None;
@@ -760,11 +760,11 @@ WHERE  Id = @Id;";
         /// </summary>
         private class FilterArguments
         {
-            public string NamePattern { get; set; }
+            public string? NamePattern { get; set; }
 
-            public string Genre { get; set; }
+            public string? Genre { get; set; }
 
-            public string PlatformName { get; set; }
+            public string? PlatformName { get; set; }
 
             public double? MinScore { get; set; }
 
@@ -805,7 +805,9 @@ WHERE  Id = @Id;";
         {
             public int GameId { get; set; }
 
-            public string Name { get; set; }
+            // Empty until the mapper fills it in from the row. The column is declared NOT NULL,
+            // so every row that comes back really does carry a name.
+            public string Name { get; set; } = string.Empty;
         }
     }
 }

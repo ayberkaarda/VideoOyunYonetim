@@ -36,7 +36,7 @@ namespace VideoGameManager.Data
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            string value = configuration.GetConnectionString(ConnectionStringName);
+            string? value = configuration.GetConnectionString(ConnectionStringName);
 
             if (string.IsNullOrWhiteSpace(value))
             {

@@ -10,6 +10,8 @@
 [![Database](https://img.shields.io/badge/database-SQL%20Server-CC2927)](#)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+**English** · [Türkçe](README.tr.md)
+
 <img src="screenshots/main_menu.png" alt="Main menu" width="620">
 
 </div>
@@ -205,17 +207,18 @@ dotnet run --project VideoGameManager -- --gallery
 
 ## Architecture
 
-Five projects, and the arrow only ever points down. A layer knows the one below it and
+Six projects, and the arrow only ever points down. A layer knows the one below it and
 nothing above it, so the database can be swapped without touching a screen and the screens
 can be reworked without touching a query.
 
 ```mermaid
 flowchart TD
-    subgraph windows["net10.0-windows"]
-        UI["<b>VideoGameManager</b><br/>Forms · Views · Presenters<br/>Program.cs builds the container"]
+    subgraph windows["net10.0-windows — the only Windows-bound project"]
+        UI["<b>VideoGameManager</b><br/>Forms · shared control library<br/>Program.cs builds the container"]
     end
 
     subgraph portable["net10.0 — builds and tests on any OS"]
+        PRES["<b>Presentation</b><br/>IView interfaces · Presenters<br/><i>no WinForms type anywhere</i>"]
         SVC["<b>Services</b><br/>GameService · ReviewService<br/>RecommendationService · StatisticsService<br/>exporters · recommendation strategies"]
         DATA["<b>Data</b><br/>Dapper repositories · connection factory<br/>Migrations/*.sql embedded in the assembly"]
         DOM["<b>Domain</b><br/>Game · Review · PlayStatus<br/>validation rules · Result&lt;T&gt;<br/><i>no dependencies at all</i>"]
@@ -224,7 +227,8 @@ flowchart TD
 
     DB[("SQL Server<br/>dbo.Game · Genre · Platform<br/>GamePlatform · Review")]
 
-    UI --> SVC
+    UI --> PRES
+    PRES --> SVC
     SVC --> DATA
     SVC --> DOM
     DATA --> DOM
@@ -238,9 +242,11 @@ A few consequences worth naming:
   database or a window, which is what makes them cheap to test.
 - **Only the desktop project targets Windows.** Everything below it is plain `net10.0`, so
   the test suite runs on a Linux build agent.
-- **Screens follow Model-View-Presenter.** A form implements an `IView` interface and owns
-  no logic; the presenter holds the logic and never mentions a WinForms type, so it could be
-  driven by a different UI entirely.
+- **Screens follow Model-View-Presenter, in a project of their own.** A form implements an
+  `IView` interface and owns no logic; the presenter holds the logic and mentions no WinForms
+  type at all. That is why `VideoGameManager.Presentation` can target plain `net10.0` — and
+  why the screen logic is unit-tested like any other layer instead of only being clicked
+  through by hand ([ADR 0008](docs/adr/0008-presenters-in-their-own-project.md)).
 - **The migrator is separate from the application.** A schema upgrade needs neither a desktop
   session nor the application's configuration files.
 
@@ -263,11 +269,12 @@ A few consequences worth naming:
 ├── VideoGameManager.Data/       # Dapper repositories, connection factory
 │   └── Migrations/              # DbUp scripts, embedded in the assembly
 ├── VideoGameManager.Services/   # business rules, recommendation strategies
+├── VideoGameManager.Presentation/  # screen logic, no WinForms types
+│   ├── Views/                   # view interfaces a form implements
+│   └── Presenters/              # what each screen actually does
 ├── VideoGameManager.Migrator/   # console entry point for applying migrations
 ├── VideoGameManager/            # WinForms host
 │   ├── Program.cs               # entry point, DI container, startup checks
-│   ├── Views/                   # view interfaces, no WinForms types
-│   ├── Presenters/              # screen logic, no WinForms types
 │   ├── UI/                      # shared control library and theme
 │   ├── MainForm.cs              # main menu
 │   ├── AddGameForm.cs           # add a game
@@ -328,10 +335,11 @@ in numbered phases:
 | 5 | Features — search, paging, smarter recommendations, image cache, export, statistics | ✅ done |
 | 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ✅ done |
 
-Known limitations are listed in [`CHANGELOG.md`](CHANGELOG.md) rather than hidden: the
-nullable reference context is still off (see
-[ADR 0007](docs/adr/0007-defer-the-nullable-reference-context.md)), the presenters have no
-unit tests yet, and the application is DPI-unaware by design.
+Known limitations are listed in [`CHANGELOG.md`](CHANGELOG.md) rather than hidden. The
+nullable reference context is on for Domain, Data and Services and still off for the
+presentation, desktop and test projects — it is being turned on one layer at a time, in the
+order the dependencies run ([ADR 0007](docs/adr/0007-defer-the-nullable-reference-context.md)).
+The application is DPI-unaware by design, matching the layout the forms were drawn against.
 
 ## Development
 
@@ -397,8 +405,8 @@ Please also:
 
 - Keep one logical change per commit, and write the subject as
   `type(scope): subject` — for example `feat(services): weight recommendations by genre`.
-  Scopes match the project directories: `domain`, `data`, `services`, `winforms`, `tests`,
-  `db`, `docs`, `ci`.
+  Scopes match the project directories: `domain`, `data`, `services`, `presentation`,
+  `winforms`, `tests`, `db`, `docs`, `ci`.
 - Write code, comments, identifiers and commit messages in English.
 - Add new user-facing strings to `Properties/Resources.resx` rather than hard-coding them.
 - Never commit a connection string or a password. `appsettings.json` carries a placeholder;

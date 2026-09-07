@@ -77,7 +77,7 @@ namespace VideoGameManager.Services
         private double? ScoreFilter => MinimumScore > ScoreRange.Min ? MinimumScore : (double?)null;
 
         /// <inheritdoc />
-        public Task<Game> PickAsync(CancellationToken ct = default) =>
+        public Task<Game?> PickAsync(CancellationToken ct = default) =>
             DatabaseCall.RunAsync(
                 () => _games.GetRandomAsync(new GameFilter(MinScore: ScoreFilter), ct),
                 "A game could not be suggested because the catalogue could not be read.");

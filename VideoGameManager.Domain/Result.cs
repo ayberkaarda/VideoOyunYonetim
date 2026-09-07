@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace VideoGameManager.Domain
 {
@@ -86,9 +87,9 @@ namespace VideoGameManager.Domain
     /// </remarks>
     public sealed class Result<T>
     {
-        private readonly T _value;
+        private readonly T? _value;
 
-        private Result(bool isSuccess, T value, ValidationResult validation)
+        private Result(bool isSuccess, T? value, ValidationResult validation)
         {
             IsSuccess = isSuccess;
             _value = value;
@@ -98,6 +99,13 @@ namespace VideoGameManager.Domain
         /// <summary>
         /// <c>true</c> when the operation ran and produced a value.
         /// </summary>
+        /// <remarks>
+        /// The attribute states the invariant the two factory methods below establish and
+        /// nothing else can break: the stored value is present exactly when this is
+        /// <c>true</c>. It is what lets <see cref="Value"/> hand the value back without
+        /// claiming, against the compiler, that a field which really can be absent never is.
+        /// </remarks>
+        [MemberNotNullWhen(true, nameof(_value))]
         public bool IsSuccess { get; }
 
         /// <summary>

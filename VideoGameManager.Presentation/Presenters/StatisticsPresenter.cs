@@ -47,7 +47,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Reading the catalogue statistics failed on {Screen}", nameof(VideoGameManager.StatisticsForm));
+                _logger.LogError(ex, "Reading the catalogue statistics failed on {Screen}", nameof(StatisticsPresenter));
                 _view.ShowUnavailable(Messages.ForUser(ex));
             }
         }

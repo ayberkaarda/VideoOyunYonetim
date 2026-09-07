@@ -5,6 +5,48 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `VideoGameManager.Presentation`, a `net10.0` project holding the view interfaces and the
+  presenters, which used to sit inside the desktop project. They mentioned no WinForms type
+  even then, but a `net10.0` test project cannot reference a `net10.0-windows` one, so the
+  layer that holds the screen logic was the only one in the solution with no tests at all.
+  The namespaces did not move, so not one form file changed (ADR 0008).
+- Unit tests for all five presenters, driven through their `IView` with substituted views
+  and services: 91% line coverage on a project that had none. Plus a unit test for
+  `SqlConnectionFactory`'s connection-string validation and an integration test for
+  `SqlDatabaseProbe` against both a reachable and an unreachable server, which lifted the
+  data layer from 87% to 92%. The suite is 471 tests.
+- `Directory.Build.props`, holding the three settings every project repeated.
+- `global.json`, pinning the SDK feature band with `rollForward: latestFeature`.
+- `README.tr.md`, a Turkish translation of the README. The English one remains the README
+  the repository opens with; the two are updated together.
+
+### Changed
+- The nullable reference context is on for Domain, Data and Services, turned on one layer
+  at a time in the direction the dependencies run. Absence is now annotated where absence
+  is a real answer - `Game.Genre`, `Game.CoverUrl`, `Game.LatestReview`, the text fields of
+  `GameFilter`, and every repository and service method that already returned `null` to mean
+  "no such game". Fields where absence is not a real answer start empty instead:
+  `Game.Name`, `Game.Platforms`, `Review.Body`. No null-forgiving operator, no `required`
+  modifier and no in-file pragma was used. Presentation, the desktop project and the test
+  project are still off (ADR 0007).
+- The screen name recorded in log scopes is the presenter rather than the form, which no
+  longer exists in that assembly. Log files written before and after this change use
+  different names for the same screen.
+- The CI workflow runs `actions/checkout@v5`, `actions/setup-dotnet@v5` and
+  `actions/upload-artifact@v6` - the oldest versions of each that run on Node 24, now that
+  GitHub is retiring Node 20.
+
+### Fixed
+- ADR 0007 reported roughly twice as many nullable diagnostics as there were. MSBuild prints
+  every diagnostic twice, once where it occurs and once in the project summary, so counting
+  the lines a build emits doubles the real figure. The record now carries unique counts and
+  says how to count them.
+- Documentation that named tooling which is not part of this repository, in two ADRs and the
+  architecture document. The reasons now stand on their own.
+
 ## [1.0.0] - 2026-09-07
 
 The first release. It collects the six phases that turned a single-project prototype with a
@@ -27,8 +69,9 @@ hard-coded connection string into a layered, tested and documented application.
   block-scoped namespaces, `System` usings first, braces required once a body moves to its
   own line.
 - ADR 0007, recording that the nullable reference context stays off for now, with the
-  measurement behind that decision - 558 diagnostics across 122 files - and the order in
-  which it is planned to be turned on.
+  measurement behind that decision and the order in which it is planned to be turned on.
+  (The figure that record originally carried was double the real one; see the Unreleased
+  section above.)
 
 #### Changed
 - The README now documents what the application actually does. It gained an architecture
@@ -254,3 +297,6 @@ hard-coded connection string into a layered, tested and documented application.
 - Untracked 32 files that should never have been versioned: Visual Studio caches under
   `.vs/`, compiled binaries under `bin/` and `obj/`, and the 4.7 MB database backup. They
   remain on disk.
+
+[Unreleased]: https://github.com/ayberkaarda/VideoOyunYonetim/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.0.0

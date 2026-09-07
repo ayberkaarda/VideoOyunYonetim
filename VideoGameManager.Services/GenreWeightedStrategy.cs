@@ -57,7 +57,7 @@ namespace VideoGameManager.Services
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="minimumScore"/> falls outside the score range.
         /// </exception>
-        public GenreWeightedStrategy(IGameRepository games, double minimumScore = ScoreRange.Min, Random random = null)
+        public GenreWeightedStrategy(IGameRepository games, double minimumScore = ScoreRange.Min, Random? random = null)
         {
             if (games == null)
             {
@@ -97,17 +97,17 @@ namespace VideoGameManager.Services
         private double? ScoreFilter => MinimumScore > ScoreRange.Min ? MinimumScore : (double?)null;
 
         /// <inheritdoc />
-        public async Task<Game> PickAsync(CancellationToken ct = default)
+        public async Task<Game?> PickAsync(CancellationToken ct = default)
         {
             IReadOnlyList<GenreReviewSummary> affinities = await DatabaseCall
                 .RunAsync(() => _games.GetGenreAffinitiesAsync(ct), FailureMessage)
                 .ConfigureAwait(false);
 
-            string genre = ChooseGenre(affinities);
+            string? genre = ChooseGenre(affinities);
 
             if (genre != null)
             {
-                Game fromFavouredGenre = await PickAsync(genre, ct).ConfigureAwait(false);
+                Game? fromFavouredGenre = await PickAsync(genre, ct).ConfigureAwait(false);
 
                 if (fromFavouredGenre != null)
                 {
@@ -131,7 +131,7 @@ namespace VideoGameManager.Services
         /// Draws one genre, each with a probability proportional to its weight.
         /// </summary>
         /// <returns>The chosen genre, or <c>null</c> when no genre carries any weight.</returns>
-        private string ChooseGenre(IReadOnlyList<GenreReviewSummary> affinities)
+        private string? ChooseGenre(IReadOnlyList<GenreReviewSummary>? affinities)
         {
             if (affinities == null)
             {
@@ -184,7 +184,7 @@ namespace VideoGameManager.Services
         /// <summary>
         /// Asks the repository for a random game, optionally confined to one genre.
         /// </summary>
-        private Task<Game> PickAsync(string genre, CancellationToken ct) =>
+        private Task<Game?> PickAsync(string? genre, CancellationToken ct) =>
             DatabaseCall.RunAsync(
                 () => _games.GetRandomAsync(new GameFilter(Genre: genre, MinScore: ScoreFilter), ct),
                 FailureMessage);

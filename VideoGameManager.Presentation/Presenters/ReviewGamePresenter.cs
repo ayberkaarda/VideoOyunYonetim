@@ -24,6 +24,12 @@ namespace VideoGameManager.Presenters
         private readonly IReviewService _reviews;
         private readonly ILogger<ReviewGamePresenter> _logger;
 
+        /// <summary>Wires the presenter to a view, the catalogue and the reviews.</summary>
+        /// <param name="view">The screen to drive. Its events are subscribed to here.</param>
+        /// <param name="games">Fills the picker; this screen only reads from the catalogue.</param>
+        /// <param name="reviews">Where the written review is stored.</param>
+        /// <param name="logger">Where the technical detail of a failure is written.</param>
+        /// <exception cref="ArgumentNullException">Any argument is <c>null</c>.</exception>
         public ReviewGamePresenter(
             IReviewGameView view,
             IGameService games,
@@ -47,7 +53,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Loading the game picker failed on {Screen}", nameof(VideoGameManager.ReviewGameForm));
+                _logger.LogError(ex, "Loading the game picker failed on {Screen}", nameof(ReviewGamePresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
@@ -60,7 +66,7 @@ namespace VideoGameManager.Presenters
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Saving a review failed on {Screen}", nameof(VideoGameManager.ReviewGameForm));
+                _logger.LogError(ex, "Saving a review failed on {Screen}", nameof(ReviewGamePresenter));
                 _view.ShowError(Messages.ForUser(ex));
             }
         }
