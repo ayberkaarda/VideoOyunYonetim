@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using VideoGameManager.Domain;
@@ -8,8 +9,8 @@ using VideoGameManager.Views;
 namespace VideoGameManager
 {
     /// <summary>
-    /// Passive view for the "add a game" screen. It reports what the user typed and raises
-    /// events; validation and persistence live behind the presenter.
+    /// Passive view for the "add or edit a game" screen. It reports what the user typed and
+    /// raises events; validation and persistence live behind the presenter.
     /// </summary>
     public partial class AddGameForm : VideoGameManager.UI.Controls.ChromelessForm, IAddGameView
     {
@@ -17,10 +18,21 @@ namespace VideoGameManager
         private const string PlatformPlaceholder = "Platform";
         private const string ScorePlaceholder = "Score";
 
+        private const string AddingTitle = "Video Game Manager | Add Game";
+        private const string EditingTitle = "Video Game Manager | Edit Game";
+
         private readonly ErrorProvider _errors;
 
         private readonly Presenters.AddGamePresenter _presenter;
         private readonly ILogger<AddGameForm> _logger;
+
+        /// <summary>
+        /// Set once a load requested through <see cref="LoadForEditing"/> fails. Saving stays
+        /// disabled from then on, regardless of what <see cref="Views.IView.IsBusy"/> does
+        /// afterwards, so a form left half-filled by a failed load can never be written over
+        /// the row that could not be read.
+        /// </summary>
+        private bool _saveBlocked;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public AddGameForm()
@@ -42,6 +54,8 @@ namespace VideoGameManager
         }
 
         public event EventHandler SaveRequested;
+
+        public event EventHandler<GameEditRequestedEventArgs> EditRequested;
 
         public string GameName => txtName.Text;
 
@@ -68,11 +82,20 @@ namespace VideoGameManager
 
         public string CoverUrl => txtCoverUrl.Text;
 
+        /// <summary>
+        /// The list holds the three <see cref="PlayStatus"/> names in declaration order, so
+        /// the selected index is also the underlying enum value; there is no placeholder
+        /// because a game always has a play state, even one nobody set on purpose.
+        /// </summary>
+        public PlayStatus Status => (PlayStatus)cmbStatus.SelectedIndex;
+
+        public bool IsFavourite => chkFavourite.Checked;
+
         bool Views.IView.IsBusy
         {
             set
             {
-                btnSave.Enabled = !value;
+                btnSave.Enabled = !value && !_saveBlocked;
                 Cursor = value ? Cursors.WaitCursor : Cursors.Default;
             }
         }
@@ -84,7 +107,50 @@ namespace VideoGameManager
             cmbGenre.SelectedIndex = 0;
             cmbPlatform.SelectedIndex = 0;
             cmbScore.SelectedIndex = 0;
+            cmbStatus.SelectedIndex = 0;
+            chkFavourite.Checked = false;
             ClearFieldErrors();
+        }
+
+        public void ShowGame(Game game)
+        {
+            txtName.Text = game.Name;
+            SelectOrAdd(cmbGenre, game.Genre);
+            SelectOrAdd(cmbPlatform, game.Platforms != null && game.Platforms.Count > 0 ? game.Platforms[0] : null);
+            SelectOrAdd(cmbScore, game.Score.HasValue
+                ? game.Score.Value.ToString("0.#", CultureInfo.InvariantCulture)
+                : null);
+            txtCoverUrl.Text = game.CoverUrl ?? string.Empty;
+            cmbStatus.SelectedIndex = (int)game.Status;
+            chkFavourite.Checked = game.IsFavourite;
+            ClearFieldErrors();
+        }
+
+        public void ShowEditing(bool isEditing)
+        {
+            Text = isEditing ? EditingTitle : AddingTitle;
+            btnSave.Text = isEditing ? "Update" : "Save";
+        }
+
+        public void ShowLoadFailed(string message)
+        {
+            _saveBlocked = true;
+            btnSave.Enabled = false;
+            ShowError(message);
+        }
+
+        public void CloseAfterSave()
+        {
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        /// <summary>Raises <see cref="EditRequested"/> so the presenter can load the game.
+        /// Calling this before the dialog is shown is optional; without it the screen adds a
+        /// new game, exactly as it always has.</summary>
+        public void LoadForEditing(int gameId)
+        {
+            EditRequested?.Invoke(this, new GameEditRequestedEventArgs(gameId));
         }
 
         /// <summary>
@@ -135,6 +201,7 @@ namespace VideoGameManager
             if (field == nameof(Game.Platforms)) return framePlatform;
             if (field == nameof(Game.Score)) return frameScore;
             if (field == nameof(Game.CoverUrl)) return frameCoverUrl;
+            if (field == nameof(Game.Status)) return frameStatus;
             return null;
         }
 
@@ -143,6 +210,34 @@ namespace VideoGameManager
         {
             string text = combo.Text;
             return string.IsNullOrEmpty(text) || text == placeholder ? null : text;
+        }
+
+        /// <summary>
+        /// Selects <paramref name="value"/> in a placeholder-first combo, adding it to the
+        /// list first when the fixed list does not already contain it.
+        /// </summary>
+        /// <remarks>
+        /// A stored value can fall outside the fixed list this screen offers -- most often a
+        /// score that does not land on the half-point grid, such as one recorded before this
+        /// list existed. A plain <c>DropDownList</c> cannot show a value that is not one of
+        /// its items, and leaving the placeholder selected in that case would read back as
+        /// "no value" and silently blank the real one out the next time the row is saved.
+        /// </remarks>
+        private static void SelectOrAdd(ComboBox combo, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                combo.SelectedIndex = 0;
+                return;
+            }
+
+            int index = combo.Items.IndexOf(value);
+            if (index < 0)
+            {
+                index = combo.Items.Add(value);
+            }
+
+            combo.SelectedIndex = index;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -175,6 +270,13 @@ namespace VideoGameManager
                 cmbScore.Items.Add((half / 2.0).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
             }
             cmbScore.SelectedIndex = 0;
+
+            // The items are added in PlayStatus declaration order (Backlog, Playing,
+            // Finished), so the selected index doubles as the enum's underlying value; see
+            // the Status property above.
+            cmbStatus.Items.Clear();
+            cmbStatus.Items.AddRange(new string[] { "Backlog", "Playing", "Finished" });
+            cmbStatus.SelectedIndex = 0;
         }
     }
 }

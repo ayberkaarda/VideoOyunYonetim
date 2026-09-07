@@ -29,10 +29,22 @@ namespace VideoGameManager.Services
             services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
             services.AddScoped<IReviewService, ReviewService>();
             services.AddScoped<IDatabaseHealthService, DatabaseHealthService>();
+            services.AddScoped<IStatisticsService, StatisticsService>();
 
-            // Registered as IEnumerable<IRecommendationStrategy>: Phase 5 adds the
-            // genre-weighted strategy with one more line here and no other change.
+            // Registered as a set, like the strategies below: the screen that saves a file
+            // offers one entry per exporter and asks the chosen one to write, so adding a
+            // third format costs one line here and nothing in the user interface.
+            services.AddScoped<IGameExporter, CsvGameExporter>();
+            services.AddScoped<IGameExporter, JsonGameExporter>();
+
+            // Registered as IEnumerable<IRecommendationStrategy>, so a further strategy costs
+            // one line here and no other change. Order is meaningful: the recommendation
+            // service treats the first entry as the default when no name is given, and the
+            // random pick is the one the application has always started from.
             services.AddScoped<IRecommendationStrategy, RandomStrategy>();
+            services.AddScoped<IRecommendationStrategy, GenreWeightedStrategy>();
+            services.AddScoped<IRecommendationStrategy, BacklogFirstStrategy>();
+
             services.AddScoped<IRecommendationService, RecommendationService>();
 
             return services;

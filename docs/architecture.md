@@ -43,7 +43,11 @@ public sealed class Game
     public double? Score { get; set; }
     public string CoverUrl { get; set; }
     public string LatestReview { get; init; }
+    public PlayStatus Status { get; set; }
+    public bool IsFavourite { get; set; }
 }
+
+public enum PlayStatus { Backlog = 0, Playing = 1, Finished = 2 }
 
 public sealed class Review
 {
@@ -69,6 +73,17 @@ by key - but the entity did, in two places:
   `dbo.Review` (`ORDER BY CreatedAt DESC, Id DESC`), filled by an `OUTER APPLY` in the
   repository's `SELECT` and written by nothing. The only way to record a review is
   `IReviewRepository`.
+- `Status` and `IsFavourite` say how far the owner has got with a game and whether they
+  care about it. Both are stored on `dbo.Game` with a default, so a catalogue kept before
+  the columns existed reads as an untouched backlog rather than as a guess. `Status` is
+  stored as its number, which is why the enum's values are written out rather than left
+  implicit: renumbering them would silently reinterpret every existing row.
+
+A game in the backlog usually has no score yet, so an unscored game is an ordinary case
+rather than an oversight. A threshold at the bottom of the score range is therefore treated
+as no threshold at all when a recommendation is filtered: `Score >= 0` is unknown for a row
+with no score, and letting that hide a game would make the backlog suggestion useless
+precisely where it is most wanted.
 
 `Game.Score` is the game's own rating and stays on `dbo.Game`. It is not derived from
 review scores: a game can be scored without ever being reviewed, which is what the add
@@ -133,11 +148,18 @@ public sealed record GameFilter(
     string Genre = null,
     string Platform = null,
     double? MinScore = null,
-    double? MaxScore = null);
+    double? MaxScore = null,
+    PlayStatus? Status = null,
+    bool? OnlyFavourites = null);
 
 public enum GameSortField { Name, Score }
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int TotalCount, int Page, int PageSize);
+
+public sealed record GenreReviewSummary(string Genre, int ScoredReviewCount, double AverageReviewScore);
+public sealed record GenreDistribution(string Genre, int GameCount, double? AverageScore);
+public sealed record CatalogueStatistics(int TotalGames, int ReviewCount, double? AverageScore,
+                                         IReadOnlyList<GenreDistribution> ByGenre);
 
 public interface IGameRepository
 {
@@ -151,7 +173,15 @@ public interface IGameRepository
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);     // false if Id missing
     Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken ct = default);
     Task<IReadOnlyList<string>> GetPlatformsAsync(CancellationToken ct = default);
-    Task<Game> GetRandomAsync(double minScore, CancellationToken ct = default);
+    Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default);
+
+    // Raw facts only. The weighting that turns these into a preference lives in the
+    // service layer, where it can be unit tested without a database.
+    Task<IReadOnlyList<GenreReviewSummary>> GetGenreAffinitiesAsync(CancellationToken ct = default);
+
+    // One aggregate query. Counting a catalogue by reading it into memory would not
+    // survive a real one.
+    Task<CatalogueStatistics> GetStatisticsAsync(CancellationToken ct = default);
 }
 
 public interface IReviewRepository
@@ -295,31 +325,62 @@ References Services and Domain. It must not reference Data.
 Each form splits into three files:
 
 ```
-Views/IGameListView.cs      no System.Windows.Forms types
-Presenters/GameListPresenter.cs
-Forms/BrowseGamesForm.cs    partial class : ChromelessForm, IGameListView
+Views/IGameListView.cs           no System.Windows.Forms types
+Presenters/BrowseGamesPresenter.cs
+BrowseGamesForm.cs               partial class : ChromelessForm, IGameListView
 ```
 
-The view exposes properties and events only:
+`IView` carries what every screen needs - `IsBusy`, `ShowError`, `ShowInfo`, `Confirm` -
+and `IValidatingView` adds per-field errors for the screens that write. The list view is
+the largest of them:
 
 ```csharp
-public interface IGameListView
+public interface IGameListView : IView
 {
     IReadOnlyList<Game> Games { set; }
-    Game SelectedGame { get; set; }
-    bool IsBusy { set; }
+    int? SelectedGameId { get; }
+
+    IReadOnlyList<string> Genres { set; }
+    IReadOnlyList<string> Platforms { set; }
+    IReadOnlyList<ExportFormat> ExportFormats { set; }
+
+    string SearchText { get; }
+    string SelectedGenre { get; }        // null means "any"
+    string SelectedPlatform { get; }
+    PlayStatus? SelectedStatus { get; }
+    bool OnlyFavourites { get; }
+    GameSortField SortField { get; }
+    bool SortDescending { get; }
 
     event EventHandler Loaded;
     event EventHandler SelectionChanged;
-    event EventHandler DeleteRequested;
+    event EventHandler FilterChanged;
+    event EventHandler PreviousPageRequested;
+    event EventHandler NextPageRequested;
     event EventHandler EditRequested;
+    event EventHandler DeleteRequested;
+    event EventHandler<ExportRequestedEventArgs> ExportRequested;
 
-    void ShowError(string message);
-    void ShowFieldError(string field, string message);
-    void ShowInfo(string message);
-    bool Confirm(string message);
+    void ShowDetails(Game game);
+    void ShowPage(int page, int pageCount, int totalCount);
+    void ShowListUnavailable(string message);
+    void ShowDetailsUnavailable(string message);
+    void OpenEditor(int gameId);
 }
 ```
+
+The list carries the game's `Id`, never its name: two games can share a name, and acting
+on the name changes the wrong row without reporting anything.
+
+Searching, filtering, paging and sorting all resolve to one `GameFilter` and one page
+request, so the screen never holds more than the twenty-five rows it is showing. Export is
+the exception on purpose: it walks the whole result the current filter selects, because a
+file holding the visible page out of a larger match would be a silent loss with nothing in
+it to say so. Choosing the path belongs to the view, which owns the file dialog; writing
+the bytes belongs to the presenter, which owns no window.
+
+`ExportFormat` exists so the view can build a file-dialog filter without referencing
+`IGameExporter`; the presenter maps the chosen name back to the exporter.
 
 Rules:
 
@@ -329,6 +390,27 @@ Rules:
 - No `async void` outside event handlers, and every `async void` handler has a try/catch
   that routes failures to `ShowError`.
 - `*.Designer.cs` keeps the control names; only the namespace changes.
+- A caption that is aligned against a value is `AutoSize = false` with a fixed width and
+  `TextAlign = MiddleRight`. Hand-positioning an auto-sized caption from its text width
+  works until the text changes, and then the caption slides over the value it labels or
+  is clipped to a fragment - which no build and no test can see.
+
+The screens and what each one owns:
+
+| Screen | View | Does |
+|---|---|---|
+| `MainForm` | - | resolves each dialog from the container in its own scope |
+| `BrowseGamesForm` | `IGameListView` | search, filter, page, sort, delete, export, launch the editor |
+| `AddGameForm` | `IAddGameView` | adds a game, and edits one after `LoadForEditing(int)` |
+| `RecommendationForm` | `IRecommendationView` | picks a strategy by name from `AvailableStrategies` |
+| `ReviewGameForm` | `IReviewGameView` | records a review |
+| `StatisticsForm` | `IStatisticsView` | headline totals and the genre distribution, drawn by `BarChart` |
+
+`BarChart` is drawn with GDI+ rather than pulled from a charting package: the dependency
+set is fixed, and the one charting component that used to ship with the framework does not
+exist on this target. It handles the cases that break a hand-drawn chart - no data, one
+bar, every value equal, a value of zero, a label longer than its bar - rather than
+dividing by zero or painting outside its own bounds.
 
 ### Composition root
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using VideoGameManager.Domain;
 
 namespace VideoGameManager.Views
@@ -6,6 +7,19 @@ namespace VideoGameManager.Views
     /// <summary>The "recommend me something" screen.</summary>
     public interface IRecommendationView : IView
     {
+        /// <summary>
+        /// Names of the strategies the picker offers, in the order they should be listed.
+        /// The view renders each one as readable text; the identifier itself is what
+        /// <see cref="SelectedStrategy"/> returns.
+        /// </summary>
+        IReadOnlyList<string> Strategies { set; }
+
+        /// <summary>The identifier of the strategy currently picked, never the display text.</summary>
+        string SelectedStrategy { get; }
+
+        /// <summary>Raised once the screen has finished loading, so the presenter can fill the picker.</summary>
+        event EventHandler Loaded;
+
         event EventHandler RecommendationRequested;
 
         /// <summary>Renders the pick, or clears the panel when passed <c>null</c>.</summary>

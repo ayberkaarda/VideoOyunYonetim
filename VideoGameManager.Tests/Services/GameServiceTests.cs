@@ -291,6 +291,45 @@ namespace VideoGameManager.Tests.Services
         }
 
         [Fact]
+        public async Task AddAsync_PlayStateAndFavouriteFlag_ReachTheRepositoryUnchanged()
+        {
+            // The service hands the repository a copy it builds property by property, so a
+            // property the copy forgets is written as the default of its type instead of what the
+            // user chose. Nothing fails when that happens: the save reports success and the value
+            // is simply gone. This test is what notices.
+            Game game = ValidGame();
+            game.Status = PlayStatus.Playing;
+            game.IsFavourite = true;
+
+            Game stored = await CaptureAdd(game);
+
+            stored.Status.Should().Be(PlayStatus.Playing);
+            stored.IsFavourite.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task AddAsync_GameLeftInItsDefaultState_StillReachesTheRepositoryAsBacklog()
+        {
+            Game stored = await CaptureAdd(ValidGame());
+
+            stored.Status.Should().Be(PlayStatus.Backlog);
+            stored.IsFavourite.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task AddAsync_StatusThatIsNotADefinedState_IsRejectedWithoutReachingTheRepository()
+        {
+            Game game = ValidGame();
+            game.Status = (PlayStatus)9;
+
+            Result<int> result = await _service.AddAsync(game);
+
+            result.IsSuccess.Should().BeFalse();
+            result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Status));
+            await _games.DidNotReceiveWithAnyArgs().AddAsync(default);
+        }
+
+        [Fact]
         public async Task AddAsync_RepositoryThrowsProviderFailure_ThrowsDataAccessException()
         {
             SqlException provider = SqlExceptionFactory.Create();
@@ -370,6 +409,43 @@ namespace VideoGameManager.Tests.Services
             result.IsSuccess.Should().BeTrue();
             stored.Id.Should().Be(12);
             stored.Name.Should().Be("Celeste");
+        }
+
+        [Fact]
+        public async Task UpdateAsync_PlayStateAndFavouriteFlag_ReachTheRepositoryUnchanged()
+        {
+            // Marking a game finished is an update and nothing else, so a copy that drops the
+            // play state would undo the very change the user asked for, and report success.
+            Game game = ValidGame(12);
+            game.Status = PlayStatus.Finished;
+            game.IsFavourite = true;
+
+            Game stored = await CaptureUpdate(game);
+
+            stored.Status.Should().Be(PlayStatus.Finished);
+            stored.IsFavourite.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task UpdateAsync_GameLeftInItsDefaultState_StillReachesTheRepositoryAsBacklog()
+        {
+            Game stored = await CaptureUpdate(ValidGame(12));
+
+            stored.Status.Should().Be(PlayStatus.Backlog);
+            stored.IsFavourite.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdateAsync_StatusThatIsNotADefinedState_IsRejectedWithoutReachingTheRepository()
+        {
+            Game game = ValidGame(12);
+            game.Status = (PlayStatus)9;
+
+            Result result = await _service.UpdateAsync(game);
+
+            result.IsSuccess.Should().BeFalse();
+            result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Status));
+            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default);
         }
 
         [Fact]
@@ -508,6 +584,28 @@ namespace VideoGameManager.Tests.Services
             });
 
             Result<int> result = await _service.AddAsync(game);
+
+            result.IsSuccess.Should().BeTrue("the game under test is meant to pass validation");
+            stored.Should().NotBeNull();
+
+            return stored;
+        }
+
+        /// <summary>
+        /// Runs an update and hands back the game that actually reached the repository, which is
+        /// where the normalisation the service performs becomes observable.
+        /// </summary>
+        private async Task<Game> CaptureUpdate(Game game)
+        {
+            Game stored = null;
+
+            _games.UpdateAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>()).Returns(call =>
+            {
+                stored = call.Arg<Game>();
+                return Task.FromResult(true);
+            });
+
+            Result result = await _service.UpdateAsync(game);
 
             result.IsSuccess.Should().BeTrue("the game under test is meant to pass validation");
             stored.Should().NotBeNull();

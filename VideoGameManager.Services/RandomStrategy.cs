@@ -63,10 +63,23 @@ namespace VideoGameManager.Services
         /// </summary>
         public double MinimumScore { get; }
 
+        /// <summary>
+        /// The threshold as the filter should carry it, which is nothing at all when it sits at
+        /// the bottom of the score range.
+        /// </summary>
+        /// <remarks>
+        /// A threshold at the bottom of the range is not a threshold. Asking the catalogue for
+        /// games scoring at or above zero is not the same question as asking for every game: a
+        /// game nobody has rated has no score to compare against, so it drops out of that
+        /// comparison without a word. An unrated game is unknown, not worthless, and leaving the
+        /// score out of the filter altogether is what keeps it a candidate.
+        /// </remarks>
+        private double? ScoreFilter => MinimumScore > ScoreRange.Min ? MinimumScore : (double?)null;
+
         /// <inheritdoc />
         public Task<Game> PickAsync(CancellationToken ct = default) =>
             DatabaseCall.RunAsync(
-                () => _games.GetRandomAsync(MinimumScore, ct),
+                () => _games.GetRandomAsync(new GameFilter(MinScore: ScoreFilter), ct),
                 "A game could not be suggested because the catalogue could not be read.");
     }
 }

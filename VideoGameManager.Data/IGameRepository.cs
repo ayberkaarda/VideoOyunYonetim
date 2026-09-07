@@ -75,11 +75,37 @@ namespace VideoGameManager.Data
         Task<IReadOnlyList<string>> GetPlatformsAsync(CancellationToken ct = default);
 
         /// <summary>
-        /// Picks one game at random from those scoring at least <paramref name="minScore"/>.
+        /// Picks one game at random from those a filter keeps.
         /// </summary>
-        /// <param name="minScore">Lowest acceptable score, inclusive.</param>
+        /// <remarks>
+        /// The filter means exactly what it means in <see cref="ListAsync"/> -- every field of it
+        /// is honoured, and the candidates are the same rows that listing would show. A suggestion
+        /// drawn from a different set of rows than the one the user is looking at would be a
+        /// second, quietly diverging definition of the same question.
+        /// </remarks>
+        /// <param name="filter">Which games may be picked. <c>null</c> allows every game.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A random matching game, or <c>null</c> when nothing matches.</returns>
-        Task<Game> GetRandomAsync(double minScore, CancellationToken ct = default);
+        Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default);
+
+        /// <summary>
+        /// Reports, per genre, how many scored reviews the catalogue holds and what they average.
+        /// </summary>
+        /// <remarks>
+        /// Raw facts, not a preference. Only reviews that carry a score are counted, and each is
+        /// attributed to the genre of the game it was written about; a genre nobody has scored is
+        /// absent from the answer rather than present with a count of zero. What weight those
+        /// numbers deserve is a rule, and rules live above this layer.
+        /// </remarks>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>One row per genre that has at least one scored review, ordered by name.</returns>
+        Task<IReadOnlyList<GenreReviewSummary>> GetGenreAffinitiesAsync(CancellationToken ct = default);
+
+        /// <summary>
+        /// Reads the totals and the per-genre breakdown of the whole catalogue in one go.
+        /// </summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The figures describing the catalogue as it stands.</returns>
+        Task<CatalogueStatistics> GetStatisticsAsync(CancellationToken ct = default);
     }
 }

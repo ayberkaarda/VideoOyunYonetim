@@ -167,10 +167,21 @@ namespace VideoGameManager.Services
         /// untouched cover box does not store an empty string.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// The text of the newest review is not carried over. It is a projection the repository
         /// fills in when it reads a game; a review is written through the review service, so
         /// letting it travel back down a write path here would be a second, silent way to change
         /// it.
+        /// </para>
+        /// <para>
+        /// Every other property is copied by name, which means this list has to grow whenever the
+        /// entity does. A property left out here is not merely ignored: the copy is what reaches
+        /// the repository, so the missing value is written as the default of its type on every add
+        /// and every update. Nothing complains -- the build passes and the caller is told the save
+        /// succeeded -- while the play state or the favourite flag the user just set is quietly
+        /// dropped. Adding a property to the entity therefore means adding a line here and a test
+        /// that fails if the line goes away again.
+        /// </para>
         /// </remarks>
         private static Game Normalise(Game game) => new Game
         {
@@ -180,6 +191,8 @@ namespace VideoGameManager.Services
             Platforms = TrimPlatforms(game.Platforms),
             Score = game.Score,
             CoverUrl = Trim(game.CoverUrl),
+            Status = game.Status,
+            IsFavourite = game.IsFavourite,
         };
 
         /// <summary>

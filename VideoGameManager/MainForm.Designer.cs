@@ -35,6 +35,7 @@ namespace VideoGameManager
             this.btnBrowseGames = new VideoGameManager.UI.Controls.FlatCardButton();
             this.btnRecommend = new VideoGameManager.UI.Controls.FlatCardButton();
             this.btnReview = new VideoGameManager.UI.Controls.FlatCardButton();
+            this.btnStatistics = new VideoGameManager.UI.Controls.FlatCardButton();
             this.panelActions = new System.Windows.Forms.FlowLayoutPanel();
             this.btnExit = new VideoGameManager.UI.Controls.FlatButton();
             this.layoutRoot.SuspendLayout();
@@ -64,11 +65,14 @@ namespace VideoGameManager
             this.layoutCards.Controls.Add(this.btnBrowseGames, 1, 0);
             this.layoutCards.Controls.Add(this.btnRecommend, 0, 1);
             this.layoutCards.Controls.Add(this.btnReview, 1, 1);
+            this.layoutCards.Controls.Add(this.btnStatistics, 0, 2);
             this.layoutCards.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutCards.Name = "layoutCards";
-            this.layoutCards.RowCount = 2;
-            this.layoutCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.layoutCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.layoutCards.RowCount = 3;
+            this.layoutCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33F));
+            this.layoutCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33F));
+            this.layoutCards.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.34F));
+            this.layoutCards.SetColumnSpan(this.btnStatistics, 2);
             this.layoutCards.TabIndex = 0;
             //
             // btnAddGame
@@ -115,6 +119,17 @@ namespace VideoGameManager
             this.btnReview.Tone = VideoGameManager.UI.Theming.CardTone.Warning;
             this.btnReview.Click += new System.EventHandler(this.btnReview_Click);
             //
+            // btnStatistics
+            //
+            this.btnStatistics.AccessibleName = "Statistics";
+            this.btnStatistics.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.btnStatistics.Glyph = "\uE904";
+            this.btnStatistics.Name = "btnStatistics";
+            this.btnStatistics.TabIndex = 4;
+            this.btnStatistics.Text = "Statistics";
+            this.btnStatistics.Tone = VideoGameManager.UI.Theming.CardTone.Accent;
+            this.btnStatistics.Click += new System.EventHandler(this.btnStatistics_Click);
+            //
             // panelActions
             //
             this.panelActions.AutoSize = true;
@@ -139,7 +154,7 @@ namespace VideoGameManager
             // MainForm
             //
             this.AcceptButton = this.btnAddGame;
-            this.ClientSize = new System.Drawing.Size(600, 370);
+            this.ClientSize = new System.Drawing.Size(600, 485);
             this.Controls.Add(this.layoutRoot);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainForm";
@@ -159,6 +174,7 @@ namespace VideoGameManager
         private VideoGameManager.UI.Controls.FlatCardButton btnBrowseGames;
         private VideoGameManager.UI.Controls.FlatCardButton btnRecommend;
         private VideoGameManager.UI.Controls.FlatCardButton btnReview;
+        private VideoGameManager.UI.Controls.FlatCardButton btnStatistics;
         private System.Windows.Forms.FlowLayoutPanel panelActions;
         private VideoGameManager.UI.Controls.FlatButton btnExit;
     }

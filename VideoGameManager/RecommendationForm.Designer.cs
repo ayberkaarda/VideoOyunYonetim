@@ -44,11 +44,15 @@ namespace VideoGameManager
             this.lblScore = new System.Windows.Forms.Label();
             this.panelActions = new System.Windows.Forms.FlowLayoutPanel();
             this.btnRecommend = new VideoGameManager.UI.Controls.FlatButton();
+            this.frameStrategy = new VideoGameManager.UI.Controls.InputFrame();
+            this.cmbStrategy = new System.Windows.Forms.ComboBox();
+            this.lblStrategyCaption = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.picCover)).BeginInit();
             this.layoutRoot.SuspendLayout();
             this.coverCard.SuspendLayout();
             this.layoutDetails.SuspendLayout();
             this.panelActions.SuspendLayout();
+            this.frameStrategy.SuspendLayout();
             this.SuspendLayout();
             //
             // layoutRoot
@@ -59,13 +63,14 @@ namespace VideoGameManager
             this.layoutRoot.Controls.Add(this.coverCard, 0, 0);
             this.layoutRoot.Controls.Add(this.layoutDetails, 1, 0);
             this.layoutRoot.Controls.Add(this.lblStatus, 1, 0);
-            this.layoutRoot.Controls.Add(this.panelActions, 1, 1);
+            this.layoutRoot.Controls.Add(this.panelActions, 0, 1);
             this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutRoot.Name = "layoutRoot";
             this.layoutRoot.RowCount = 2;
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this.layoutRoot.TabIndex = 0;
+            this.layoutRoot.SetColumnSpan(this.panelActions, 2);
             //
             // coverCard
             //
@@ -221,6 +226,8 @@ namespace VideoGameManager
             this.panelActions.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panelActions.BackColor = System.Drawing.Color.Transparent;
             this.panelActions.Controls.Add(this.btnRecommend);
+            this.panelActions.Controls.Add(this.frameStrategy);
+            this.panelActions.Controls.Add(this.lblStrategyCaption);
             this.panelActions.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             this.panelActions.Margin = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.M, 0, 0);
@@ -234,14 +241,41 @@ namespace VideoGameManager
             this.btnRecommend.Kind = VideoGameManager.UI.Controls.ButtonKind.Primary;
             this.btnRecommend.Name = "btnRecommend";
             this.btnRecommend.Size = new System.Drawing.Size(220, VideoGameManager.UI.Theming.Theme.Metrics.Button);
-            this.btnRecommend.TabIndex = 0;
+            this.btnRecommend.TabIndex = 2;
             this.btnRecommend.Text = "Get Recommendation";
             this.btnRecommend.Click += new System.EventHandler(this.btnRecommend_Click);
+            //
+            // frameStrategy
+            //
+            this.frameStrategy.Controls.Add(this.cmbStrategy);
+            this.frameStrategy.Margin = new System.Windows.Forms.Padding(VideoGameManager.UI.Theming.Theme.Space.M, 3, VideoGameManager.UI.Theming.Theme.Space.M, 3);
+            this.frameStrategy.Name = "frameStrategy";
+            this.frameStrategy.Size = new System.Drawing.Size(180, VideoGameManager.UI.Theming.Theme.Metrics.Input);
+            this.frameStrategy.TabIndex = 1;
+            //
+            // cmbStrategy
+            //
+            this.cmbStrategy.AccessibleName = "Recommendation strategy";
+            this.cmbStrategy.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbStrategy.FormattingEnabled = true;
+            this.cmbStrategy.Name = "cmbStrategy";
+            this.cmbStrategy.TabIndex = 0;
+            //
+            // lblStrategyCaption
+            //
+            this.lblStrategyCaption.AutoSize = false;
+            this.lblStrategyCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblStrategyCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
+            this.lblStrategyCaption.Name = "lblStrategyCaption";
+            this.lblStrategyCaption.Size = new System.Drawing.Size(70, VideoGameManager.UI.Theming.Theme.Metrics.Input);
+            this.lblStrategyCaption.TabIndex = 0;
+            this.lblStrategyCaption.Text = "Strategy:";
+            this.lblStrategyCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             //
             // RecommendationForm
             //
             this.AcceptButton = this.btnRecommend;
-            this.ClientSize = new System.Drawing.Size(700, 460);
+            this.ClientSize = new System.Drawing.Size(760, 460);
             this.Controls.Add(this.layoutRoot);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "RecommendationForm";
@@ -251,6 +285,7 @@ namespace VideoGameManager
             this.coverCard.ResumeLayout(false);
             this.layoutDetails.ResumeLayout(false);
             this.panelActions.ResumeLayout(false);
+            this.frameStrategy.ResumeLayout(false);
             this.layoutRoot.ResumeLayout(false);
             this.layoutRoot.PerformLayout();
             this.ResumeLayout(false);
@@ -273,5 +308,8 @@ namespace VideoGameManager
         private System.Windows.Forms.Label lblScore;
         private System.Windows.Forms.FlowLayoutPanel panelActions;
         private VideoGameManager.UI.Controls.FlatButton btnRecommend;
+        private VideoGameManager.UI.Controls.InputFrame frameStrategy;
+        private System.Windows.Forms.ComboBox cmbStrategy;
+        private System.Windows.Forms.Label lblStrategyCaption;
     }
 }

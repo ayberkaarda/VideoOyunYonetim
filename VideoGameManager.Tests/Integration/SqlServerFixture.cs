@@ -333,6 +333,7 @@ DELETE FROM dbo.[Platform]   WHERE Id > 0;";
             "0002_normalise_genre_and_platform.sql",
             "0003_add_review_table.sql",
             "0004_add_indexes.sql",
+            "0005_add_play_status_and_favourite.sql",
         };
     }
 }

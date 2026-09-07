@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,7 @@ namespace VideoGameManager.Tests.Services
         [InlineData(typeof(IRecommendationService))]
         [InlineData(typeof(IDatabaseHealthService))]
         [InlineData(typeof(IDatabaseMigrationService))]
+        [InlineData(typeof(IStatisticsService))]
         public void AddVideoGameManager_RegistersTheService(Type serviceType)
         {
             using (ServiceProvider provider = BuildProvider())
@@ -38,6 +40,20 @@ namespace VideoGameManager.Tests.Services
         }
 
         [Fact]
+        public void AddVideoGameManager_RegistersBothExportersAsASet()
+        {
+            using (ServiceProvider provider = BuildProvider())
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                IEnumerable<IGameExporter> exporters =
+                    scope.ServiceProvider.GetServices<IGameExporter>();
+
+                exporters.Select(exporter => exporter.Format)
+                    .Should().BeEquivalentTo(new[] { "CSV", "JSON" });
+            }
+        }
+
+        [Fact]
         public void AddVideoGameManager_RegistersTheRecommendationStrategiesAsASet()
         {
             using (ServiceProvider provider = BuildProvider())
@@ -45,7 +61,28 @@ namespace VideoGameManager.Tests.Services
             {
                 IRecommendationService service = scope.ServiceProvider.GetRequiredService<IRecommendationService>();
 
-                service.AvailableStrategies.Should().Contain(RandomStrategy.StrategyName);
+                service.AvailableStrategies.Should().BeEquivalentTo(new[]
+                {
+                    RandomStrategy.StrategyName,
+                    GenreWeightedStrategy.StrategyName,
+                    BacklogFirstStrategy.StrategyName,
+                });
+            }
+        }
+
+        [Fact]
+        public void AddVideoGameManager_OffersTheRandomStrategyFirst()
+        {
+            // The recommendation service treats the first registered strategy as the default
+            // when the caller names none, so the order of the registrations is behaviour and
+            // not housekeeping.
+            using (ServiceProvider provider = BuildProvider())
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                IRecommendationService service = scope.ServiceProvider.GetRequiredService<IRecommendationService>();
+
+                service.AvailableStrategies.Should().HaveCountGreaterThan(1);
+                service.AvailableStrategies[0].Should().Be(RandomStrategy.StrategyName);
             }
         }
 
