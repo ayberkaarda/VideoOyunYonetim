@@ -105,7 +105,7 @@ VALUES (@Name, @Status);";
         /// the one path where existing data is at risk.
         /// </remarks>
         private const string CreateFlatGameTableSql = @"
--- sql-guard: bypass-ok this rebuilds the historical table so a replay can be tested against it; it is not a schema change to any real database
+-- bypass-ok: this rebuilds the historical table so a replay can be tested against it; it is not a schema change to any real database
 CREATE TABLE dbo.Game
 (
     Id         INT            IDENTITY(1, 1) NOT NULL,

@@ -1,6 +1,6 @@
 using System;
-using VideoGameManager.Domain;
 using FluentAssertions;
+using VideoGameManager.Domain;
 using Xunit;
 
 namespace VideoGameManager.Tests.Domain

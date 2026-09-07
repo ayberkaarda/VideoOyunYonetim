@@ -151,11 +151,7 @@ namespace VideoGameManager.UI.Controls
         /// <param name="e">Always <see cref="EventArgs.Empty"/>.</param>
         protected virtual void OnSearchTextChanged(EventArgs e)
         {
-            EventHandler handler = SearchTextChanged;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            SearchTextChanged?.Invoke(this, e);
         }
 
         /// <inheritdoc/>

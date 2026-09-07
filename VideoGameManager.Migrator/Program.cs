@@ -22,7 +22,7 @@ namespace VideoGameManager.Migrator
         /// The shape of the argument the operator types, shown in the help text. Every
         /// secret in it is a placeholder; no value here is real.
         /// </summary>
-        // secret-guard: bypass-ok Help text rather than a value -- the password is the literal placeholder <password>.
+        // bypass-ok: Help text rather than a value -- the password is the literal placeholder <password>.
         private const string ExampleConnectionString =
             "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=<password>;TrustServerCertificate=True";
 

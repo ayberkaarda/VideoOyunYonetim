@@ -28,8 +28,8 @@ explicit reads and writes.
 
 ## Consequences
 
-- Every query is written by hand and must be parameterised; the `sql-guard` hook rejects
-  concatenated SQL.
+- Every query is written by hand and must be parameterised. Building SQL by concatenating
+  or interpolating strings is not allowed anywhere in the data layer.
 - No automatic migrations. Schema changes go through DbUp scripts (Phase 3).
 - Repository integration tests run against a real SQL Server container rather than an
   in-memory provider, which is more faithful and slower.

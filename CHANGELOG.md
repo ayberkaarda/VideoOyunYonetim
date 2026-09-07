@@ -5,7 +5,109 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-09-07
+
+The first release. It collects the six phases that turned a single-project prototype with a
+hard-coded connection string into a layered, tested and documented application.
+
+### Phase 6 - Continuous integration and documentation
+
+#### Added
+- `.github/workflows/ci.yml`, run on every push to `main`, every pull request and on
+  demand. The work is split across two runners because the solution is split across two
+  target frameworks: a Linux job builds the four cross-platform projects with
+  `-warnaserror` and runs the whole test suite, including the integration tests that start
+  their own SQL Server container; a Windows job builds the full solution, desktop project
+  included, and runs the format check. Neither runner can do the whole job alone - the
+  desktop project does not build on Linux, and the SQL Server image does not run on
+  Windows. Test results and the coverage report are kept as artifacts.
+- `.editorconfig` describing the style the code already has, so running the formatter is a
+  whitespace pass rather than a rewrite: explicit types over `var` (513 declarations
+  against 6), `_camelCase` private fields, PascalCase for private `static readonly` fields,
+  block-scoped namespaces, `System` usings first, braces required once a body moves to its
+  own line.
+- ADR 0007, recording that the nullable reference context stays off for now, with the
+  measurement behind that decision - 558 diagnostics across 122 files - and the order in
+  which it is planned to be turned on.
+
+#### Changed
+- The README now documents what the application actually does. It gained an architecture
+  diagram, the statistics screen, a development guide covering build, test, format and
+  migration commands, the rules the code is expected to keep and why each exists, and a
+  contribution checklist. The roadmap no longer describes finished phases as planned, and
+  the score range is written as 0-10, which is what the domain enforces.
+- `end_of_line` is deliberately left out of `.editorconfig`. The repository is stored with
+  LF and the working copy on Windows is CRLF; pinning either would make the format check
+  fail on one of the two platforms the project is built on.
+
+#### Removed
+- `README.tr.md`. The application, the schema and the documentation were translated to
+  English in phase 0, and this file was the last thing left in Turkish. It had also fallen
+  out of date - it described a database and table that no longer exist, referred to ADO.NET
+  which was replaced by Dapper, and all five of its screenshot links were broken.
+
+#### Fixed
+- Formatting drift in three files, found by the first `dotnet format --verify-no-changes`
+  run and fixed by the first `dotnet format` run.
+
+### Phase 5 - Search, paging, recommendation strategies, export and statistics
+
+#### Added
+- Search and filtering on the browse screen: live search by name, with filters for genre,
+  platform, score range, play status and favourites. Filtering happens in SQL, not in the
+  list control.
+- Server-side paging and sorting through `OFFSET/FETCH`, ordered by name or by score, with
+  each sort backed by an index.
+- `IRecommendationStrategy` with three implementations behind it, chosen from a drop-down
+  on the recommendation screen: `RandomStrategy`, `GenreWeightedStrategy`, which favours
+  the genres the catalogue is scored highest in, and `BacklogFirstStrategy`, which prefers
+  what has not been played yet.
+- A cover image cache. Covers are downloaded asynchronously and kept on disk, so a second
+  look at the same game does not hit the network; a placeholder stands in when a link is
+  dead, and the failure is logged rather than shown as an exception.
+- CSV and JSON export behind a single `IGameExporter`, so the view only ever sees a list of
+  formats.
+- A statistics screen: distribution by genre and average scores, served by
+  `IStatisticsService` and drawn by a hand-written `BarChart` control. No charting library
+  was added.
+- Migration 0005 adding `PlayStatus` and `IsFavourite`, exposed as a filter on the browse
+  screen and as fields on the add screen.
+
+#### Fixed
+- The action row on the recommendation screen was laid out in a single column that could
+  not hold it. The panel is right-to-left, so the overflow was clipped from the left and
+  the "Strategy:" label rendered as "egy:". The row now spans both columns. The build was
+  green and every test passed; only a screenshot showed it.
+
+### Phase 4 - Test suite
+
+#### Added
+- `VideoGameManager.Tests`, targeting `net10.0`: 396 tests covering the domain validators,
+  `Result<T>`, every service, the recommendation strategies, both exporters and the
+  composition root, plus integration tests that exercise the repositories and the whole
+  migration chain against a real SQL Server.
+- ADR 0006 recording the stack and its version pins: xUnit 2.9.3, FluentAssertions 7.2.0,
+  NSubstitute 6.2.0, Testcontainers.MsSql 4.15.0 and coverlet.collector 6.0.4.
+
+#### Changed
+- FluentAssertions is pinned to the 7.x line. From 8.0 the package moved to a licence that
+  charges for commercial use, and this repository is published under MIT.
+- Integration tests raise their own SQL Server container and never touch the development
+  database, so running them cannot damage a local catalogue.
+
+#### Fixed
+- The integration fixture waits until the container reports the collation it was started
+  with, instead of connecting as soon as the server accepts logins. The image accepts
+  clients before it has applied `MSSQL_COLLATION`, and a session opened in that window is
+  rejected when the pool later reuses it - with a message about a failed login that says
+  nothing about collation. This failed roughly one run in five; eight consecutive runs
+  passed after the fix.
+
+#### Known limitations
+- The presenters have no unit tests. The test project targets `net10.0` and the desktop
+  project targets `net10.0-windows`, so one cannot reference the other. Moving the
+  presenters and view interfaces into a separate cross-platform project would fix this and
+  is the first candidate for the next piece of work.
 
 ### Phase 3 - Database normalisation, indexes and migrations
 
@@ -85,7 +187,7 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   instead of being pinned to whichever control happened to be first. The review screen was
   pointing the score rule at its game selector.
 
-### Phase 1 - Layered architecture (in progress)
+### Phase 1 - Layered architecture
 
 #### Added
 - `docs/architecture.md`, the contract for the rewrite: project layout, entity shapes,
@@ -109,9 +211,9 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - `ChromelessForm` restores the window behaviour the borderless forms had lost: Alt+F4,
   Escape, taskbar minimise and restore, and Aero Snap dragging.
 
-## Phase 0 - Repository hygiene and English-only codebase
+### Phase 0 - Repository hygiene and English-only codebase
 
-### Added
+#### Added
 - `.gitignore` covering Visual Studio caches, build output, database backups and secrets.
 - `db/schema.sql` and `db/seed.sql`, both idempotent. The schema and fifteen rows of
   sample data were recovered from the data pages of the SQL Server backup that used to be
@@ -120,7 +222,7 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   starts with one command.
 - `LICENSE` (MIT) and a rewritten `README.md` with in-app screenshots.
 
-### Changed
+#### Changed
 - Migrated the project to the SDK-style format targeting .NET 10, from .NET Framework
   4.7.2 in the legacy csproj format.
 - Replaced `System.Data.SqlClient`, which is absent from the .NET 10 BCL and no longer
@@ -133,7 +235,7 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Pinned `ApplicationHighDpiMode` to `DpiUnaware` to preserve the pixel-aligned layout of
   the fixed-size forms, which matched the .NET Framework 4.7.2 default.
 
-### Fixed
+#### Fixed
 - Collated the database `Latin1_General_100_CI_AI` instead of `Turkish_CI_AS`. Under a
   Turkish collation `I` and `i` are different letters, so `Name LIKE '%fifa%'` did not
   match `FIFA 24`: search returned nothing and reported no error. Accent-insensitive
@@ -148,7 +250,7 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Declared the review column as `NVARCHAR(MAX)` instead of the original `TEXT`, a
   deprecated non-Unicode type that mangled non-ASCII characters.
 
-### Removed
+#### Removed
 - Untracked 32 files that should never have been versioned: Visual Studio caches under
   `.vs/`, compiled binaries under `bin/` and `obj/`, and the 4.7 MB database backup. They
   remain on disk.

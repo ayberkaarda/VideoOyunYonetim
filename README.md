@@ -4,6 +4,7 @@
 
 **A Windows desktop app for cataloguing, rating and discovering video games.**
 
+[![CI](https://github.com/ayberkaarda/VideoOyunYonetim/actions/workflows/ci.yml/badge.svg)](https://github.com/ayberkaarda/VideoOyunYonetim/actions/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](#)
 [![Language](https://img.shields.io/badge/C%23-.NET%2010-512BD4)](#)
 [![Database](https://img.shields.io/badge/database-SQL%20Server-CC2927)](#)
@@ -18,18 +19,26 @@
 ## Overview
 
 Video Game Manager is a Windows Forms application backed by SQL Server. You add games to a
-personal catalogue with a genre, a platform, a score and a cover image, browse the
-catalogue with full details, leave a written review on any game, and get a random pick
-when you cannot decide what to play.
+personal catalogue with a genre, a platform, a score and a cover image, search and filter
+your way through it, leave a written review on any game, and get a suggestion when you
+cannot decide what to play — either at random or weighted towards what you already rate
+highly. A statistics screen shows how the catalogue breaks down by genre, and the whole
+list exports to CSV or JSON.
 
 ## Features
 
 | | |
 |---|---|
-| ➕ **Add a game** | Name, genre, platform, score (1–10) and a cover image URL |
+| ➕ **Add a game** | Name, genre, platform, score (0–10), play status, favourite flag and a cover image URL |
+| ✏️ **Edit & delete** | Change or remove any row in the catalogue, addressed by id |
 | 📃 **Browse & inspect** | Pick a game from the list and see every field plus its cover art |
-| 🗣️ **Review** | Attach a written review to any game in the catalogue |
-| 🎲 **Recommend** | Draw a random game from the catalogue with its cover |
+| 🔎 **Search & filter** | Live search by name with filters for genre, platform, score range, play status and favourites |
+| 📄 **Paging & sorting** | Server-side `OFFSET/FETCH`, sorted by name or score |
+| 🗣️ **Review** | Attach a written review to any game; the newest one shows on the detail screen |
+| 🎲 **Recommend** | Three interchangeable strategies: random, weighted towards the genres you score highly, or backlog-first |
+| 🖼️ **Cover cache** | Cover art is downloaded asynchronously and cached on disk; a placeholder stands in when a link is dead |
+| 📊 **Statistics** | Distribution by genre and average scores, drawn on a hand-rolled bar chart |
+| 📤 **Export** | Write the catalogue out as CSV or JSON |
 | 🪟 **Custom chrome** | Borderless forms with hand-rolled minimise/close buttons |
 
 ## Screens
@@ -67,6 +76,17 @@ when you cannot decide what to play.
 
 </td>
 </tr>
+<tr>
+<td width="50%">
+
+**Statistics** — `StatisticsForm`
+
+<img src="screenshots/statistics.png" alt="Statistics screen" width="100%">
+
+</td>
+<td width="50%">
+</td>
+</tr>
 </table>
 
 ## Tech stack
@@ -79,6 +99,11 @@ when you cannot decide what to play.
   constant with bound parameters
 - **[DbUp](https://dbup.readthedocs.io/)** for schema migrations, applied at startup
 - **[Serilog](https://serilog.net/)** behind `Microsoft.Extensions.Logging`, rolling file sink
+- **[xUnit](https://xunit.net/)** with [FluentAssertions](https://fluentassertions.com/) and
+  [NSubstitute](https://nsubstitute.github.io/) for unit tests, and
+  [Testcontainers](https://dotnet.testcontainers.org/) for integration tests that raise a
+  real SQL Server rather than a fake one
+- **GitHub Actions** for build, test and format checks on every push and pull request
 
 ## Getting started
 
@@ -178,10 +203,53 @@ needed:
 dotnet run --project VideoGameManager -- --gallery
 ```
 
+## Architecture
+
+Five projects, and the arrow only ever points down. A layer knows the one below it and
+nothing above it, so the database can be swapped without touching a screen and the screens
+can be reworked without touching a query.
+
+```mermaid
+flowchart TD
+    subgraph windows["net10.0-windows"]
+        UI["<b>VideoGameManager</b><br/>Forms · Views · Presenters<br/>Program.cs builds the container"]
+    end
+
+    subgraph portable["net10.0 — builds and tests on any OS"]
+        SVC["<b>Services</b><br/>GameService · ReviewService<br/>RecommendationService · StatisticsService<br/>exporters · recommendation strategies"]
+        DATA["<b>Data</b><br/>Dapper repositories · connection factory<br/>Migrations/*.sql embedded in the assembly"]
+        DOM["<b>Domain</b><br/>Game · Review · PlayStatus<br/>validation rules · Result&lt;T&gt;<br/><i>no dependencies at all</i>"]
+        MIG["<b>Migrator</b><br/>console entry point"]
+    end
+
+    DB[("SQL Server<br/>dbo.Game · Genre · Platform<br/>GamePlatform · Review")]
+
+    UI --> SVC
+    SVC --> DATA
+    SVC --> DOM
+    DATA --> DOM
+    DATA --> DB
+    MIG --> DATA
+```
+
+A few consequences worth naming:
+
+- **Domain has no package references.** Entities and validation rules stay usable without a
+  database or a window, which is what makes them cheap to test.
+- **Only the desktop project targets Windows.** Everything below it is plain `net10.0`, so
+  the test suite runs on a Linux build agent.
+- **Screens follow Model-View-Presenter.** A form implements an `IView` interface and owns
+  no logic; the presenter holds the logic and never mentions a WinForms type, so it could be
+  driven by a different UI entirely.
+- **The migrator is separate from the application.** A schema upgrade needs neither a desktop
+  session nor the application's configuration files.
+
 ## Repository layout
 
 ```
 .
+├── .github/workflows/ci.yml     # build, test and format checks
+├── .editorconfig                # coding style, read by `dotnet format`
 ├── db/
 │   ├── docker-compose.yml       # local SQL Server 2022 container
 │   ├── .env.example             # template for the SA password
@@ -203,15 +271,18 @@ dotnet run --project VideoGameManager -- --gallery
 │   ├── UI/                      # shared control library and theme
 │   ├── MainForm.cs              # main menu
 │   ├── AddGameForm.cs           # add a game
-│   ├── BrowseGamesForm.cs       # browse the catalogue
-│   ├── RecommendationForm.cs    # random recommendation
-│   └── ReviewGameForm.cs        # write a review
+│   ├── BrowseGamesForm.cs       # browse, search, filter, page
+│   ├── RecommendationForm.cs    # recommendation, one of three strategies
+│   ├── ReviewGameForm.cs        # write a review
+│   └── StatisticsForm.cs        # genre distribution and average scores
+├── VideoGameManager.Tests/      # xUnit — unit tests and Testcontainers integration tests
 └── VideoGameManager.sln
 ```
 
-Dependencies run one way: WinForms → Services → Data → Domain. Domain has no dependencies
-at all, and only the WinForms project targets Windows, so the layers below it build and
-test on a Linux agent. [`docs/architecture.md`](docs/architecture.md) is the contract.
+[`docs/architecture.md`](docs/architecture.md) is the contract the layers were built
+against: every interface signature was fixed there before implementation started.
+[`docs/adr/`](docs/adr) records the decisions that were not obvious at the time — why Dapper
+rather than EF Core, why .NET 10, why MVP, why DbUp.
 
 ### Database schema
 
@@ -253,14 +324,87 @@ in numbered phases:
 | 1 | Layered architecture — Domain / Data / Services / WinForms, MVP, dependency injection | ✅ done |
 | 2 | Configuration & error handling — `appsettings.json`, Serilog, validation, `async/await` | ✅ done |
 | 3 | Database — normalisation, indexes, migrations | ✅ done |
-| 4 | Tests — xUnit, FluentAssertions, NSubstitute | ⏳ planned |
-| 5 | Features — search, paging, smarter recommendations, image cache, export, statistics | ⏳ planned |
-| 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ⏳ planned |
+| 4 | Tests — xUnit, FluentAssertions, NSubstitute, Testcontainers | ✅ done |
+| 5 | Features — search, paging, smarter recommendations, image cache, export, statistics | ✅ done |
+| 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ✅ done |
+
+Known limitations are listed in [`CHANGELOG.md`](CHANGELOG.md) rather than hidden: the
+nullable reference context is still off (see
+[ADR 0007](docs/adr/0007-defer-the-nullable-reference-context.md)), the presenters have no
+unit tests yet, and the application is DPI-unaware by design.
+
+## Development
+
+Everything below runs from the repository root and needs nothing but the .NET SDK — plus
+Docker for the parts that talk to a database.
+
+```powershell
+# build the whole solution the way CI does
+dotnet build VideoGameManager.sln --no-incremental -warnaserror
+
+# unit tests only — no database, no Docker, about a second
+dotnet test VideoGameManager.Tests --filter "FullyQualifiedName!~Integration"
+
+# everything, including integration tests that start their own SQL Server container
+dotnet test VideoGameManager.sln
+
+# coding style: check, then fix
+dotnet format VideoGameManager.sln --verify-no-changes
+dotnet format VideoGameManager.sln
+```
+
+**Integration tests raise their own container.** They never connect to the development
+database, so running them cannot damage your catalogue. They also do not skip themselves
+when Docker is missing — they fail — because a suite that reports green without having
+tested anything is worse than one that reports red.
+
+**Changing the schema means writing a migration.** Add a numbered script to
+`VideoGameManager.Data/Migrations/`; it is embedded in the assembly and picked up in name
+order. Scripts must be re-runnable, and the application applies whatever is pending at
+startup. To bring a database up to date without opening the application:
+
+```powershell
+dotnet run --project VideoGameManager.Migrator -- "Server=localhost,1433;Database=VideoGameManager;User Id=sa;Password=<password>;TrustServerCertificate=True"
+```
+
+**Rules the code is expected to keep**, all of which have a test or a build check behind
+them:
+
+| Rule | Why |
+|---|---|
+| SQL is a `const string` with bound parameters, never string concatenation | SQL injection |
+| Rows are addressed by `Id`, never by `Name` | Two games can share a name; the wrong row would be updated silently, with no error |
+| `[Platform]` is always bracketed | It is a reserved-ish identifier in T-SQL |
+| No database access or business logic in a form's code-behind | The presenter is the only place screen logic lives |
+| Validation rules live in Domain, and only there | One rule, one home; the UI only renders the result |
+| No empty `catch`, and no `MessageBox.Show(ex.Message)` | Errors are logged in English with detail, and shown to the user as something they can act on |
+| Database and network calls are `async` | The UI thread is never blocked |
+| The schema changes only through a migration | A clean database must be rebuildable from zero |
 
 ## Contributing
 
-Issues and pull requests are welcome. Please keep each phase in its own commit and make
-sure the solution still builds before opening a PR.
+Issues and pull requests are welcome.
+
+Before opening a pull request:
+
+1. `dotnet build VideoGameManager.sln --no-incremental -warnaserror` — CI treats warnings as
+   errors, and an incremental build silently skips the analyzers.
+2. `dotnet test VideoGameManager.sln` — including the integration tests.
+3. `dotnet format VideoGameManager.sln --verify-no-changes` — the style rules live in
+   `.editorconfig`.
+
+Please also:
+
+- Keep one logical change per commit, and write the subject as
+  `type(scope): subject` — for example `feat(services): weight recommendations by genre`.
+  Scopes match the project directories: `domain`, `data`, `services`, `winforms`, `tests`,
+  `db`, `docs`, `ci`.
+- Write code, comments, identifiers and commit messages in English.
+- Add new user-facing strings to `Properties/Resources.resx` rather than hard-coding them.
+- Never commit a connection string or a password. `appsettings.json` carries a placeholder;
+  the real value belongs in `appsettings.Development.json`, which is git-ignored.
+- Record a decision that a reader would otherwise have to reverse-engineer as an ADR in
+  `docs/adr/`.
 
 ## Author
 

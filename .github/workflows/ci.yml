@@ -1,0 +1,114 @@
+# Build, test and format check.
+#
+# The work is split across two runners because the solution is split across two target
+# frameworks. Domain, Data, Services, the migrator and the test project target `net10.0`
+# and run anywhere; the desktop project targets `net10.0-windows` and only builds on
+# Windows. The integration tests are the mirror image: they start a SQL Server container
+# from a Linux image, which a Windows runner cannot run. Neither runner can therefore do
+# the whole job on its own.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same branch makes the previous run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Keep the log readable whatever the runner's locale would otherwise pick.
+  DOTNET_CLI_UI_LANGUAGE: en
+
+jobs:
+  # Everything that does not need Windows: the four cross-platform projects, the unit
+  # tests and the integration tests, which raise their own SQL Server container.
+  test:
+    name: Build and test (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # The solution file is not used here: it contains the desktop project, and
+      # restoring or building that on Linux fails on the Windows target framework.
+      # The test project references Domain, Data and Services, so those three come
+      # along with it; the migrator is the only other project left to name.
+      - name: Restore
+        run: |
+          dotnet restore VideoGameManager.Tests/VideoGameManager.Tests.csproj
+          dotnet restore VideoGameManager.Migrator/VideoGameManager.Migrator.csproj
+
+      # `--no-incremental` matters: with an incremental build the analyzers are skipped
+      # for projects that did not change, and a warning that should fail the run is
+      # never reported.
+      - name: Build
+        run: |
+          dotnet build VideoGameManager.Tests/VideoGameManager.Tests.csproj \
+            --no-restore --no-incremental -warnaserror
+          dotnet build VideoGameManager.Migrator/VideoGameManager.Migrator.csproj \
+            --no-restore --no-incremental -warnaserror
+
+      # The integration tests pull mcr.microsoft.com/mssql/server and start a container
+      # per fixture. They do not skip themselves when Docker is missing - a suite that
+      # reports green without having tested anything is worse than a red one - so the
+      # job fails outright on a runner without Docker.
+      - name: Test
+        run: >
+          dotnet test VideoGameManager.Tests/VideoGameManager.Tests.csproj
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory TestResults
+
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 14
+
+  # Windows-only work: the desktop project, and the format check, which has to load
+  # every project in the solution to run.
+  build-windows:
+    name: Build and format check (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore VideoGameManager.sln
+
+      - name: Build the whole solution
+        run: dotnet build VideoGameManager.sln --no-restore --no-incremental -warnaserror
+
+      # Reads .editorconfig and fails when a file is not formatted the way it describes.
+      - name: Check formatting
+        run: dotnet format VideoGameManager.sln --no-restore --verify-no-changes
