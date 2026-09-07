@@ -25,7 +25,8 @@ VideoGameManager.Domain     net10.0           Entities, enums, validation. No de
 It exists so that a database can be created and brought up to date without starting the
 desktop application - from a build agent, or against a throwaway database in a test.
 
-The arrow is one-way and enforced by project references plus the `layer-guard` hook. Only
+The arrow is one-way, and the project references are what enforce it: a reference in the
+other direction would not compile, so the rule cannot be broken by accident. Only
 the WinForms project targets Windows, so Domain, Data and Services can run their tests on
 a Linux CI agent.
 
@@ -245,7 +246,7 @@ Rules:
 
 - Every method is async and takes a `CancellationToken`.
 - SQL is a `const string` with a Dapper parameter object. String concatenation or
-  interpolation to build SQL is forbidden (`sql-guard` blocks it).
+  interpolation to build SQL is forbidden.
 - Column lists are explicit; no `SELECT *`. Schema is qualified (`dbo.Game`).
 - `Platform` is a table now, not a column, and is written schema-qualified as
   `dbo.Platform`. The rule that a bare `Platform` must be bracketed still stands for any

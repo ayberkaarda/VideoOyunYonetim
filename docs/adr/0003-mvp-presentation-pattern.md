@@ -22,7 +22,8 @@ NSubstitute - which is exactly what the Phase 4 coverage target needs.
 MVVM was the alternative. WinForms data binding is weak compared to WPF's, so MVVM here
 would mean hand-written `INotifyPropertyChanged` plumbing and binding glue for very little
 benefit over an explicit view interface. Passive View also keeps the presenter free of any
-WinForms type, which the `layer-guard` hook can then enforce mechanically.
+WinForms type, which makes the rule easy to check: a presenter that mentions `Form`,
+`Control` or `MessageBox` has taken on work that belongs to the view.
 
 ## Consequences
 

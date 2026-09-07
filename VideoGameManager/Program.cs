@@ -61,7 +61,7 @@ namespace VideoGameManager
         /// another form or a service directly.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             // The UI is English-only, so formatting must not follow the machine's
             // regional settings: on a Turkish Windows a score of 8.6 would render
@@ -314,7 +314,7 @@ namespace VideoGameManager
                 // The message loop has not started yet, so there is neither a UI thread
                 // waiting on this call nor a captured synchronization context to deadlock
                 // against; the same reasoning as ProbeDatabase's bypass just above.
-                outcome = Task.Run(() => migrations.ApplyPendingAsync()).GetAwaiter().GetResult(); // error-guard: bypass-ok no message loop and no synchronization context exist yet, so neither side of the deadlock is present
+                outcome = Task.Run(() => migrations.ApplyPendingAsync()).GetAwaiter().GetResult(); // bypass-ok: no message loop and no synchronization context exist yet, so neither side of the deadlock is present
             }
 
             if (outcome.Log != null && outcome.Log.Count > 0)
@@ -349,7 +349,7 @@ namespace VideoGameManager
                 // one call that runs before the message loop starts, which is why it can
                 // be waited on: every later attempt is made from the dialog, where the
                 // loop is running and the result is awaited.
-                return Task.Run(() => CheckDatabaseAsync(provider)).GetAwaiter().GetResult(); // error-guard: bypass-ok no message loop and no synchronization context exist yet, so neither side of the deadlock is present
+                return Task.Run(() => CheckDatabaseAsync(provider)).GetAwaiter().GetResult(); // bypass-ok: no message loop and no synchronization context exist yet, so neither side of the deadlock is present
             }
             catch (Exception exception)
             {

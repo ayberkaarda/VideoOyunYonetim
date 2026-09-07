@@ -236,7 +236,7 @@ namespace VideoGameManager.UI
                 // The disk cache is an optimisation, not a requirement: a failed write
                 // just means the next load downloads again instead of reading from disk.
             }
-            catch (UnauthorizedAccessException) // error-guard: bypass-ok caching is best-effort; a permissions failure on the cache folder falls back to re-downloading on the next call, same as the IOException case above, so there is nothing actionable to log or show.
+            catch (UnauthorizedAccessException) // bypass-ok: caching is best-effort; a permissions failure on the cache folder falls back to re-downloading on the next call, same as the IOException case above, so there is nothing actionable to log or show.
             {
             }
         }
