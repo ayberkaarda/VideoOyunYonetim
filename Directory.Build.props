@@ -1,18 +1,25 @@
 <Project>
 
   <!-- Settings every project in the solution shares. MSBuild imports this file before
-       each project file, so a project can still override any of it locally - which is
-       how the nullable context is being turned on one layer at a time.
+       each project file, so a project can still override any of it locally.
 
        Only genuinely common settings belong here. GenerateDocumentationFile is not one
        of them: the class libraries produce documentation, the test project does not, and
        the desktop project does not. Putting it here and overriding it twice would say
-       less than saying it three times. -->
+       less than saying it three times.
+
+       The nullable reference context is on, with no project overriding it. It was turned
+       on one layer at a time, in the direction the dependencies run, so that each layer
+       was annotated against a vocabulary that was already settled rather than against a
+       guess - entities, then repositories, then services, then the presenters, then the
+       forms and the tests. Now that every project has been through that, the setting
+       belongs here rather than being repeated seven times, and a new project inherits it
+       instead of having to remember it. -->
 
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>

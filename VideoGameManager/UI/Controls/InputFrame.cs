@@ -103,13 +103,13 @@ namespace VideoGameManager.UI.Controls
             child.BackColor = Enabled ? Theme.SurfaceRaised : Theme.SurfaceDisabled;
             child.ForeColor = Enabled ? Theme.TextPrimary : Theme.TextDisabled;
 
-            TextBoxBase textBox = child as TextBoxBase;
+            TextBoxBase? textBox = child as TextBoxBase;
             if (textBox != null)
             {
                 textBox.BorderStyle = BorderStyle.None;
             }
 
-            ComboBox comboBox = child as ComboBox;
+            ComboBox? comboBox = child as ComboBox;
             if (comboBox != null)
             {
                 comboBox.FlatStyle = FlatStyle.Flat;
@@ -128,7 +128,7 @@ namespace VideoGameManager.UI.Controls
         /// <inheritdoc/>
         protected override void OnControlRemoved(ControlEventArgs e)
         {
-            if (e != null && e.Control != null)
+            if (e.Control != null)
             {
                 e.Control.GotFocus -= ChildFocusChanged;
                 e.Control.LostFocus -= ChildFocusChanged;
@@ -256,7 +256,7 @@ namespace VideoGameManager.UI.Controls
             base.OnPaint(e);
         }
 
-        private void ChildFocusChanged(object sender, EventArgs e)
+        private void ChildFocusChanged(object? sender, EventArgs e)
         {
             bool focused = ContainsFocus;
             if (_focused != focused)
@@ -266,7 +266,7 @@ namespace VideoGameManager.UI.Controls
             }
         }
 
-        private void ChildHoverChanged(object sender, EventArgs e)
+        private void ChildHoverChanged(object? sender, EventArgs e)
         {
             Invalidate();
         }

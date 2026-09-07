@@ -89,7 +89,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
             id.Should().BeGreaterThan(0);
 
-            Game stored = await _repository.GetAsync(id);
+            Game? stored = await _repository.GetAsync(id);
 
             stored.Should().NotBeNull();
             stored.Id.Should().Be(id);
@@ -140,7 +140,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         [Fact]
         public async Task GetAsync_ForAnUnknownId_ReturnsNull()
         {
-            Game found = await _repository.GetAsync(987654);
+            Game? found = await _repository.GetAsync(987654);
 
             found.Should().BeNull();
         }
@@ -156,9 +156,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
                 Score = null,
             });
 
-            Game stored = await _repository.GetAsync(id);
+            Game? stored = await _repository.GetAsync(id);
 
-            stored.Platforms.Should().NotBeNull().And.BeEmpty();
+            stored!.Platforms.Should().NotBeNull().And.BeEmpty();
             stored.Score.Should().BeNull();
         }
 
@@ -179,9 +179,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
             updated.Should().BeTrue();
 
-            Game stored = await _repository.GetAsync(id);
+            Game? stored = await _repository.GetAsync(id);
 
-            stored.Name.Should().Be("Celeste (Remastered)");
+            stored!.Name.Should().Be("Celeste (Remastered)");
             stored.Genre.Should().Be("Precision Platformer");
             stored.Score.Should().Be(9.4);
             // The list is replaced, not merged: Switch and PS4 were dropped by the caller and so
@@ -431,7 +431,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
             // about the query rather than about a lucky draw.
             for (int attempt = 0; attempt < 30; attempt++)
             {
-                Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 8.0));
+                Game? picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 8.0));
 
                 picked.Should().NotBeNull();
                 picked.Score.Should().NotBeNull();
@@ -449,7 +449,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
             await _repository.AddAsync(NewGame("Low One", "Action", 4.0, "PC"));
             await _repository.AddAsync(NewGame("Unrated", "Action", null, "PC"));
 
-            Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 9.9));
+            Game? picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 9.9));
 
             picked.Should().BeNull();
         }
@@ -459,9 +459,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         {
             await _repository.AddAsync(NewGame("Only Choice", "Action", 9.0, "PC", "Switch"));
 
-            Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 1.0));
+            Game? picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 1.0));
 
-            picked.Name.Should().Be("Only Choice");
+            picked!.Name.Should().Be("Only Choice");
             picked.Platforms.Should().BeEquivalentTo(new[] { "PC", "Switch" });
         }
 
@@ -472,7 +472,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
             // rather than quietly excluding the rows that have no score.
             await _repository.AddAsync(NewGame("Unrated", "Action", null, "PC"));
 
-            Game picked = await _repository.GetRandomAsync(GameFilter.None);
+            Game? picked = await _repository.GetRandomAsync(GameFilter.None);
 
             picked.Should().NotBeNull();
             picked.Name.Should().Be("Unrated");
@@ -492,7 +492,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
             for (int attempt = 0; attempt < 20; attempt++)
             {
-                Game picked = await _repository.GetRandomAsync(filter);
+                Game? picked = await _repository.GetRandomAsync(filter);
 
                 picked.Should().NotBeNull();
                 picked.Name.Should().Be("The Only Match");
@@ -504,7 +504,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         {
             await AddAsync(NewGame("Backlogged", "RPG", 9.0, "PC"), PlayStatus.Backlog, false);
 
-            Game picked = await _repository.GetRandomAsync(new GameFilter(Status: PlayStatus.Finished));
+            Game? picked = await _repository.GetRandomAsync(new GameFilter(Status: PlayStatus.Finished));
 
             picked.Should().BeNull();
         }
@@ -517,9 +517,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
             for (int attempt = 0; attempt < 20; attempt++)
             {
-                Game picked = await _repository.GetRandomAsync(new GameFilter(OnlyFavourites: true));
+                Game? picked = await _repository.GetRandomAsync(new GameFilter(OnlyFavourites: true));
 
-                picked.Name.Should().Be("Loved");
+                picked!.Name.Should().Be("Loved");
             }
         }
 
@@ -528,9 +528,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         {
             int id = await AddAsync(NewGame("Hades", "Roguelike", 9.6, "PC"), PlayStatus.Playing, true);
 
-            Game stored = await _repository.GetAsync(id);
+            Game? stored = await _repository.GetAsync(id);
 
-            stored.Status.Should().Be(PlayStatus.Playing);
+            stored!.Status.Should().Be(PlayStatus.Playing);
             stored.IsFavourite.Should().BeTrue();
 
             stored.Status = PlayStatus.Finished;
@@ -538,9 +538,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
             (await _repository.UpdateAsync(stored)).Should().BeTrue();
 
-            Game reread = await _repository.GetAsync(id);
+            Game? reread = await _repository.GetAsync(id);
 
-            reread.Status.Should().Be(PlayStatus.Finished);
+            reread!.Status.Should().Be(PlayStatus.Finished);
             reread.IsFavourite.Should().BeFalse();
         }
 
@@ -549,9 +549,9 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         {
             int id = await _repository.AddAsync(NewGame("Fresh Arrival", "Action", 7.0, "PC"));
 
-            Game stored = await _repository.GetAsync(id);
+            Game? stored = await _repository.GetAsync(id);
 
-            stored.Status.Should().Be(PlayStatus.Backlog);
+            stored!.Status.Should().Be(PlayStatus.Backlog);
             stored.IsFavourite.Should().BeFalse();
         }
 
@@ -831,13 +831,23 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
 
         private Task<int> CountAsync(string sql, object parameters) => ScalarAsync<int>(sql, parameters);
 
-        private async Task<T> ScalarAsync<T>(string sql, object parameters)
+        /// <summary>
+        /// Reads a single value straight from the database.
+        /// </summary>
+        /// <remarks>
+        /// Every query sent through here is either a count or a column of a row this class has
+        /// just written, so the server always answers with one row and the result is never the
+        /// empty answer the provider signature has to allow for. Where the column itself may hold
+        /// no value the caller asks for a nullable <typeparamref name="T"/>, so that case is
+        /// carried by the type argument rather than by this signature.
+        /// </remarks>
+        private async Task<T> ScalarAsync<T>(string sql, object? parameters)
         {
             using (DbConnection connection = await _fixture.OpenConnectionAsync().ConfigureAwait(false))
             {
-                return await connection
+                return (await connection
                     .ExecuteScalarAsync<T>(new CommandDefinition(sql, parameters))
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(false))!;
             }
         }
     }

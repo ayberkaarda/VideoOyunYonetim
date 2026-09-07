@@ -34,7 +34,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
             Action act = () => new RecommendationPresenter(
-                null, _recommendations, NullLogger<RecommendationPresenter>.Instance);
+                null!, _recommendations, NullLogger<RecommendationPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -42,7 +42,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullRecommendationService_ThrowsArgumentNullException()
         {
-            Action act = () => new RecommendationPresenter(_view, null, NullLogger<RecommendationPresenter>.Instance);
+            Action act = () => new RecommendationPresenter(_view, null!, NullLogger<RecommendationPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("recommendations");
         }
@@ -50,7 +50,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new RecommendationPresenter(_view, _recommendations, null);
+            Action act = () => new RecommendationPresenter(_view, _recommendations, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -71,7 +71,7 @@ namespace VideoGameManager.Tests.Presenters
         {
             Game recommended = SampleGame(3);
             _view.SelectedStrategy.Returns("Random");
-            _recommendations.RecommendAsync("Random", Arg.Any<CancellationToken>()).Returns(Task.FromResult(recommended));
+            _recommendations.RecommendAsync("Random", Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(recommended));
 
             RaiseRecommend();
 
@@ -82,11 +82,11 @@ namespace VideoGameManager.Tests.Presenters
         public void RecommendationRequested_NothingQualifies_ShowsEmptyPickAndAnInfoMessage()
         {
             _recommendations.RecommendAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult<Game>(null));
+                .Returns(Task.FromResult<Game?>(null));
 
             RaiseRecommend();
 
-            _view.Received(1).ShowGame(null);
+            _view.Received(1).ShowGame(null!);
             _view.Received(1).ShowInfo(Arg.Any<string>());
         }
 
@@ -96,7 +96,7 @@ namespace VideoGameManager.Tests.Presenters
             List<bool> busyStates = new List<bool>();
             _view.When(v => v.IsBusy = Arg.Any<bool>()).Do(call => busyStates.Add(call.Arg<bool>()));
             _recommendations.RecommendAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(SampleGame(1)));
+                .Returns(Task.FromResult<Game?>(SampleGame(1)));
 
             RaiseRecommend();
 

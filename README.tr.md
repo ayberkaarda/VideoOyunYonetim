@@ -342,11 +342,10 @@ fazlar halinde taşınıyor:
 | 6 | CI ve dokümantasyon — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ✅ tamamlandı |
 
 Bilinen sınırlamalar gizlenmek yerine [`CHANGELOG.md`](CHANGELOG.md) dosyasında
-listeleniyor. Nullable reference bağlamı Domain, Data ve Services için açık; presentation,
-masaüstü ve test projeleri için hâlâ kapalı — bağımlılıkların işlediği sırayla, katman
-katman açılıyor
-([ADR 0007](docs/adr/0007-defer-the-nullable-reference-context.md)). Uygulama tasarım gereği
-DPI'dan bağımsız (DPI-unaware); formların çizildiği düzeni birebir koruyor.
+listeleniyor. Uygulama tasarım gereği DPI'dan bağımsız (DPI-unaware); formların çizildiği
+düzeni birebir koruyor. Ayrıca örnek verideki on beş kapak bağlantısından üçü kaynağında
+ölmüş durumda — uygulama bunları gizlemek yerine yer tutucu gösteriyor ve hatayı log'a
+yazıyor.
 
 ## Geliştirme
 

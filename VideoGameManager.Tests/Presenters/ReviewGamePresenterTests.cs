@@ -36,7 +36,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
             Action act = () => new ReviewGamePresenter(
-                null, _games, _reviews, NullLogger<ReviewGamePresenter>.Instance);
+                null!, _games, _reviews, NullLogger<ReviewGamePresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -45,7 +45,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullGameService_ThrowsArgumentNullException()
         {
             Action act = () => new ReviewGamePresenter(
-                _view, null, _reviews, NullLogger<ReviewGamePresenter>.Instance);
+                _view, null!, _reviews, NullLogger<ReviewGamePresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -54,7 +54,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullReviewService_ThrowsArgumentNullException()
         {
             Action act = () => new ReviewGamePresenter(
-                _view, _games, null, NullLogger<ReviewGamePresenter>.Instance);
+                _view, _games, null!, NullLogger<ReviewGamePresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("reviews");
         }
@@ -62,7 +62,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new ReviewGamePresenter(_view, _games, _reviews, null);
+            Action act = () => new ReviewGamePresenter(_view, _games, _reviews, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -109,7 +109,7 @@ namespace VideoGameManager.Tests.Presenters
             RaiseSave();
 
             _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("select a game")));
-            _reviews.DidNotReceiveWithAnyArgs().AddAsync(default, default, default);
+            _reviews.DidNotReceiveWithAnyArgs().AddAsync(default, default, default!);
         }
 
         [Fact]

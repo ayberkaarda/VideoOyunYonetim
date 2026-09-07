@@ -182,7 +182,7 @@ namespace VideoGameManager.UI.Controls
                 return;
             }
 
-            Form form = FindForm();
+            Form? form = FindForm();
             if (form == null)
             {
                 return;
@@ -246,18 +246,18 @@ namespace VideoGameManager.UI.Controls
             }
         }
 
-        private void CloseButtonClick(object sender, EventArgs e)
+        private void CloseButtonClick(object? sender, EventArgs e)
         {
-            Form form = FindForm();
+            Form? form = FindForm();
             if (form != null)
             {
                 form.Close();
             }
         }
 
-        private void MinimizeButtonClick(object sender, EventArgs e)
+        private void MinimizeButtonClick(object? sender, EventArgs e)
         {
-            Form form = FindForm();
+            Form? form = FindForm();
             if (form != null)
             {
                 form.WindowState = FormWindowState.Minimized;

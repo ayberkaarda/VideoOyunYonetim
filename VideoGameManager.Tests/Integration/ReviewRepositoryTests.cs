@@ -217,13 +217,13 @@ WHERE  Id = @Id;";
 
             await _reviews.AddAsync(NewReview(gameId, 7.0, "The first thing I said.", baseMoment));
 
-            Game afterFirst = await _games.GetAsync(gameId);
-            afterFirst.LatestReview.Should().Be("The first thing I said.");
+            Game? afterFirst = await _games.GetAsync(gameId);
+            afterFirst!.LatestReview.Should().Be("The first thing I said.");
 
             await _reviews.AddAsync(NewReview(gameId, 8.0, "What I say now.", baseMoment.AddDays(1)));
 
-            Game afterSecond = await _games.GetAsync(gameId);
-            afterSecond.LatestReview.Should().Be("What I say now.", "the projection shows the newest review, not the first");
+            Game? afterSecond = await _games.GetAsync(gameId);
+            afterSecond!.LatestReview.Should().Be("What I say now.", "the projection shows the newest review, not the first");
         }
 
         [Fact]
@@ -231,9 +231,9 @@ WHERE  Id = @Id;";
         {
             int gameId = await AddGameAsync("Outer Wilds", 9.0);
 
-            Game stored = await _games.GetAsync(gameId);
+            Game? stored = await _games.GetAsync(gameId);
 
-            stored.LatestReview.Should().BeNull();
+            stored!.LatestReview.Should().BeNull();
         }
 
         /// <summary>
@@ -261,13 +261,23 @@ WHERE  Id = @Id;";
                 CreatedAt = createdAt ?? new DateTimeOffset(2024, 6, 1, 10, 30, 0, TimeSpan.Zero),
             };
 
-        private async Task<T> ScalarAsync<T>(string sql, object parameters)
+        /// <summary>
+        /// Reads a single value straight from the database.
+        /// </summary>
+        /// <remarks>
+        /// Every query sent through here is either a count or a column of a row this class has
+        /// just written, so the server always answers with one row and the result is never the
+        /// empty answer the provider signature has to allow for. Where the column itself may hold
+        /// no value the caller asks for a nullable <typeparamref name="T"/>, so that case is
+        /// carried by the type argument rather than by this signature.
+        /// </remarks>
+        private async Task<T> ScalarAsync<T>(string sql, object? parameters)
         {
             using (DbConnection connection = await _fixture.OpenConnectionAsync().ConfigureAwait(false))
             {
-                return await connection
+                return (await connection
                     .ExecuteScalarAsync<T>(new CommandDefinition(sql, parameters))
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(false))!;
             }
         }
     }

@@ -39,7 +39,7 @@ namespace VideoGameManager.Presenters
 
         // Filling the picker touches no database, only the service's in-memory list of
         // registered strategies, so this stays synchronous and needs no try/catch of its own.
-        private void OnLoaded(object sender, EventArgs e)
+        private void OnLoaded(object? sender, EventArgs e)
         {
             _view.Strategies = _recommendations.AvailableStrategies;
         }
@@ -47,7 +47,7 @@ namespace VideoGameManager.Presenters
         // A failed pick renders inline where the pick is normally shown, rather than as a
         // dialog: the button can be clicked repeatedly while the database is unreachable,
         // and a dialog on every click would repeat with it.
-        private async void OnRecommendationRequested(object sender, EventArgs e)
+        private async void OnRecommendationRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace VideoGameManager.Presenters
             _view.IsBusy = true;
             try
             {
-                Game game = await _recommendations.RecommendAsync(_view.SelectedStrategy, ct).ConfigureAwait(true);
+                Game? game = await _recommendations.RecommendAsync(_view.SelectedStrategy, ct).ConfigureAwait(true);
 
                 if (game is null)
                 {

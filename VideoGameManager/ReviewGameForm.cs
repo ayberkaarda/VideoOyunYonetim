@@ -18,8 +18,8 @@ namespace VideoGameManager
 
         private readonly ErrorProvider _errors;
 
-        private readonly Presenters.ReviewGamePresenter _presenter;
-        private readonly ILogger<ReviewGameForm> _logger;
+        private readonly Presenters.ReviewGamePresenter? _presenter;
+        private readonly ILogger<ReviewGameForm>? _logger;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public ReviewGameForm()
@@ -41,9 +41,9 @@ namespace VideoGameManager
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public event EventHandler Loaded;
+        public event EventHandler? Loaded;
 
-        public event EventHandler SaveRequested;
+        public event EventHandler? SaveRequested;
 
         public int? SelectedGameId => cmbGames.SelectedItem is GameListItem item ? item.Id : (int?)null;
 
@@ -83,7 +83,7 @@ namespace VideoGameManager
 
         public void ShowFieldError(string field, string message)
         {
-            Control target = ControlFor(field);
+            Control? target = ControlFor(field);
             if (target is null)
             {
                 _logger?.LogWarning(
@@ -103,7 +103,7 @@ namespace VideoGameManager
         /// through to the general error display rather than being pinned to an unrelated
         /// control.
         /// </summary>
-        private Control ControlFor(string field)
+        private Control? ControlFor(string field)
         {
             if (field == nameof(Review.Body)) return frameComment;
             if (field == nameof(Review.GameId)) return frameGames;

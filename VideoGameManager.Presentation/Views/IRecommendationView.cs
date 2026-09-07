@@ -15,19 +15,19 @@ namespace VideoGameManager.Views
         IReadOnlyList<string> Strategies { set; }
 
         /// <summary>The identifier of the strategy currently picked, never the display text.</summary>
-        string SelectedStrategy { get; }
+        string? SelectedStrategy { get; }
 
         /// <summary>Raised once the screen has finished loading, so the presenter can fill the picker.</summary>
-        event EventHandler Loaded;
+        event EventHandler? Loaded;
 
         /// <summary>
         /// The user asked for a pick using the currently selected strategy. Raised once per
         /// press, so asking again with the same strategy may well return a different game.
         /// </summary>
-        event EventHandler RecommendationRequested;
+        event EventHandler? RecommendationRequested;
 
         /// <summary>Renders the pick, or clears the panel when passed <c>null</c>.</summary>
-        void ShowGame(Game game);
+        void ShowGame(Game? game);
 
         /// <summary>
         /// Replaces the pick panel with a readable status message, for example when no

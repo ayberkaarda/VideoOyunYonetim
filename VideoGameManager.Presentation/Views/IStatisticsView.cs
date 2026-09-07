@@ -7,10 +7,10 @@ namespace VideoGameManager.Views
     public interface IStatisticsView : IView
     {
         /// <summary>Raised once the screen is on screen and ready to be filled.</summary>
-        event EventHandler Loaded;
+        event EventHandler? Loaded;
 
         /// <summary>Raised when the user asks for the figures to be read again.</summary>
-        event EventHandler RefreshRequested;
+        event EventHandler? RefreshRequested;
 
         /// <summary>Renders the headline figures and the per-genre breakdown.</summary>
         /// <param name="statistics">One reading of the whole catalogue.</param>

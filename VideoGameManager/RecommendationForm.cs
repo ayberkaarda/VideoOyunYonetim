@@ -15,8 +15,8 @@ namespace VideoGameManager
     /// </summary>
     public partial class RecommendationForm : VideoGameManager.UI.Controls.ChromelessForm, IRecommendationView
     {
-        private readonly Presenters.RecommendationPresenter _presenter;
-        private readonly ILogger<RecommendationForm> _logger;
+        private readonly Presenters.RecommendationPresenter? _presenter;
+        private readonly ILogger<RecommendationForm>? _logger;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public RecommendationForm()
@@ -37,9 +37,9 @@ namespace VideoGameManager
             picCover.LoadCompleted += PicCover_LoadCompleted;
         }
 
-        public event EventHandler Loaded;
+        public event EventHandler? Loaded;
 
-        public event EventHandler RecommendationRequested;
+        public event EventHandler? RecommendationRequested;
 
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -64,7 +64,7 @@ namespace VideoGameManager
             }
         }
 
-        public string SelectedStrategy => cmbStrategy.SelectedItem is StrategyItem item ? item.Identifier : null;
+        public string? SelectedStrategy => cmbStrategy.SelectedItem is StrategyItem item ? item.Identifier : null;
 
         bool Views.IView.IsBusy
         {
@@ -75,7 +75,7 @@ namespace VideoGameManager
             }
         }
 
-        public void ShowGame(Game game)
+        public void ShowGame(Game? game)
         {
             lblStatus.Visible = false;
             layoutDetails.Visible = true;
@@ -129,7 +129,7 @@ namespace VideoGameManager
         /// the download itself, or here for one that happens before the download starts
         /// (for example, an address that is not a valid URI).
         /// </summary>
-        private void LoadCover(string coverUrl)
+        private void LoadCover(string? coverUrl)
         {
             picCover.Image = null;
 
@@ -144,7 +144,7 @@ namespace VideoGameManager
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Starting the cover art download failed on {Screen}", nameof(RecommendationForm));
+                _logger?.LogWarning(ex, "Starting the cover art download failed on {Screen}", nameof(RecommendationForm));
                 picCover.Image = null;
             }
         }
@@ -154,7 +154,7 @@ namespace VideoGameManager
         /// only sees a failure that happens before the download starts; a network or decoding
         /// failure during the download surfaces here instead.
         /// </summary>
-        private void PicCover_LoadCompleted(object sender, AsyncCompletedEventArgs e)
+        private void PicCover_LoadCompleted(object? sender, AsyncCompletedEventArgs e)
         {
             if (e.Cancelled)
             {
@@ -163,17 +163,17 @@ namespace VideoGameManager
 
             if (e.Error != null)
             {
-                _logger.LogWarning(e.Error, "Downloading cover art failed on {Screen}", nameof(RecommendationForm));
+                _logger?.LogWarning(e.Error, "Downloading cover art failed on {Screen}", nameof(RecommendationForm));
                 picCover.Image = null;
             }
         }
 
-        private void btnRecommend_Click(object sender, EventArgs e)
+        private void btnRecommend_Click(object? sender, EventArgs e)
         {
             RecommendationRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void RecommendationForm_Load(object sender, EventArgs e)
+        private void RecommendationForm_Load(object? sender, EventArgs e)
         {
             picCover.SizeMode = PictureBoxSizeMode.Zoom;
             Loaded?.Invoke(this, EventArgs.Empty);

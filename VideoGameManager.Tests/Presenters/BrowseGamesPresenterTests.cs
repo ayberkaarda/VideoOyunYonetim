@@ -50,7 +50,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                null, _games, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
+                null!, _games, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -59,7 +59,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullGameService_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, null, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
+                _view, null!, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -68,7 +68,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullExporters_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, _games, null, NullLogger<BrowseGamesPresenter>.Instance);
+                _view, _games, null!, NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("exporters");
         }
@@ -77,7 +77,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, _games, new List<IGameExporter> { _csvExporter }, null);
+                _view, _games, new List<IGameExporter> { _csvExporter }, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -168,7 +168,7 @@ namespace VideoGameManager.Tests.Presenters
         {
             Game selected = SampleGame(5);
             _view.SelectedGameId.Returns(5);
-            _games.GetAsync(5, Arg.Any<CancellationToken>()).Returns(Task.FromResult(selected));
+            _games.GetAsync(5, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(selected));
 
             RaiseSelectionChanged();
 
@@ -182,7 +182,7 @@ namespace VideoGameManager.Tests.Presenters
 
             RaiseSelectionChanged();
 
-            _view.Received().ShowDetails(null);
+            _view.Received().ShowDetails(null!);
         }
 
         [Fact]

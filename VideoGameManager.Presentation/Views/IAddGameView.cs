@@ -15,7 +15,7 @@ namespace VideoGameManager.Views
         string GameName { get; }
 
         /// <summary>Selected genre, or <c>null</c> while the placeholder is selected.</summary>
-        string Genre { get; }
+        string? Genre { get; }
 
         /// <summary>
         /// Selected platforms. The catalogue can hold more than one platform per game, but
@@ -25,13 +25,13 @@ namespace VideoGameManager.Views
         IReadOnlyList<string> Platforms { get; }
 
         /// <summary>Selected score as typed text, or <c>null</c> while the placeholder is selected.</summary>
-        string ScoreText { get; }
+        string? ScoreText { get; }
 
         /// <summary>
         /// Cover image address as typed. Optional, so an empty value is valid; when one is
         /// given the domain validator decides whether the address is usable.
         /// </summary>
-        string CoverUrl { get; }
+        string? CoverUrl { get; }
 
         /// <summary>How far the owner has got with the game. Always one of the defined values.</summary>
         PlayStatus Status { get; }
@@ -44,13 +44,13 @@ namespace VideoGameManager.Views
         /// own: the presenter reads the fields, has the domain validate them, and either
         /// writes the game or reports the failed fields back.
         /// </summary>
-        event EventHandler SaveRequested;
+        event EventHandler? SaveRequested;
 
         /// <summary>
         /// Raised when the caller asks this screen to load an existing game for editing.
         /// The presenter reads the identity from the event argument and fetches the game.
         /// </summary>
-        event EventHandler<GameEditRequestedEventArgs> EditRequested;
+        event EventHandler<GameEditRequestedEventArgs>? EditRequested;
 
         /// <summary>Empties the fields and returns the combo boxes to their placeholders.</summary>
         void ResetInput();

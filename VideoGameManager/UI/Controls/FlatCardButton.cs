@@ -163,7 +163,7 @@ namespace VideoGameManager.UI.Controls
         /// <inheritdoc/>
         protected override void OnMouseDown(MouseEventArgs mevent)
         {
-            if (mevent != null && mevent.Button == MouseButtons.Left)
+            if (mevent.Button == MouseButtons.Left)
             {
                 _pressed = true;
                 Invalidate();

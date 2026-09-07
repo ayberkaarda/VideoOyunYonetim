@@ -19,14 +19,14 @@ namespace VideoGameManager.Views
         /// The screen is on screen and needs its picker filled. Raised before the user can
         /// interact with it, so the picker is never empty by the time it is reachable.
         /// </summary>
-        event EventHandler Loaded;
+        event EventHandler? Loaded;
 
         /// <summary>
         /// The user asked to save the review. The presenter reads the chosen game and the
         /// text, has the domain validate them, and reports the failed fields back when it
         /// refuses.
         /// </summary>
-        event EventHandler SaveRequested;
+        event EventHandler? SaveRequested;
 
         /// <summary>
         /// Fills the picker. Ids travel with the items, so a review is written against the

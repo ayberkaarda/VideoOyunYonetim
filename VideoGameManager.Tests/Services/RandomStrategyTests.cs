@@ -23,7 +23,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new RandomStrategy(null);
+            Action act = () => new RandomStrategy(null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -103,7 +103,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Still Unrated", Score = null });
             RandomStrategy strategy = new RandomStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().NotBeNull();
             recommendation.Name.Should().Be("Still Unrated");
@@ -114,7 +114,7 @@ namespace VideoGameManager.Tests.Services
         {
             CancellationToken ct = new CancellationTokenSource().Token;
             RandomStrategy strategy = new RandomStrategy(_games);
-            _games.GetRandomAsync(Arg.Any<GameFilter>(), ct).Returns(Task.FromResult<Game>(null));
+            _games.GetRandomAsync(Arg.Any<GameFilter>(), ct).Returns(Task.FromResult<Game?>(null));
 
             await strategy.PickAsync(ct);
 
@@ -130,7 +130,7 @@ namespace VideoGameManager.Tests.Services
                 new Game { Name = "Unrated", Score = null });
             RandomStrategy strategy = new RandomStrategy(_games, 8.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().BeNull();
         }
@@ -148,7 +148,7 @@ namespace VideoGameManager.Tests.Services
             // even if the threshold were being ignored.
             for (int attempt = 0; attempt < 20; attempt++)
             {
-                Game recommendation = await strategy.PickAsync();
+                Game? recommendation = await strategy.PickAsync();
 
                 recommendation.Should().NotBeNull();
                 recommendation.Score.Should().BeGreaterThanOrEqualTo(8.0);
@@ -161,7 +161,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Right On The Line", Score = 8.0 });
             RandomStrategy strategy = new RandomStrategy(_games, 8.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().NotBeNull();
             recommendation.Name.Should().Be("Right On The Line");
@@ -173,7 +173,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue();
             RandomStrategy strategy = new RandomStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().BeNull();
         }

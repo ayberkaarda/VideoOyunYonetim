@@ -24,7 +24,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Validate_NullGame_Throws()
         {
-            Action act = () => GameValidator.Validate(null);
+            Action act = () => GameValidator.Validate(null!);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -44,10 +44,10 @@ namespace VideoGameManager.Tests.Domain
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Validate_NameMissing_ReportsRequiredError(string name)
+        public void Validate_NameMissing_ReportsRequiredError(string? name)
         {
             Game game = CreateValidGame();
-            game.Name = name;
+            game.Name = name!;
 
             ValidationResult result = GameValidator.Validate(game);
 
@@ -85,7 +85,7 @@ namespace VideoGameManager.Tests.Domain
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Validate_GenreMissing_ReportsRequiredError(string genre)
+        public void Validate_GenreMissing_ReportsRequiredError(string? genre)
         {
             Game game = CreateValidGame();
             game.Genre = genre;
@@ -126,7 +126,7 @@ namespace VideoGameManager.Tests.Domain
         public void Validate_NullPlatforms_ReportsAtLeastOneRequired()
         {
             Game game = CreateValidGame();
-            game.Platforms = null;
+            game.Platforms = null!;
 
             ValidationResult result = GameValidator.Validate(game);
 
@@ -282,7 +282,7 @@ namespace VideoGameManager.Tests.Domain
         [InlineData("   ")]
         [InlineData("https://example.com/cover.jpg")]
         [InlineData("http://example.com/cover.jpg")]
-        public void Validate_AcceptableCoverUrl_IsAccepted(string coverUrl)
+        public void Validate_AcceptableCoverUrl_IsAccepted(string? coverUrl)
         {
             Game game = CreateValidGame();
             game.CoverUrl = coverUrl;
@@ -320,7 +320,7 @@ namespace VideoGameManager.Tests.Domain
         [InlineData("ftp://example.com/cover.jpg", false)]
         [InlineData("file:///C:/covers/cover.jpg", false)]
         [InlineData("not a url", false)]
-        public void IsAcceptableCoverUrl_ReturnsExpectedResult(string coverUrl, bool expected)
+        public void IsAcceptableCoverUrl_ReturnsExpectedResult(string? coverUrl, bool expected)
         {
             GameValidator.IsAcceptableCoverUrl(coverUrl).Should().Be(expected);
         }
@@ -332,7 +332,7 @@ namespace VideoGameManager.Tests.Domain
             {
                 Name = string.Empty,
                 Genre = string.Empty,
-                Platforms = null,
+                Platforms = null!,
                 Score = 99,
                 CoverUrl = "not a url",
             };

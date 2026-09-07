@@ -5,14 +5,6 @@
     <RootNamespace>VideoGameManager.Domain</RootNamespace>
     <AssemblyName>VideoGameManager.Domain</AssemblyName>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- The nullable reference context is switched on one project at a time, in the
-         direction the dependencies run, so that each layer is annotated against a
-         vocabulary that is already settled rather than against a guess. This is the
-         first layer: nothing below it exists. The shared build settings turn the
-         context off for the solution, and this line overrides that for this project
-         only; the projects that have not been converted yet still carry the shared
-         setting and compile without nullable diagnostics. -->
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <!-- This project deliberately has no PackageReference and no ProjectReference.

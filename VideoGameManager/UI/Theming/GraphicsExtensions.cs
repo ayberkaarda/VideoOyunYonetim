@@ -25,7 +25,7 @@ namespace VideoGameManager.UI.Theming
         /// <returns>The nearest opaque ancestor colour, or the theme surface.</returns>
         public static Color ResolveBackColor(this Control control)
         {
-            Control current = control != null ? control.Parent : null;
+            Control? current = control != null ? control.Parent : null;
 
             while (current != null)
             {

@@ -336,10 +336,9 @@ in numbered phases:
 | 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ✅ done |
 
 Known limitations are listed in [`CHANGELOG.md`](CHANGELOG.md) rather than hidden. The
-nullable reference context is on for Domain, Data and Services and still off for the
-presentation, desktop and test projects — it is being turned on one layer at a time, in the
-order the dependencies run ([ADR 0007](docs/adr/0007-defer-the-nullable-reference-context.md)).
-The application is DPI-unaware by design, matching the layout the forms were drawn against.
+application is DPI-unaware by design, matching the layout the forms were drawn against, and
+three of the fifteen sample cover links have gone dead upstream — the app shows a
+placeholder and logs the failure rather than pretending otherwise.
 
 ## Development
 

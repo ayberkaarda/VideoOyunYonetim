@@ -33,7 +33,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
-            Action act = () => new AddGamePresenter(null, _games, NullLogger<AddGamePresenter>.Instance);
+            Action act = () => new AddGamePresenter(null!, _games, NullLogger<AddGamePresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -41,7 +41,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullGameService_ThrowsArgumentNullException()
         {
-            Action act = () => new AddGamePresenter(_view, null, NullLogger<AddGamePresenter>.Instance);
+            Action act = () => new AddGamePresenter(_view, null!, NullLogger<AddGamePresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -49,7 +49,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new AddGamePresenter(_view, _games, null);
+            Action act = () => new AddGamePresenter(_view, _games, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -57,7 +57,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Save_ScorePlaceholderSelected_SendsNullScoreToTheService()
         {
-            _view.ScoreText.Returns((string)null);
+            _view.ScoreText.Returns((string)null!);
             _games.AddAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(Result<int>.Success(1)));
 
@@ -74,7 +74,7 @@ namespace VideoGameManager.Tests.Presenters
             RaiseSave();
 
             _view.Received(1).ShowFieldError(nameof(Game.Score), Arg.Any<string>());
-            _games.DidNotReceiveWithAnyArgs().AddAsync(default, default);
+            _games.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
         }
 
         [Fact]
@@ -130,7 +130,7 @@ namespace VideoGameManager.Tests.Presenters
         public void EditRequested_GameFound_ShowsGameAndSwitchesToEditingMode()
         {
             Game game = SampleGame(5);
-            _games.GetAsync(5, Arg.Any<CancellationToken>()).Returns(Task.FromResult(game));
+            _games.GetAsync(5, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(game));
 
             RaiseEdit(5);
 
@@ -141,7 +141,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void EditRequested_GameNoLongerExists_ShowsLoadFailedMessage()
         {
-            _games.GetAsync(9, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game>(null));
+            _games.GetAsync(9, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(null));
 
             RaiseEdit(9);
 
@@ -162,7 +162,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Save_AfterSuccessfulEdit_UpdatesAndClosesTheDialog()
         {
             Game loaded = SampleGame(12);
-            _games.GetAsync(12, Arg.Any<CancellationToken>()).Returns(Task.FromResult(loaded));
+            _games.GetAsync(12, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(loaded));
             RaiseEdit(12);
 
             _games.UpdateAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>())
@@ -179,7 +179,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Save_UpdateRejectedByValidation_ShowsFieldErrorsAndDoesNotClose()
         {
             Game loaded = SampleGame(12);
-            _games.GetAsync(12, Arg.Any<CancellationToken>()).Returns(Task.FromResult(loaded));
+            _games.GetAsync(12, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(loaded));
             RaiseEdit(12);
 
             _games.UpdateAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>())
@@ -201,7 +201,7 @@ namespace VideoGameManager.Tests.Presenters
             _view.Genre.Returns("Metroidvania");
             _view.Platforms.Returns(new List<string> { "PC" });
             _view.ScoreText.Returns("9.4");
-            _view.CoverUrl.Returns((string)null);
+            _view.CoverUrl.Returns((string)null!);
             _view.Status.Returns(PlayStatus.Backlog);
             _view.IsFavourite.Returns(false);
         }

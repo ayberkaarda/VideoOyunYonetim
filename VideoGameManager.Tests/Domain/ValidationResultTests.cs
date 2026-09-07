@@ -11,7 +11,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Constructor_NullErrors_Throws()
         {
-            Action act = () => new ValidationResult(null);
+            Action act = () => new ValidationResult(null!);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -51,7 +51,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Failed_NullErrors_Throws()
         {
-            Action act = () => ValidationResult.Failed(null);
+            Action act = () => ValidationResult.Failed(null!);
 
             act.Should().Throw<ArgumentNullException>();
         }

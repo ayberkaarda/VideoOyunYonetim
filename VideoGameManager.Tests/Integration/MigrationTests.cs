@@ -186,7 +186,7 @@ VALUES (@Name, @Genre, @Platform, @Score, @Comment);";
             MigrationOutcome outcome = DatabaseMigrator.ForConnectionString(connectionString).CreateAndApply();
             outcome.Succeeded.Should().BeTrue(SqlServerFixture.Describe("The run failed.", outcome));
 
-            string collation;
+            string? collation;
 
             using (DbConnection connection = await OpenAsync(connectionString))
             {
@@ -291,7 +291,7 @@ ORDER BY c.name;";
 
             using (DbConnection connection = await OpenAsync(connectionString))
             {
-                CheckShape check = await connection.QuerySingleOrDefaultAsync<CheckShape>(new CommandDefinition(
+                CheckShape? check = await connection.QuerySingleOrDefaultAsync<CheckShape>(new CommandDefinition(
                     CheckShapeSql, new { Table = "dbo.Game", Name = "CK_Game_Status" }));
 
                 check.Should().NotBeNull("the play state is only a number until something limits it");
@@ -352,9 +352,9 @@ ORDER BY c.name;";
 
                 await connection.ExecuteAsync(new CommandDefinition(InsertFlatGameSql, new[]
                 {
-                    new { Name = "FIFA 24", Genre = "Sports", Platform = "PS5", Score = (double?)7.4, Comment = "Much like the last one." },
-                    new { Name = "Hades", Genre = "Roguelike", Platform = "PC", Score = (double?)9.6, Comment = (string)null },
-                    new { Name = "Unrated Thing", Genre = (string)null, Platform = (string)null, Score = (double?)null, Comment = (string)null },
+                    new { Name = "FIFA 24", Genre = (string?)"Sports", Platform = (string?)"PS5", Score = (double?)7.4, Comment = (string?)"Much like the last one." },
+                    new { Name = "Hades", Genre = (string?)"Roguelike", Platform = (string?)"PC", Score = (double?)9.6, Comment = (string?)null },
+                    new { Name = "Unrated Thing", Genre = (string?)null, Platform = (string?)null, Score = (double?)null, Comment = (string?)null },
                 }));
             }
 
@@ -425,13 +425,15 @@ ORDER BY c.name;";
         /// </summary>
         private sealed class ColumnShape
         {
-            public string ColumnName { get; set; }
+            public string ColumnName { get; set; } = string.Empty;
 
-            public string TypeName { get; set; }
+            public string TypeName { get; set; } = string.Empty;
 
             public bool IsNullable { get; set; }
 
-            public string DefaultDefinition { get; set; }
+            // A column only has a default constraint if one was declared for it, so the join that
+            // reads this one is an outer join and the server really can answer with nothing here.
+            public string? DefaultDefinition { get; set; }
         }
 
         /// <summary>
@@ -439,7 +441,7 @@ ORDER BY c.name;";
         /// </summary>
         private sealed class CheckShape
         {
-            public string Definition { get; set; }
+            public string Definition { get; set; } = string.Empty;
 
             public bool IsNotTrusted { get; set; }
         }

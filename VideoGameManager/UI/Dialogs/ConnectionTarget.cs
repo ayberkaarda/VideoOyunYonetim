@@ -62,7 +62,7 @@ namespace VideoGameManager.UI.Dialogs
         /// </summary>
         /// <param name="connectionString">The connection string, which may be null or malformed.</param>
         /// <returns>The target; unknown parts read as a placeholder rather than throwing.</returns>
-        public static ConnectionTarget FromConnectionString(string connectionString)
+        public static ConnectionTarget FromConnectionString(string? connectionString)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -89,13 +89,13 @@ namespace VideoGameManager.UI.Dialogs
         {
             for (int i = 0; i < keys.Length; i++)
             {
-                object value;
+                object? value;
                 if (!builder.TryGetValue(keys[i], out value) || value == null)
                 {
                     continue;
                 }
 
-                string text = value.ToString().Trim();
+                string text = (value.ToString() ?? string.Empty).Trim();
                 if (text.Length > 0)
                 {
                     return text;

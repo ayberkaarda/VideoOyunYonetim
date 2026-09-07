@@ -31,7 +31,7 @@ namespace VideoGameManager.Tests.Services
         {
             using StringWriter writer = new StringWriter();
 
-            Func<Task> act = () => _exporter.WriteAsync(null, writer);
+            Func<Task> act = () => _exporter.WriteAsync(null!, writer);
 
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("games");
         }
@@ -39,7 +39,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public async Task WriteAsync_NullWriter_ThrowsArgumentNullException()
         {
-            Func<Task> act = () => _exporter.WriteAsync(new Game[0], null);
+            Func<Task> act = () => _exporter.WriteAsync(new Game[0], null!);
 
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("writer");
         }

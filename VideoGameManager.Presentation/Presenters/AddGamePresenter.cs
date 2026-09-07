@@ -51,7 +51,7 @@ namespace VideoGameManager.Presenters
 
         // async void is confined to the event handler, and it cannot let an exception
         // escape onto the UI message loop.
-        private async void OnEditRequested(object sender, GameEditRequestedEventArgs e)
+        private async void OnEditRequested(object? sender, GameEditRequestedEventArgs e)
         {
             int gameId = e.GameId;
 
@@ -77,7 +77,7 @@ namespace VideoGameManager.Presenters
             _view.IsBusy = true;
             try
             {
-                Game game = await _games.GetAsync(gameId, ct).ConfigureAwait(true);
+                Game? game = await _games.GetAsync(gameId, ct).ConfigureAwait(true);
 
                 if (game == null)
                 {
@@ -98,7 +98,7 @@ namespace VideoGameManager.Presenters
 
         // async void is confined to the event handler, and it cannot let an exception
         // escape onto the UI message loop.
-        private async void OnSaveRequested(object sender, EventArgs e)
+        private async void OnSaveRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace VideoGameManager.Presenters
             Game game = new Game
             {
                 Id = _editingId ?? 0,
-                Name = _view.GameName?.Trim(),
+                Name = _view.GameName?.Trim() ?? string.Empty,
                 Genre = _view.Genre,
                 Platforms = _view.Platforms,
                 Score = score,
@@ -188,7 +188,7 @@ namespace VideoGameManager.Presenters
         private bool TryReadScore(out double? score)
         {
             score = null;
-            string text = _view.ScoreText;
+            string? text = _view.ScoreText;
 
             if (string.IsNullOrWhiteSpace(text))
             {

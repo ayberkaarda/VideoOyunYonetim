@@ -30,7 +30,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new ReviewService(null, NullLogger<ReviewService>.Instance);
+            Action act = () => new ReviewService(null!, NullLogger<ReviewService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("reviews");
         }
@@ -38,7 +38,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new ReviewService(_reviews, null);
+            Action act = () => new ReviewService(_reviews, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -131,13 +131,13 @@ namespace VideoGameManager.Tests.Services
         [InlineData("")]
         [InlineData("   ")]
         [InlineData("\t\r\n")]
-        public async Task AddAsync_BodyThatIsOnlySpace_IsRejectedWithoutReachingTheRepository(string body)
+        public async Task AddAsync_BodyThatIsOnlySpace_IsRejectedWithoutReachingTheRepository(string? body)
         {
-            Result result = await _service.AddAsync(GameId, 8.5, body);
+            Result result = await _service.AddAsync(GameId, 8.5, body!);
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Review.Body));
-            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Theory]
@@ -149,7 +149,7 @@ namespace VideoGameManager.Tests.Services
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Review.GameId));
-            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Theory]
@@ -161,7 +161,7 @@ namespace VideoGameManager.Tests.Services
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Review.Score));
-            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _reviews.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Fact]
@@ -215,7 +215,7 @@ namespace VideoGameManager.Tests.Services
         /// </summary>
         private async Task<Review> CaptureAdd(int gameId, double? score, string body)
         {
-            Review stored = null;
+            Review? stored = null;
 
             _reviews.AddAsync(Arg.Any<Review>(), Arg.Any<CancellationToken>()).Returns(call =>
             {
@@ -228,7 +228,7 @@ namespace VideoGameManager.Tests.Services
             result.IsSuccess.Should().BeTrue("the review under test is meant to pass validation");
             stored.Should().NotBeNull();
 
-            return stored;
+            return stored!;
         }
     }
 }

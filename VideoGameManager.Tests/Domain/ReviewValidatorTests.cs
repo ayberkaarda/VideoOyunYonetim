@@ -21,7 +21,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Validate_NullReview_Throws()
         {
-            Action act = () => ReviewValidator.Validate(null);
+            Action act = () => ReviewValidator.Validate(null!);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -60,10 +60,10 @@ namespace VideoGameManager.Tests.Domain
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Validate_BlankBody_IsRejected(string body)
+        public void Validate_BlankBody_IsRejected(string? body)
         {
             Review review = CreateValidReview();
-            review.Body = body;
+            review.Body = body!;
 
             ValidationResult result = ReviewValidator.Validate(review);
 
