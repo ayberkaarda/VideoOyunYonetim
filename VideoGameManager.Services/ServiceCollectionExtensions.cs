@@ -37,6 +37,12 @@ namespace VideoGameManager.Services
             services.AddScoped<IGameExporter, CsvGameExporter>();
             services.AddScoped<IGameExporter, JsonGameExporter>();
 
+            // The reading half of the same idea, registered as its own set. There are fewer
+            // importers than exporters because reading a format back costs more than writing
+            // it: comma-separated text has no agreed way of saying "no score" or of carrying a
+            // list inside one field, so only JSON is offered here for now.
+            services.AddScoped<IGameImporter, JsonGameImporter>();
+
             // Registered as IEnumerable<IRecommendationStrategy>, so a further strategy costs
             // one line here and no other change. Order is meaningful: the recommendation
             // service treats the first entry as the default when no name is given, and the

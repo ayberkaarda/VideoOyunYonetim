@@ -54,6 +54,37 @@ namespace VideoGameManager.Tests.Services
         }
 
         [Fact]
+        public void AddVideoGameManager_RegistersTheJsonImporterAsASet()
+        {
+            using (ServiceProvider provider = BuildProvider())
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                IEnumerable<IGameImporter> importers =
+                    scope.ServiceProvider.GetServices<IGameImporter>();
+
+                importers.Select(importer => importer.Format)
+                    .Should().BeEquivalentTo(new[] { "JSON" });
+            }
+        }
+
+        [Fact]
+        public void AddVideoGameManager_EveryImportFormatCanAlsoBeExported()
+        {
+            // A file offered for import has to be one this application could have written,
+            // otherwise the round trip the screen implies does not exist.
+            using (ServiceProvider provider = BuildProvider())
+            using (IServiceScope scope = provider.CreateScope())
+            {
+                IEnumerable<string> exported = scope.ServiceProvider
+                    .GetServices<IGameExporter>().Select(exporter => exporter.Format);
+                IEnumerable<string> imported = scope.ServiceProvider
+                    .GetServices<IGameImporter>().Select(importer => importer.Format);
+
+                imported.Should().BeSubsetOf(exported);
+            }
+        }
+
+        [Fact]
         public void AddVideoGameManager_RegistersTheRecommendationStrategiesAsASet()
         {
             using (ServiceProvider provider = BuildProvider())

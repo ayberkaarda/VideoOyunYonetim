@@ -114,6 +114,153 @@ namespace VideoGameManager.Tests.Desktop.UI
         }
 
         // ------------------------------------------------------------------
+        // Stored format
+        // ------------------------------------------------------------------
+
+        [Fact]
+        public async Task Artwork_with_nothing_to_see_through_is_stored_lossily()
+        {
+            const string reference = "https://example.invalid/opaque.png";
+            byte[] original = OpaqueDetailedPng(1200, 1600);
+
+            using (CachedCoverImageProvider provider = ProviderReturning(original))
+            {
+                (await provider.GetCoverAsync(reference, CancellationToken.None)).Should().NotBeNull();
+            }
+
+            byte[] stored = File.ReadAllBytes(CachePathFor(reference));
+
+            StoredFormatOf(stored).Should().Be(ImageFormat.Jpeg,
+                "a cover with no transparency has nothing to gain from a lossless format");
+
+            // The point of the exercise: a lossless copy of the very same scaled picture
+            // is the thing this is meant to be smaller than. Comparing against the
+            // download would prove nothing, because the download is a different size.
+            stored.Length.Should().BeLessThan(LosslessSizeOf(stored) / 2,
+                "photographic cover art is what this format exists for");
+        }
+
+        [Fact]
+        public async Task Artwork_that_is_see_through_is_stored_losslessly_and_stays_see_through()
+        {
+            const string reference = "https://example.invalid/transparent.png";
+            byte[] original = PngWithTransparentCorner(1200, 1600);
+
+            using (CachedCoverImageProvider provider = ProviderReturning(original))
+            {
+                Image? cover = await provider.GetCoverAsync(reference, CancellationToken.None);
+
+                cover.Should().NotBeNull();
+
+                // Flattening this onto a solid background is the failure being guarded
+                // against: it is invisible to a build and to every size assertion, and it
+                // shows up on screen as a black or white block where the artwork was cut out.
+                using (Bitmap drawn = new Bitmap(cover!))
+                {
+                    drawn.GetPixel(2, 2).A.Should().Be(0, "the transparent corner survived the round trip");
+                }
+            }
+
+            byte[] stored = File.ReadAllBytes(CachePathFor(reference));
+
+            StoredFormatOf(stored).Should().Be(ImageFormat.Png,
+                "the lossy format cannot record transparency at all");
+        }
+
+        // ------------------------------------------------------------------
+        // Entries the current build cannot read
+        // ------------------------------------------------------------------
+
+        [Fact]
+        public async Task Cache_files_left_by_the_previous_naming_scheme_are_cleared_out()
+        {
+            Directory.CreateDirectory(_cacheDirectory);
+
+            string firstOrphan = Path.Combine(_cacheDirectory, "0f9a2b.img");
+            string secondOrphan = Path.Combine(_cacheDirectory, "c41d77.IMG");
+
+            File.WriteAllBytes(firstOrphan, new byte[] { 1, 2, 3 });
+            File.WriteAllBytes(secondOrphan, new byte[] { 4, 5, 6 });
+
+            using (CachedCoverImageProvider provider = ProviderReturning(PngOfSize(64, 96)))
+            {
+                (await provider.GetCoverAsync("https://example.invalid/any.png", CancellationToken.None))
+                    .Should().NotBeNull();
+            }
+
+            File.Exists(firstOrphan).Should().BeFalse();
+            File.Exists(secondOrphan).Should().BeFalse("the extension is matched without regard to case");
+        }
+
+        [Fact]
+        public async Task Clearing_out_stale_entries_touches_nothing_else()
+        {
+            Directory.CreateDirectory(_cacheDirectory);
+
+            string nested = Path.Combine(_cacheDirectory, "nested");
+            Directory.CreateDirectory(nested);
+
+            string[] keep =
+            {
+                Path.Combine(_cacheDirectory, "3ab19c.cover"),
+                Path.Combine(_cacheDirectory, "3ab19c.imgx"),
+                Path.Combine(_cacheDirectory, "3ab19c.image"),
+                Path.Combine(_cacheDirectory, "img"),
+                Path.Combine(_cacheDirectory, "notes.txt"),
+                Path.Combine(nested, "deep.img"),
+            };
+
+            foreach (string path in keep)
+            {
+                File.WriteAllBytes(path, new byte[] { 7 });
+            }
+
+            using (CachedCoverImageProvider provider = ProviderReturning(PngOfSize(64, 96)))
+            {
+                (await provider.GetCoverAsync("https://example.invalid/any.png", CancellationToken.None))
+                    .Should().NotBeNull();
+            }
+
+            foreach (string path in keep)
+            {
+                File.Exists(path).Should().BeTrue(
+                    "only files in this folder whose extension is exactly the stale one may be removed, and " +
+                    path + " is not one of them");
+            }
+        }
+
+        [Fact]
+        public async Task A_cover_written_by_this_build_is_still_there_after_the_sweep()
+        {
+            const string reference = "https://example.invalid/kept.png";
+            byte[] original = OpaqueDetailedPng(1200, 1600);
+
+            // Written by one provider, so the sweep the next one runs meets a real entry
+            // rather than a file the test invented.
+            using (CachedCoverImageProvider first = ProviderReturning(original))
+            {
+                (await first.GetCoverAsync(reference, CancellationToken.None)).Should().NotBeNull();
+            }
+
+            string path = CachePathFor(reference);
+            File.Exists(path).Should().BeTrue();
+
+            int downloads = 0;
+
+            using (CachedCoverImageProvider second = ProviderUsing((r, t) =>
+            {
+                downloads++;
+                return Task.FromResult<byte[]?>(original);
+            }))
+            {
+                (await second.GetCoverAsync(reference, CancellationToken.None)).Should().NotBeNull();
+            }
+
+            File.Exists(path).Should().BeTrue();
+            downloads.Should().Be(0, "the entry was read from disk, so the sweep left it usable");
+        }
+
+        // ------------------------------------------------------------------
         // Cache key
         // ------------------------------------------------------------------
 
@@ -275,6 +422,84 @@ namespace VideoGameManager.Tests.Desktop.UI
                 _cacheDirectory,
                 NullLogger<CachedCoverImageProvider>.Instance,
                 download);
+        }
+
+        /// <summary>Where the provider under test keeps the entry for one address.</summary>
+        private string CachePathFor(string reference)
+        {
+            return Path.Combine(
+                _cacheDirectory,
+                CachedCoverImageProvider.DiskCacheFileName(reference, 480, 848));
+        }
+
+        /// <summary>The format a decoder sees when it opens these bytes.</summary>
+        private static ImageFormat StoredFormatOf(byte[] stored)
+        {
+            using (MemoryStream buffer = new MemoryStream(stored, writable: false))
+            using (Image image = Image.FromStream(buffer))
+            {
+                return image.RawFormat;
+            }
+        }
+
+        /// <summary>What the same picture would take if it were stored without losing anything.</summary>
+        private static int LosslessSizeOf(byte[] stored)
+        {
+            using (MemoryStream buffer = new MemoryStream(stored, writable: false))
+            using (Image image = Image.FromStream(buffer))
+            using (MemoryStream output = new MemoryStream())
+            {
+                image.Save(output, ImageFormat.Png);
+                return (int)output.Length;
+            }
+        }
+
+        /// <summary>
+        /// Builds an opaque picture with the sort of detail real cover art has. A flat fill
+        /// would compress to almost nothing either way and prove nothing about the choice.
+        /// </summary>
+        private static byte[] OpaqueDetailedPng(int width, int height)
+        {
+            using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb))
+            {
+                // Fixed seed: the sizes this feeds into are asserted on, so the picture has
+                // to be the same one on every run.
+                Random random = new Random(20240117);
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        bitmap.SetPixel(x, y, Color.FromArgb(
+                            random.Next(256), random.Next(256), random.Next(256)));
+                    }
+                }
+
+                using (MemoryStream output = new MemoryStream())
+                {
+                    bitmap.Save(output, ImageFormat.Png);
+                    return output.ToArray();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds artwork whose top-left quarter is cut out entirely, the shape that a
+        /// lossy format would silently fill in with a solid colour.
+        /// </summary>
+        private static byte[] PngWithTransparentCorner(int width, int height)
+        {
+            using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            using (MemoryStream output = new MemoryStream())
+            {
+                graphics.Clear(Color.Transparent);
+                graphics.FillRectangle(Brushes.MediumVioletRed, width / 2, 0, width / 2, height);
+                graphics.FillRectangle(Brushes.SeaGreen, 0, height / 2, width, height / 2);
+
+                bitmap.Save(output, ImageFormat.Png);
+                return output.ToArray();
+            }
         }
 
         /// <summary>Builds a PNG of the requested size, so a test can state the size it means.</summary>

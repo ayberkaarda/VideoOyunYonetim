@@ -53,6 +53,17 @@ namespace VideoGameManager.Presenters
             "The export file could not be written. Check that the folder still exists and " +
             "that the file is not open in another application.";
 
+        private const string ImportUnknownFormat =
+            "That import format is not available.";
+
+        private const string ImportFileFailed =
+            "The import file could not be read. Check that the file still exists and that it " +
+            "is not open in another application.";
+
+        private const string ImportFileNotUnderstood =
+            "That file is not in the expected format, so nothing was imported. Choose a file " +
+            "this application exported.";
+
         /// <summary>
         /// UTF-8 without a byte order mark. The mark is not part of the exported content:
         /// a strict JSON reader rejects a document that starts with one, and every tool that
@@ -61,9 +72,17 @@ namespace VideoGameManager.Presenters
         /// </summary>
         private static readonly Encoding ExportEncoding = new UTF8Encoding(false);
 
+        /// <summary>
+        /// Encoding assumed for an import file that carries no byte order mark. UTF-8, because
+        /// that is what the export writes and what any other tool producing JSON writes; a file
+        /// that does carry a mark is read in whatever encoding the mark announces instead.
+        /// </summary>
+        private static readonly Encoding ImportEncoding = new UTF8Encoding(false);
+
         private readonly IGameListView _view;
         private readonly IGameService _games;
         private readonly IReadOnlyList<IGameExporter> _exporters;
+        private readonly IReadOnlyList<IGameImporter> _importers;
         private readonly ILogger<BrowseGamesPresenter> _logger;
 
         /// <summary>One-based number of the page currently on screen.</summary>
@@ -84,12 +103,14 @@ namespace VideoGameManager.Presenters
         /// <param name="view">The screen to drive.</param>
         /// <param name="games">The catalogue.</param>
         /// <param name="exporters">Every available export format.</param>
+        /// <param name="importers">Every available import format.</param>
         /// <param name="logger">Where failures are recorded in full.</param>
         /// <exception cref="ArgumentNullException">Any argument is <c>null</c>.</exception>
         public BrowseGamesPresenter(
             IGameListView view,
             IGameService games,
             IEnumerable<IGameExporter> exporters,
+            IEnumerable<IGameImporter> importers,
             ILogger<BrowseGamesPresenter> logger)
         {
             _view = view ?? throw new ArgumentNullException(nameof(view));
@@ -101,9 +122,15 @@ namespace VideoGameManager.Presenters
                 throw new ArgumentNullException(nameof(exporters));
             }
 
+            if (importers == null)
+            {
+                throw new ArgumentNullException(nameof(importers));
+            }
+
             // Copied once: the container hands over a lazy sequence, and the list is walked
             // again on every export.
             _exporters = new List<IGameExporter>(exporters);
+            _importers = new List<IGameImporter>(importers);
 
             _view.Loaded += OnLoaded;
             _view.SelectionChanged += OnSelectionChanged;
@@ -113,6 +140,7 @@ namespace VideoGameManager.Presenters
             _view.EditRequested += OnEditRequested;
             _view.DeleteRequested += OnDeleteRequested;
             _view.ExportRequested += OnExportRequested;
+            _view.ImportRequested += OnImportRequested;
         }
 
         // ------------------------------------------------------------------
@@ -131,6 +159,7 @@ namespace VideoGameManager.Presenters
             try
             {
                 PublishExportFormats();
+                PublishImportFormats();
                 await LoadLookupsAsync(CancellationToken.None).ConfigureAwait(true);
                 await LoadPageAsync(CancellationToken.None).ConfigureAwait(true);
             }
@@ -269,6 +298,36 @@ namespace VideoGameManager.Presenters
             }
         }
 
+        private async void OnImportRequested(object? sender, ImportRequestedEventArgs e)
+        {
+            try
+            {
+                await ImportAsync(e, CancellationToken.None).ConfigureAwait(true);
+            }
+            catch (ImportFormatException ex)
+            {
+                // The file was opened and read, and turned out not to be what it claimed. The
+                // catalogue is untouched, which is what the message says.
+                _logger.LogError(ex, "The import file was not in the expected format on {Screen}", nameof(BrowseGamesPresenter));
+                _view.ShowError(ImportFileNotUnderstood);
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Reading the import file failed on {Screen}", nameof(BrowseGamesPresenter));
+                _view.ShowError(ImportFileFailed);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Reading the import file was refused on {Screen}", nameof(BrowseGamesPresenter));
+                _view.ShowError(ImportFileFailed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Importing games failed on {Screen}", nameof(BrowseGamesPresenter));
+                _view.ShowError(Messages.ForUser(ex));
+            }
+        }
+
         // ------------------------------------------------------------------
         // Work
         // ------------------------------------------------------------------
@@ -282,6 +341,17 @@ namespace VideoGameManager.Presenters
             }
 
             _view.ExportFormats = formats;
+        }
+
+        private void PublishImportFormats()
+        {
+            List<ImportFormat> formats = new List<ImportFormat>(_importers.Count);
+            foreach (IGameImporter importer in _importers)
+            {
+                formats.Add(new ImportFormat(importer.Format, importer.FileExtension));
+            }
+
+            _view.ImportFormats = formats;
         }
 
         private async Task LoadLookupsAsync(CancellationToken ct)
@@ -408,7 +478,11 @@ namespace VideoGameManager.Presenters
             _view.IsBusy = true;
             try
             {
-                IReadOnlyList<Game> rows = await ReadEveryMatchAsync(ct).ConfigureAwait(true);
+                // The filter and the sort are captured once, so that a batch read halfway
+                // through cannot pick up a filter the user changed while the file was being
+                // written.
+                IReadOnlyList<Game> rows = await ReadEveryMatchAsync(
+                    CurrentFilter(), _view.SortField, _view.SortDescending, ct).ConfigureAwait(true);
 
                 using (StreamWriter writer = new StreamWriter(request.FilePath, false, ExportEncoding))
                 {
@@ -433,7 +507,171 @@ namespace VideoGameManager.Presenters
         }
 
         /// <summary>
-        /// Reads every game the current filter selects, one batch at a time.
+        /// Reads a file with the chosen importer and stores what it holds, then reports what
+        /// happened to each entry.
+        /// </summary>
+        /// <remarks>
+        /// Importing never overwrites and never deletes. A game whose title is already in the
+        /// catalogue is left exactly as it is and counted as skipped, which is what makes
+        /// importing the same file twice harmless: the second run adds nothing rather than
+        /// duplicating a catalogue or writing over rows the user has since edited by hand.
+        /// </remarks>
+        private async Task ImportAsync(ImportRequestedEventArgs request, CancellationToken ct)
+        {
+            IGameImporter? importer = FindImporter(request.Format);
+            if (importer == null)
+            {
+                _logger.LogWarning("No importer is registered for the format {Format}.", request.Format);
+                _view.ShowError(ImportUnknownFormat);
+                return;
+            }
+
+            _view.IsBusy = true;
+            try
+            {
+                IReadOnlyList<Game> incoming;
+
+                using (StreamReader reader = new StreamReader(request.FilePath, ImportEncoding, true))
+                {
+                    incoming = await importer.ReadAsync(reader, ct).ConfigureAwait(true);
+                }
+
+                ImportTally tally = await StoreEachAsync(incoming, ct).ConfigureAwait(true);
+
+                _logger.LogInformation(
+                    "Imported {Added} game(s) as {Format} from {FilePath}; " +
+                    "{Duplicates} already present and {Invalid} rejected.",
+                    tally.Added, importer.Format, request.FilePath, tally.Duplicates, tally.Invalid);
+
+                await ShowEverythingAsync(ct).ConfigureAwait(true);
+
+                // Reported after the list has been redrawn, so that the user reads the counts
+                // with the imported games already behind the dialog rather than having to
+                // dismiss it before anything on screen changes.
+                _view.ShowInfo(Describe(tally));
+            }
+            finally
+            {
+                _view.IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Offers every imported game to the catalogue in turn and counts what became of it.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// One entry is one decision, so a file is never refused because part of it is wrong:
+        /// an entry that breaks a rule is counted and passed over, and the next one is still
+        /// tried. The rules themselves are not repeated here. The catalogue validates every
+        /// game it is given and answers with the broken rules, so an entry that comes back
+        /// rejected is counted as invalid without this method knowing what "valid" means.
+        /// </para>
+        /// <para>
+        /// Titles are compared without regard to case and after trimming, against the titles
+        /// already stored and against the ones this run has just added, so a file that lists
+        /// the same game twice adds it once.
+        /// </para>
+        /// </remarks>
+        private async Task<ImportTally> StoreEachAsync(IReadOnlyList<Game> incoming, CancellationToken ct)
+        {
+            HashSet<string> known = await ReadEveryNameAsync(ct).ConfigureAwait(true);
+
+            int added = 0;
+            int duplicates = 0;
+            int invalid = 0;
+
+            foreach (Game game in incoming)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string name = game.Name == null ? string.Empty : game.Name.Trim();
+
+                // An entry with no title at all is not compared: it collides with nothing, and
+                // the catalogue is about to reject it for the missing title anyway.
+                if (name.Length > 0 && known.Contains(name))
+                {
+                    duplicates++;
+                    continue;
+                }
+
+                Result<int> outcome = await _games.AddAsync(game, ct).ConfigureAwait(true);
+
+                if (!outcome.IsSuccess)
+                {
+                    invalid++;
+                    _logger.LogWarning(
+                        "An imported game was rejected: {ErrorCount} broken rule(s).",
+                        outcome.Errors.Count);
+                    continue;
+                }
+
+                added++;
+
+                if (name.Length > 0)
+                {
+                    // Only a title that was actually stored joins the set, so that two
+                    // identical entries the catalogue refuses are both counted as invalid
+                    // rather than the second one being reported as a duplicate of a row that
+                    // was never written.
+                    known.Add(name);
+                }
+            }
+
+            return new ImportTally(added, duplicates, invalid);
+        }
+
+        /// <summary>
+        /// Collects the title of every game in the catalogue, compared without regard to case.
+        /// </summary>
+        /// <remarks>
+        /// Read once, before the first insert, rather than asked per entry: an import of a
+        /// hundred games would otherwise be a hundred extra round trips to answer a question
+        /// this run can answer for itself as it goes.
+        /// </remarks>
+        private async Task<HashSet<string>> ReadEveryNameAsync(CancellationToken ct)
+        {
+            // No filter: a title the user cannot currently see still occupies that title, and
+            // an import that only checked the games on screen would happily add a second copy
+            // of one the filter was hiding.
+            IReadOnlyList<Game> everything = await ReadEveryMatchAsync(
+                null, GameSortField.Name, false, ct).ConfigureAwait(true);
+
+            HashSet<string> names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (Game game in everything)
+            {
+                if (!string.IsNullOrWhiteSpace(game.Name))
+                {
+                    names.Add(game.Name.Trim());
+                }
+            }
+
+            return names;
+        }
+
+        /// <summary>
+        /// Reads the lookups again and shows the first page, so that the games just imported
+        /// are on screen.
+        /// </summary>
+        /// <remarks>
+        /// The lookups are read again because an import can bring in a genre or a platform
+        /// nobody had used before, and filling them puts both of those filters back on their
+        /// "any" entry. That reset is wanted rather than tolerated: a narrow genre filter left
+        /// in place could hide every game that was just imported and make a successful import
+        /// look like one that did nothing. The page number goes back to one for the same
+        /// reason, since a wider result set renumbers the pages under it.
+        /// </remarks>
+        private async Task ShowEverythingAsync(CancellationToken ct)
+        {
+            await LoadLookupsAsync(ct).ConfigureAwait(true);
+
+            _page = 1;
+            await LoadPageAsync(ct).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Reads every game a filter selects, one batch at a time.
         /// </summary>
         /// <remarks>
         /// The export covers the whole result set rather than the page on screen. A file
@@ -442,14 +680,13 @@ namespace VideoGameManager.Presenters
         /// and whoever opens it later has no way to tell. Reading it in batches keeps the
         /// database from being asked for the entire catalogue in one statement.
         /// </remarks>
-        private async Task<IReadOnlyList<Game>> ReadEveryMatchAsync(CancellationToken ct)
+        /// <param name="filter">Which games to read. <c>null</c> reads the whole catalogue.</param>
+        /// <param name="sort">Column to order by.</param>
+        /// <param name="descending"><c>true</c> to order from high to low.</param>
+        /// <param name="ct">Cancellation token.</param>
+        private async Task<IReadOnlyList<Game>> ReadEveryMatchAsync(
+            GameFilter? filter, GameSortField sort, bool descending, CancellationToken ct)
         {
-            // The filter and the sort are captured once, so that a batch read halfway through
-            // cannot pick up a filter the user changed while the file was being written.
-            GameFilter filter = CurrentFilter();
-            GameSortField sort = _view.SortField;
-            bool descending = _view.SortDescending;
-
             List<Game> everything = new List<Game>();
             int page = 1;
 
@@ -515,6 +752,53 @@ namespace VideoGameManager.Presenters
             return null;
         }
 
+        private IGameImporter? FindImporter(string format)
+        {
+            foreach (IGameImporter importer in _importers)
+            {
+                if (string.Equals(importer.Format, format, StringComparison.OrdinalIgnoreCase))
+                {
+                    return importer;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Puts the outcome of an import into a sentence per count.
+        /// </summary>
+        /// <remarks>
+        /// All three counts are always shown, including the zeros. A summary that mentioned
+        /// only what happened would leave the user to work out whether the missing games were
+        /// skipped as duplicates or refused as invalid, which is the one thing they came to
+        /// this dialog to learn.
+        /// </remarks>
+        private static string Describe(ImportTally tally)
+        {
+            StringBuilder text = new StringBuilder();
+
+            text.AppendFormat(
+                CultureInfo.CurrentCulture,
+                "Imported {0} {1}.",
+                tally.Added,
+                tally.Added == 1 ? "game" : "games");
+
+            text.Append(Environment.NewLine);
+            text.AppendFormat(
+                CultureInfo.CurrentCulture,
+                "Skipped {0} already in the catalogue.",
+                tally.Duplicates);
+
+            text.Append(Environment.NewLine);
+            text.AppendFormat(
+                CultureInfo.CurrentCulture,
+                "Skipped {0} that broke a validation rule.",
+                tally.Invalid);
+
+            return text.ToString();
+        }
+
         private string ConfirmDeleteMessage(int gameId)
         {
             // The cached game is only trusted when it is the one that is highlighted; the
@@ -529,6 +813,30 @@ namespace VideoGameManager.Presenters
             }
 
             return "Delete the selected game and its reviews? This cannot be undone.";
+        }
+
+        /// <summary>
+        /// What became of the entries in one import file. The three counts add up to the
+        /// number of entries the file held, which is what lets the summary be checked against
+        /// the file rather than believed.
+        /// </summary>
+        private readonly struct ImportTally
+        {
+            public ImportTally(int added, int duplicates, int invalid)
+            {
+                Added = added;
+                Duplicates = duplicates;
+                Invalid = invalid;
+            }
+
+            /// <summary>How many games were stored.</summary>
+            public int Added { get; }
+
+            /// <summary>How many were passed over because that title was already stored.</summary>
+            public int Duplicates { get; }
+
+            /// <summary>How many the catalogue refused because they broke a rule.</summary>
+            public int Invalid { get; }
         }
     }
 }

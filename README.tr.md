@@ -41,6 +41,7 @@ türlere göre dağılımını gösterir ve tüm liste CSV veya JSON olarak dı�
 | 🖼️ **Kapak önbelleği** | Kapak görselleri eşzamansız indirilip diskte önbelleğe alınır; bağlantı ölüyse yerine bir yer tutucu görsel gösterilir |
 | 📊 **İstatistikler** | Türe göre dağılım ve ortalama puanlar, elle hazırlanmış bir çubuk grafikle çizilir |
 | 📤 **Dışa aktarma** | Kataloğu CSV veya JSON olarak yazma |
+| 📥 **İçe aktarma** | JSON dışa aktarmasını geri okuma — kataloğda zaten olan başlıklar atlanır, iki kez aktarmak hiçbir şeyi değiştirmez |
 | 🪟 **Özel pencere çerçevesi** | Kenarlıksız formlar, elle hazırlanmış küçültme/kapatma düğmeleriyle |
 
 ## Ekranlar

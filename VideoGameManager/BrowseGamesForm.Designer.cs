@@ -71,6 +71,7 @@ namespace VideoGameManager
             this.btnDelete = new VideoGameManager.UI.Controls.FlatButton();
             this.btnEdit = new VideoGameManager.UI.Controls.FlatButton();
             this.btnExport = new VideoGameManager.UI.Controls.FlatButton();
+            this.btnImport = new VideoGameManager.UI.Controls.FlatButton();
             this.layoutRoot.SuspendLayout();
             this.layoutFilters.SuspendLayout();
             this.frameGenre.SuspendLayout();
@@ -527,6 +528,7 @@ namespace VideoGameManager
             this.panelActions.Controls.Add(this.btnDelete);
             this.panelActions.Controls.Add(this.btnEdit);
             this.panelActions.Controls.Add(this.btnExport);
+            this.panelActions.Controls.Add(this.btnImport);
             this.panelActions.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             this.panelActions.Margin = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.M, 0, 0);
@@ -539,7 +541,7 @@ namespace VideoGameManager
             this.btnClose.AccessibleName = "Close";
             this.btnClose.Kind = VideoGameManager.UI.Controls.ButtonKind.Secondary;
             this.btnClose.Name = "btnClose";
-            this.btnClose.TabIndex = 3;
+            this.btnClose.TabIndex = 4;
             this.btnClose.Text = "Close";
             this.btnClose.Click += new System.EventHandler(this.btnClose_Click);
             //
@@ -548,7 +550,7 @@ namespace VideoGameManager
             this.btnDelete.AccessibleName = "Delete";
             this.btnDelete.Kind = VideoGameManager.UI.Controls.ButtonKind.Danger;
             this.btnDelete.Name = "btnDelete";
-            this.btnDelete.TabIndex = 2;
+            this.btnDelete.TabIndex = 3;
             this.btnDelete.Text = "Delete";
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             //
@@ -557,7 +559,7 @@ namespace VideoGameManager
             this.btnEdit.AccessibleName = "Edit";
             this.btnEdit.Kind = VideoGameManager.UI.Controls.ButtonKind.Primary;
             this.btnEdit.Name = "btnEdit";
-            this.btnEdit.TabIndex = 1;
+            this.btnEdit.TabIndex = 2;
             this.btnEdit.Text = "Edit";
             this.btnEdit.Click += new System.EventHandler(this.btnEdit_Click);
             //
@@ -566,9 +568,18 @@ namespace VideoGameManager
             this.btnExport.AccessibleName = "Export";
             this.btnExport.Kind = VideoGameManager.UI.Controls.ButtonKind.Secondary;
             this.btnExport.Name = "btnExport";
-            this.btnExport.TabIndex = 0;
+            this.btnExport.TabIndex = 1;
             this.btnExport.Text = "Export...";
             this.btnExport.Click += new System.EventHandler(this.btnExport_Click);
+            //
+            // btnImport
+            //
+            this.btnImport.AccessibleName = "Import";
+            this.btnImport.Kind = VideoGameManager.UI.Controls.ButtonKind.Secondary;
+            this.btnImport.Name = "btnImport";
+            this.btnImport.TabIndex = 0;
+            this.btnImport.Text = "Import...";
+            this.btnImport.Click += new System.EventHandler(this.btnImport_Click);
             //
             // BrowseGamesForm
             //
@@ -639,5 +650,6 @@ namespace VideoGameManager
         private VideoGameManager.UI.Controls.FlatButton btnDelete;
         private VideoGameManager.UI.Controls.FlatButton btnEdit;
         private VideoGameManager.UI.Controls.FlatButton btnExport;
+        private VideoGameManager.UI.Controls.FlatButton btnImport;
     }
 }
