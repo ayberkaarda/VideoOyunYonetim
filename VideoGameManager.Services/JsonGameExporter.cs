@@ -92,7 +92,7 @@ namespace VideoGameManager.Services
                 Id = game.Id,
                 Name = game.Name,
                 Genre = game.Genre,
-                Platforms = game.Platforms ?? Array.Empty<string>(),
+                Platforms = game.Platforms,
                 Score = game.Score,
                 Status = game.Status,
                 IsFavourite = game.IsFavourite,

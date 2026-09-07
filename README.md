@@ -283,6 +283,7 @@ A few consequences worth naming:
 │   ├── ReviewGameForm.cs        # write a review
 │   └── StatisticsForm.cs        # genre distribution and average scores
 ├── VideoGameManager.Tests/      # xUnit — unit tests and Testcontainers integration tests
+├── VideoGameManager.Tests.Desktop/  # the few tests that need Windows (System.Drawing)
 └── VideoGameManager.sln
 ```
 
@@ -359,6 +360,13 @@ dotnet test VideoGameManager.sln
 dotnet format VideoGameManager.sln --verify-no-changes
 dotnet format VideoGameManager.sln
 ```
+
+**The suite lives in two projects.** Almost everything is in `VideoGameManager.Tests`,
+which targets `net10.0` and runs anywhere. `VideoGameManager.Tests.Desktop` targets
+`net10.0-windows` and holds only what cannot be reached from a portable project — today
+that is the cover art pipeline, which is `System.Drawing`. When you add a test, ask whether
+it could run on Linux: if it could, it belongs in the first project
+([ADR 0009](docs/adr/0009-a-second-test-project-for-windows-only-code.md)).
 
 **Integration tests raise their own container.** They never connect to the development
 database, so running them cannot damage your catalogue. They also do not skip themselves

@@ -56,6 +56,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The cover cache keeps its scaling and cache-key helpers internal: they are
+         implementation detail, not something another screen should call. The desktop
+         test project still has to reach them to prove that artwork keeps its
+         proportions and that a cache entry is tied to the size it was stored at. -->
+    <InternalsVisibleTo Include="VideoGameManager.Tests.Desktop" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

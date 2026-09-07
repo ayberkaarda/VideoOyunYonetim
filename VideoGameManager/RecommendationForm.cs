@@ -16,7 +16,6 @@ namespace VideoGameManager
     public partial class RecommendationForm : VideoGameManager.UI.Controls.ChromelessForm, IRecommendationView
     {
         private readonly Presenters.RecommendationPresenter? _presenter;
-        private readonly ILogger<RecommendationForm>? _logger;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public RecommendationForm()
@@ -25,16 +24,20 @@ namespace VideoGameManager
         }
 
         /// <summary>The constructor the container uses. It wires the presenter to this view.</summary>
+        /// <param name="recommendations">The picking service behind the presenter.</param>
+        /// <param name="covers">
+        /// The shared cover cache. It is handed in rather than created here so that every
+        /// screen draws from the same one and artwork survives a window closing.
+        /// </param>
+        /// <param name="presenterLogger">Logger for the presenter.</param>
         public RecommendationForm(
             Services.IRecommendationService recommendations,
-            ILogger<Presenters.RecommendationPresenter> presenterLogger,
-            ILogger<RecommendationForm> logger)
+            UI.Controls.ICoverImageProvider covers,
+            ILogger<Presenters.RecommendationPresenter> presenterLogger)
             : this()
         {
             _presenter = new Presenters.RecommendationPresenter(this, recommendations, presenterLogger);
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            picCover.LoadCompleted += PicCover_LoadCompleted;
+            picCover.Provider = covers;
         }
 
         public event EventHandler? Loaded;
@@ -86,7 +89,7 @@ namespace VideoGameManager
                 lblGenre.Text = string.Empty;
                 lblPlatform.Text = string.Empty;
                 lblScore.Text = string.Empty;
-                picCover.Image = null;
+                _ = picCover.LoadCoverAsync(null);
                 return;
             }
 
@@ -95,12 +98,16 @@ namespace VideoGameManager
             lblPlatform.Text = JoinPlatforms(game.Platforms);
             lblScore.Text = game.Score?.ToString("0.#", CultureInfo.CurrentCulture) ?? string.Empty;
 
-            LoadCover(game.CoverUrl);
+            // The box owns the fetch: it cancels whatever was in flight, runs its loading
+            // state and settles on either the artwork or its empty state. Nothing here has
+            // to be awaited, and a failure is reported by the cache rather than surfacing
+            // as an exception on this thread.
+            _ = picCover.LoadCoverAsync(game.CoverUrl);
         }
 
         public void ShowLoadError(string message)
         {
-            picCover.Image = null;
+            _ = picCover.LoadCoverAsync(null);
             layoutDetails.Visible = false;
             lblStatus.Text = message;
             lblStatus.Visible = true;
@@ -122,52 +129,6 @@ namespace VideoGameManager
                    == DialogResult.Yes;
         }
 
-        /// <summary>
-        /// Cover art comes from a remote address that may be slow, missing or no longer an
-        /// image. A failure leaves the box empty rather than interrupting the user; it is
-        /// still logged, through <see cref="PicCover_LoadCompleted"/> for a failure during
-        /// the download itself, or here for one that happens before the download starts
-        /// (for example, an address that is not a valid URI).
-        /// </summary>
-        private void LoadCover(string? coverUrl)
-        {
-            picCover.Image = null;
-
-            if (string.IsNullOrWhiteSpace(coverUrl))
-            {
-                return;
-            }
-
-            try
-            {
-                picCover.LoadAsync(coverUrl);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "Starting the cover art download failed on {Screen}", nameof(RecommendationForm));
-                picCover.Image = null;
-            }
-        }
-
-        /// <summary>
-        /// Reports a cover art download that failed once it was under way. <see cref="LoadCover"/>
-        /// only sees a failure that happens before the download starts; a network or decoding
-        /// failure during the download surfaces here instead.
-        /// </summary>
-        private void PicCover_LoadCompleted(object? sender, AsyncCompletedEventArgs e)
-        {
-            if (e.Cancelled)
-            {
-                return;
-            }
-
-            if (e.Error != null)
-            {
-                _logger?.LogWarning(e.Error, "Downloading cover art failed on {Screen}", nameof(RecommendationForm));
-                picCover.Image = null;
-            }
-        }
-
         private void btnRecommend_Click(object? sender, EventArgs e)
         {
             RecommendationRequested?.Invoke(this, EventArgs.Empty);
@@ -175,7 +136,6 @@ namespace VideoGameManager
 
         private void RecommendationForm_Load(object? sender, EventArgs e)
         {
-            picCover.SizeMode = PictureBoxSizeMode.Zoom;
             Loaded?.Invoke(this, EventArgs.Empty);
         }
 

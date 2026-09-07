@@ -43,8 +43,6 @@ namespace VideoGameManager
         {
             InitializeComponent();
 
-            picCover.Provider = new VideoGameManager.UI.CachedCoverImageProvider();
-
             FillFixedFilters();
         }
 
@@ -56,18 +54,21 @@ namespace VideoGameManager
         /// </param>
         /// <param name="games">The catalogue.</param>
         /// <param name="exporters">Every registered export format.</param>
+        /// <param name="covers">
+        /// The shared cover cache. It is handed in rather than created here so that every
+        /// screen draws from the same one and artwork survives a window closing.
+        /// </param>
         /// <param name="presenterLogger">Logger for the presenter.</param>
-        /// <param name="coverLogger">Logger for the cover image provider.</param>
         public BrowseGamesForm(
             IServiceProvider provider,
             Services.IGameService games,
             IEnumerable<Services.IGameExporter> exporters,
-            ILogger<Presenters.BrowseGamesPresenter> presenterLogger,
-            ILogger<VideoGameManager.UI.CachedCoverImageProvider> coverLogger)
+            ICoverImageProvider covers,
+            ILogger<Presenters.BrowseGamesPresenter> presenterLogger)
             : this()
         {
             _provider = provider;
-            picCover.Provider = new VideoGameManager.UI.CachedCoverImageProvider(coverLogger);
+            picCover.Provider = covers;
             _presenter = new Presenters.BrowseGamesPresenter(this, games, exporters, presenterLogger);
         }
 

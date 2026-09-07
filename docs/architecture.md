@@ -7,7 +7,7 @@ against each other without guessing.
 ## Projects and dependency direction
 
 ```
-VideoGameManager.WinForms      net10.0-windows   Forms, control library, composition root
+VideoGameManager               net10.0-windows   Forms, control library, composition root
         |
         v
 VideoGameManager.Presentation  net10.0           IView interfaces, presenters
@@ -47,11 +47,11 @@ public sealed class Game
 {
     public int Id { get; init; }
     public string Name { get; set; }
-    public string Genre { get; set; }
+    public string? Genre { get; set; }
     public IReadOnlyList<string> Platforms { get; set; }
     public double? Score { get; set; }
-    public string CoverUrl { get; set; }
-    public string LatestReview { get; init; }
+    public string? CoverUrl { get; set; }
+    public string? LatestReview { get; init; }
     public PlayStatus Status { get; set; }
     public bool IsFavourite { get; set; }
 }
@@ -153,9 +153,9 @@ public interface IDbConnectionFactory
 }
 
 public sealed record GameFilter(
-    string Name = null,
-    string Genre = null,
-    string Platform = null,
+    string? Name = null,
+    string? Genre = null,
+    string? Platform = null,
     double? MinScore = null,
     double? MaxScore = null,
     PlayStatus? Status = null,
@@ -166,23 +166,23 @@ public enum GameSortField { Name, Score }
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int TotalCount, int Page, int PageSize);
 
 public sealed record GenreReviewSummary(string Genre, int ScoredReviewCount, double AverageReviewScore);
-public sealed record GenreDistribution(string Genre, int GameCount, double? AverageScore);
+public sealed record GenreDistribution(string? Genre, int GameCount, double? AverageScore);
 public sealed record CatalogueStatistics(int TotalGames, int ReviewCount, double? AverageScore,
                                          IReadOnlyList<GenreDistribution> ByGenre);
 
 public interface IGameRepository
 {
-    Task<PagedResult<Game>> ListAsync(GameFilter filter, int page, int pageSize,
+    Task<PagedResult<Game>> ListAsync(GameFilter? filter, int page, int pageSize,
         GameSortField sort = GameSortField.Name, bool descending = false,
         CancellationToken ct = default);
 
-    Task<Game> GetAsync(int id, CancellationToken ct = default);
+    Task<Game?> GetAsync(int id, CancellationToken ct = default);
     Task<int> AddAsync(Game game, CancellationToken ct = default);      // returns new Id
     Task<bool> UpdateAsync(Game game, CancellationToken ct = default);  // false if Id missing
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);     // false if Id missing
     Task<IReadOnlyList<string>> GetGenresAsync(CancellationToken ct = default);
     Task<IReadOnlyList<string>> GetPlatformsAsync(CancellationToken ct = default);
-    Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default);
+    Task<Game?> GetRandomAsync(GameFilter? filter, CancellationToken ct = default);
 
     // Raw facts only. The weighting that turns these into a preference lives in the
     // service layer, where it can be unit tested without a database.
@@ -277,11 +277,11 @@ public sealed class DataAccessException : Exception { }   // wraps SqlException
 
 public interface IGameService
 {
-    Task<PagedResult<Game>> SearchAsync(GameFilter filter, int page, int pageSize,
+    Task<PagedResult<Game>> SearchAsync(GameFilter? filter, int page, int pageSize,
         GameSortField sort = GameSortField.Name, bool descending = false,
         CancellationToken ct = default);
 
-    Task<Game> GetAsync(int id, CancellationToken ct = default);
+    Task<Game?> GetAsync(int id, CancellationToken ct = default);
     Task<Result<int>> AddAsync(Game game, CancellationToken ct = default);
     Task<Result> UpdateAsync(Game game, CancellationToken ct = default);
     Task<Result> DeleteAsync(int id, CancellationToken ct = default);
@@ -298,13 +298,13 @@ public interface IReviewService
 public interface IRecommendationStrategy
 {
     string Name { get; }
-    Task<Game> PickAsync(CancellationToken ct = default);
+    Task<Game?> PickAsync(CancellationToken ct = default);
 }
 
 public interface IRecommendationService
 {
     IReadOnlyList<string> AvailableStrategies { get; }
-    Task<Game> RecommendAsync(string strategyName = null, CancellationToken ct = default);
+    Task<Game?> RecommendAsync(string? strategyName = null, CancellationToken ct = default);
 }
 ```
 
@@ -329,14 +329,16 @@ changing behaviour. Phase 5 adds `GenreWeightedStrategy` behind the same interfa
 
 ## WinForms (MVP)
 
-References Services and Domain. It must not reference Data.
+References Presentation, Services and Domain. It must not reference Data.
 
-Each form splits into three files:
+Each form splits into three files. The view interface and the presenter live in
+`VideoGameManager.Presentation` rather than beside the form, so that they can be tested on a
+Linux agent without a Windows target framework (ADR 0008):
 
 ```
-Views/IGameListView.cs           no System.Windows.Forms types
-Presenters/BrowseGamesPresenter.cs
-BrowseGamesForm.cs               partial class : ChromelessForm, IGameListView
+VideoGameManager.Presentation/Views/IGameListView.cs           no System.Windows.Forms types
+VideoGameManager.Presentation/Presenters/BrowseGamesPresenter.cs
+VideoGameManager/BrowseGamesForm.cs                             partial class : ChromelessForm, IGameListView
 ```
 
 `IView` carries what every screen needs - `IsBusy`, `ShowError`, `ShowInfo`, `Confirm` -
@@ -361,16 +363,16 @@ public interface IGameListView : IView
     GameSortField SortField { get; }
     bool SortDescending { get; }
 
-    event EventHandler Loaded;
-    event EventHandler SelectionChanged;
-    event EventHandler FilterChanged;
-    event EventHandler PreviousPageRequested;
-    event EventHandler NextPageRequested;
-    event EventHandler EditRequested;
-    event EventHandler DeleteRequested;
-    event EventHandler<ExportRequestedEventArgs> ExportRequested;
+    event EventHandler? Loaded;
+    event EventHandler? SelectionChanged;
+    event EventHandler? FilterChanged;
+    event EventHandler? PreviousPageRequested;
+    event EventHandler? NextPageRequested;
+    event EventHandler? EditRequested;
+    event EventHandler? DeleteRequested;
+    event EventHandler<ExportRequestedEventArgs>? ExportRequested;
 
-    void ShowDetails(Game game);
+    void ShowDetails(Game? game);
     void ShowPage(int page, int pageCount, int totalCount);
     void ShowListUnavailable(string message);
     void ShowDetailsUnavailable(string message);

@@ -7,6 +7,12 @@
 # Server container from a Linux image, which a Windows runner cannot run. Neither runner
 # can therefore do the whole job on its own.
 #
+# The test suite is split the same way and for the same reason. Nearly all of it is in
+# VideoGameManager.Tests, which targets net10.0 and runs on Linux. The exception is
+# VideoGameManager.Tests.Desktop, which covers the cover art pipeline: that code is
+# System.Drawing, so both it and its tests are Windows-bound. Both jobs run tests, and a
+# green run means both halves passed.
+#
 # The action versions below are the oldest ones that run on Node 24. GitHub is retiring
 # Node 20, and a runner that still sees a Node 20 action annotates every run with a
 # deprecation warning. checkout and setup-dotnet made the move in v5; upload-artifact did
@@ -94,10 +100,10 @@ jobs:
           path: TestResults/
           retention-days: 14
 
-  # Windows-only work: the desktop project, and the format check, which has to load
-  # every project in the solution to run.
+  # Windows-only work: the desktop project, the tests that can only run beside it, and the
+  # format check, which has to load every project in the solution.
   build-windows:
-    name: Build and format check (Windows)
+    name: Build, test and format check (Windows)
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -115,6 +121,25 @@ jobs:
 
       - name: Build the whole solution
         run: dotnet build VideoGameManager.sln --no-restore --no-incremental -warnaserror
+
+      # VideoGameManager.Tests.Desktop covers the code that cannot leave Windows - the
+      # cover art pipeline is System.Drawing, so its tests target net10.0-windows and the
+      # Linux job above cannot reference them. Everything else is tested there; this step
+      # exists so that these tests are run by something other than a developer's machine.
+      - name: Test the Windows-only project
+        run: >
+          dotnet test VideoGameManager.Tests.Desktop/VideoGameManager.Tests.Desktop.csproj
+          --no-build
+          --logger "trx;LogFileName=desktop-test-results.trx"
+          --results-directory TestResults
+
+      - name: Upload Windows test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: desktop-test-results
+          path: TestResults/
+          retention-days: 14
 
       # Reads .editorconfig and fails when a file is not formatted the way it describes.
       - name: Check formatting

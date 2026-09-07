@@ -65,9 +65,9 @@ INSERT INTO @Source (Id, Name, Genre, [Platform], Score, CoverUrl) VALUES
     (10, N'Resident Evil Village',           N'Horror',     N'PlayStation', 8.8, N'https://image.api.playstation.com/vulcan/ap/rnd/202207/0706/D8YACd9U8RAcdtOVpXeXDpzg.png'),
     (11, N'Age of Empires IV',               N'Strategy',   N'PC',          8.6, N'https://upload.wikimedia.org/wikipedia/tr/9/91/Age_of_Empires_4_kapak.jpg'),
     (12, N'Super Mario Odyssey',             N'Adventure',  N'Switch',      9.5, N'https://cdn.akakce.com/nintendo/nintendo-super-mario-odyssey-z.jpg'),
-    (13, N'Celeste',                         N'Platformer', N'PC',          8.9, N'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Celeste_box_art_full.png/1200px-Celeste_box_art_full.png'),
+    (13, N'Celeste',                         N'Platformer', N'PC',          8.9, N'https://upload.wikimedia.org/wikipedia/commons/0/0f/Celeste_box_art_full.png'),
     (14, N'Call of Duty: Modern Warfare II', N'Action',     N'Xbox',        8.2, N'https://upload.wikimedia.org/wikipedia/tr/c/c1/Modern_Warfare_2_kapak.PNG'),
-    (15, N'Stardew Valley',                  N'Simulation', N'Switch',      9.1, N'https://upload.wikimedia.org/wikipedia/tr/thumb/f/fd/Logo_of_Stardew_Valley.png/800px-Logo_of_Stardew_Valley.png');
+    (15, N'Stardew Valley',                  N'Simulation', N'Switch',      9.1, N'https://upload.wikimedia.org/wikipedia/tr/f/fd/Logo_of_Stardew_Valley.png');
 
 /* Lookup rows first: a game cannot point at a genre that is not there yet. */
 INSERT INTO dbo.Genre (Name)

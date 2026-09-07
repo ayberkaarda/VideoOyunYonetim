@@ -7,6 +7,24 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Performance
+- Cover art is scaled to twice the size it is drawn at before it reaches the disk cache,
+  and the target size is mixed into the cache key so an entry cannot outlive the size it
+  was stored for. Decoding the largest cover in the sample data went from 71 ms to 4 ms,
+  because what is decoded is now a 480-pixel image rather than a 2600-pixel one.
+- The recommendation screen goes through the same cached path as the browse screen. Its
+  cover slot was a plain `PictureBox` calling `LoadAsync`, so every recommendation
+  downloaded the full-size artwork again: measured at 1024 ms for the largest cover, now
+  paid once and then 5 ms from disk or nothing at all from memory.
+- `ICoverImageProvider` is a singleton in the composition root rather than something each
+  form constructs for itself. The in-memory cache used to be discarded every time a window
+  closed, and `BrowseGamesForm` built two providers and threw the first away.
+- An address that fails is remembered for the rest of the run, so a dead cover link costs
+  one timeout rather than one per selection. The request timeout is 6 seconds, down from
+  10.
+- The in-memory cache holds 32 covers and disposes what it evicts. It had no bound, which
+  did not matter while it died with the window and would have as a singleton.
+
 ### Added
 - `VideoGameManager.Presentation`, a `net10.0` project holding the view interfaces and the
   presenters, which used to sit inside the desktop project. They mentioned no WinForms type
@@ -23,6 +41,13 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - `global.json`, pinning the SDK feature band with `rollForward: latestFeature`.
 - `README.tr.md`, a Turkish translation of the README. The English one remains the README
   the repository opens with; the two are updated together.
+- `VideoGameManager.Tests.Desktop`, a second test project targeting `net10.0-windows`, for
+  code that cannot be reached from a portable one. It holds nine tests covering the cover
+  art pipeline - scaling, cache keys, negative caching and the cache bound - and the
+  Windows CI job runs it. Everything else stays in `VideoGameManager.Tests` and still runs
+  on Linux (ADR 0009).
+- A `User-Agent` on the cover art requests. Wikimedia answers 403 without one, which is
+  what several "dead" cover links actually were.
 
 ### Changed
 - The nullable reference context is on for the whole solution, turned on one layer at a
@@ -60,6 +85,14 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   says how to count them.
 - Documentation that named tooling which is not part of this repository, in two ADRs and the
   architecture document. The reasons now stand on their own.
+- The Celeste and Stardew Valley seed rows point at the direct file URLs. Their thumbnail
+  paths answer 400 whatever size is asked for, while the file paths answer 200. The other
+  two broken links are left alone rather than guessed at: Hollow Knight's original is a
+  `.webp`, which `System.Drawing` cannot decode, and the FIFA 24 link is genuinely gone.
+  Existing databases keep the old values - the seed script only inserts rows that are
+  missing, it does not update rows that are there.
+- Two unreachable null checks in the exporters, left over from before `Game.Platforms` was
+  guaranteed never to be null.
 
 ## [1.0.0] - 2026-09-07
 
