@@ -287,6 +287,7 @@ Anılmaya değer birkaç sonuç:
 │   ├── ReviewGameForm.cs        # değerlendirme yazma
 │   └── StatisticsForm.cs        # tür dağılımı ve ortalama puanlar
 ├── VideoGameManager.Tests/      # xUnit — birim testler ve Testcontainers entegrasyon testleri
+├── VideoGameManager.Tests.Desktop/  # Windows gerektiren birkaç test (System.Drawing)
 └── VideoGameManager.sln
 ```
 
@@ -366,6 +367,13 @@ dotnet test VideoGameManager.sln
 dotnet format VideoGameManager.sln --verify-no-changes
 dotnet format VideoGameManager.sln
 ```
+
+**Test paketi iki projede duruyor.** Neredeyse her şey `net10.0` hedefleyen ve her yerde
+koşan `VideoGameManager.Tests` içinde. `VideoGameManager.Tests.Desktop` ise
+`net10.0-windows` hedefliyor ve yalnızca taşınabilir bir projeden erişilemeyeni tutuyor —
+bugün bu, `System.Drawing`'e dayanan kapak görseli hattı. Yeni bir test eklerken şunu
+sorun: Linux'ta koşabilir mi? Koşabiliyorsa ilk projeye aittir
+([ADR 0009](docs/adr/0009-a-second-test-project-for-windows-only-code.md)).
 
 **Entegrasyon testleri kendi konteynerini kaldırır.** Geliştirme veritabanına asla
 bağlanmazlar, bu yüzden onları çalıştırmak kataloğunuza zarar veremez. Ayrıca Docker

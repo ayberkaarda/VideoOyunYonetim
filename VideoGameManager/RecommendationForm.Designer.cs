@@ -31,7 +31,7 @@ namespace VideoGameManager
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RecommendationForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.coverCard = new VideoGameManager.UI.Controls.RoundedPanel();
-            this.picCover = new System.Windows.Forms.PictureBox();
+            this.picCover = new VideoGameManager.UI.Controls.CoverImageBox();
             this.layoutDetails = new VideoGameManager.UI.Controls.LayoutGrid();
             this.lblStatus = new System.Windows.Forms.Label();
             this.lblNameCaption = new System.Windows.Forms.Label();
@@ -47,7 +47,6 @@ namespace VideoGameManager
             this.frameStrategy = new VideoGameManager.UI.Controls.InputFrame();
             this.cmbStrategy = new System.Windows.Forms.ComboBox();
             this.lblStrategyCaption = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.picCover)).BeginInit();
             this.layoutRoot.SuspendLayout();
             this.coverCard.SuspendLayout();
             this.layoutDetails.SuspendLayout();
@@ -84,12 +83,9 @@ namespace VideoGameManager
             // picCover
             //
             this.picCover.AccessibleName = "Cover artwork";
-            this.picCover.BackColor = VideoGameManager.UI.Theming.Theme.SurfaceSunken;
             this.picCover.Dock = System.Windows.Forms.DockStyle.Fill;
             this.picCover.Name = "picCover";
-            this.picCover.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picCover.TabIndex = 0;
-            this.picCover.TabStop = false;
             //
             // layoutDetails
             //
@@ -281,7 +277,6 @@ namespace VideoGameManager
             this.Name = "RecommendationForm";
             this.Text = "Video Game Manager | Recommendation";
             this.Load += new System.EventHandler(this.RecommendationForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.picCover)).EndInit();
             this.coverCard.ResumeLayout(false);
             this.layoutDetails.ResumeLayout(false);
             this.panelActions.ResumeLayout(false);
@@ -295,7 +290,7 @@ namespace VideoGameManager
         #endregion
         private VideoGameManager.UI.Controls.LayoutGrid layoutRoot;
         private VideoGameManager.UI.Controls.RoundedPanel coverCard;
-        private System.Windows.Forms.PictureBox picCover;
+        private VideoGameManager.UI.Controls.CoverImageBox picCover;
         private VideoGameManager.UI.Controls.LayoutGrid layoutDetails;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Label lblNameCaption;

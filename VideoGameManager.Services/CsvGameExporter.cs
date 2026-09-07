@@ -79,7 +79,7 @@ namespace VideoGameManager.Services
             yield return game.Id.ToString(CultureInfo.InvariantCulture);
             yield return game.Name ?? string.Empty;
             yield return game.Genre ?? string.Empty;
-            yield return game.Platforms == null ? string.Empty : string.Join("; ", game.Platforms);
+            yield return string.Join("; ", game.Platforms);
             yield return game.Score.HasValue ? game.Score.Value.ToString(CultureInfo.InvariantCulture) : string.Empty;
             yield return game.Status.ToString();
             yield return game.IsFavourite.ToString(CultureInfo.InvariantCulture);

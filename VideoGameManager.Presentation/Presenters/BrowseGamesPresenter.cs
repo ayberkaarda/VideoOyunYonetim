@@ -489,16 +489,17 @@ namespace VideoGameManager.Presenters
         {
             string search = _view.SearchText;
 
+            // false and null mean the same thing to the filter - "do not narrow" - so the
+            // unchecked box is passed as null rather than as a request for the games
+            // nobody marked.
+            bool? onlyFavourites = _view.OnlyFavourites ? true : (bool?)null;
+
             return new GameFilter(
                 Name: string.IsNullOrWhiteSpace(search) ? null : search.Trim(),
                 Genre: _view.SelectedGenre,
                 Platform: _view.SelectedPlatform,
                 Status: _view.SelectedStatus,
-
-                // false and null mean the same thing to the filter - "do not narrow" - so the
-                // unchecked box is passed as null rather than as a request for the games
-                // nobody marked.
-                OnlyFavourites: _view.OnlyFavourites ? true : (bool?)null);
+                OnlyFavourites: onlyFavourites);
         }
 
         private IGameExporter? FindExporter(string format)

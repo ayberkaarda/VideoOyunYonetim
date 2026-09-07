@@ -210,6 +210,19 @@ namespace VideoGameManager
             // never references VideoGameManager.Data at compile time.
             services.AddVideoGameManager();
 
+            // The cover cache is the one piece of UI infrastructure that has to outlive
+            // the screen using it. Held per form, its memory cache was thrown away every
+            // time a window closed, so re-opening a screen downloaded artwork the machine
+            // had already fetched minutes earlier. As a singleton it keeps what it has
+            // resolved for the run, and the container disposes it on the way out.
+            //
+            // It is registered here rather than beside the other services because it
+            // decodes images: the service layer neither references System.Drawing nor
+            // should start to.
+            services.AddSingleton<UI.Controls.ICoverImageProvider>(container =>
+                new UI.CachedCoverImageProvider(
+                    container.GetRequiredService<ILogger<UI.CachedCoverImageProvider>>()));
+
             services.AddTransient<MainForm>();
             services.AddTransient<AddGameForm>();
             services.AddTransient<BrowseGamesForm>();

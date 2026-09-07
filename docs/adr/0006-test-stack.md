@@ -1,6 +1,8 @@
 # ADR 0006 - Test stack: xUnit, FluentAssertions 7, NSubstitute, Testcontainers
 
-Status: accepted
+Status: accepted. The stack is unchanged, but the "one test project" part is amended by
+ADR 0009: code that needs `System.Drawing` cannot be reached from a `net10.0` project, so a
+second, deliberately narrow test project targets `net10.0-windows` alongside it.
 
 ## Context
 
