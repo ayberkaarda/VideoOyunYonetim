@@ -41,6 +41,7 @@ list exports to CSV or JSON.
 | 🖼️ **Cover cache** | Cover art is downloaded asynchronously and cached on disk; a placeholder stands in when a link is dead |
 | 📊 **Statistics** | Distribution by genre and average scores, drawn on a hand-rolled bar chart |
 | 📤 **Export** | Write the catalogue out as CSV or JSON |
+| 📥 **Import** | Read a JSON export back in — titles already stored are skipped, so importing twice changes nothing |
 | 🪟 **Custom chrome** | Borderless forms with hand-rolled minimise/close buttons |
 
 ## Screens

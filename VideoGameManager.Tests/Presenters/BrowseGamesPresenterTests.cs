@@ -17,9 +17,9 @@ using Xunit;
 namespace VideoGameManager.Tests.Presenters
 {
     /// <summary>
-    /// Exercises <see cref="BrowseGamesPresenter"/> against a substituted view, catalogue and
-    /// exporter set. The page size matches the presenter's own constant (25), which is not
-    /// public, so it is repeated here as <see cref="PageSize"/>.
+    /// Exercises <see cref="BrowseGamesPresenter"/> against a substituted view, catalogue,
+    /// exporter set and importer set. The page size matches the presenter's own constant (25),
+    /// which is not public, so it is repeated here as <see cref="PageSize"/>.
     /// </summary>
     public class BrowseGamesPresenterTests
     {
@@ -28,6 +28,7 @@ namespace VideoGameManager.Tests.Presenters
         private readonly IGameListView _view = Substitute.For<IGameListView>();
         private readonly IGameService _games = Substitute.For<IGameService>();
         private readonly IGameExporter _csvExporter = Substitute.For<IGameExporter>();
+        private readonly IGameImporter _jsonImporter = Substitute.For<IGameImporter>();
         private readonly BrowseGamesPresenter _presenter;
 
         public BrowseGamesPresenterTests()
@@ -35,22 +36,28 @@ namespace VideoGameManager.Tests.Presenters
             _csvExporter.Format.Returns("CSV");
             _csvExporter.FileExtension.Returns(".csv");
 
+            _jsonImporter.Format.Returns("JSON");
+            _jsonImporter.FileExtension.Returns(".json");
+            _jsonImporter.ReadAsync(Arg.Any<TextReader>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult<IReadOnlyList<Game>>(new List<Game>()));
+
             _games.GetGenresAsync(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult<IReadOnlyList<string>>(new List<string>()));
             _games.GetPlatformsAsync(Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult<IReadOnlyList<string>>(new List<string>()));
 
             SetupCatalogue(0);
+            SetupAddSucceeds();
 
             _presenter = new BrowseGamesPresenter(
-                _view, _games, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
+                _view, _games, Exporters(), Importers(), NullLogger<BrowseGamesPresenter>.Instance);
         }
 
         [Fact]
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                null!, _games, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
+                null!, _games, Exporters(), Importers(), NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -59,7 +66,7 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullGameService_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, null!, new List<IGameExporter> { _csvExporter }, NullLogger<BrowseGamesPresenter>.Instance);
+                _view, null!, Exporters(), Importers(), NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -68,16 +75,25 @@ namespace VideoGameManager.Tests.Presenters
         public void Constructor_NullExporters_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, _games, null!, NullLogger<BrowseGamesPresenter>.Instance);
+                _view, _games, null!, Importers(), NullLogger<BrowseGamesPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("exporters");
+        }
+
+        [Fact]
+        public void Constructor_NullImporters_ThrowsArgumentNullException()
+        {
+            Action act = () => new BrowseGamesPresenter(
+                _view, _games, Exporters(), null!, NullLogger<BrowseGamesPresenter>.Instance);
+
+            act.Should().Throw<ArgumentNullException>().WithParameterName("importers");
         }
 
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
             Action act = () => new BrowseGamesPresenter(
-                _view, _games, new List<IGameExporter> { _csvExporter }, null!);
+                _view, _games, Exporters(), Importers(), null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -95,6 +111,8 @@ namespace VideoGameManager.Tests.Presenters
 
             _view.Received(1).ExportFormats = Arg.Is<IReadOnlyList<ExportFormat>>(
                 f => f.Count == 1 && f[0].Name == "CSV" && f[0].FileExtension == ".csv");
+            _view.Received(1).ImportFormats = Arg.Is<IReadOnlyList<ImportFormat>>(
+                f => f.Count == 1 && f[0].Name == "JSON" && f[0].FileExtension == ".json");
             _view.Received(1).Genres = Arg.Is<IReadOnlyList<string>>(g => g.Count == 2);
             _view.Received(1).Platforms = Arg.Is<IReadOnlyList<string>>(p => p.Count == 2);
             _view.Received(1).Games = Arg.Is<IReadOnlyList<Game>>(games => games.Count == 2);
@@ -352,6 +370,179 @@ namespace VideoGameManager.Tests.Presenters
             }
         }
 
+        // ------------------------------------------------------------------
+        // Import
+        // ------------------------------------------------------------------
+
+        [Fact]
+        public void ImportRequested_UnknownFormat_ShowsAnErrorAndStoresNothing()
+        {
+            RaiseImport("XML", Path.Combine(Path.GetTempPath(), "unused.xml"));
+
+            _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("import format is not available")));
+            _games.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+        }
+
+        [Fact]
+        public void ImportRequested_NoFileChosen_DoesNothing()
+        {
+            // The view raises nothing when the user closes the file dialog without choosing,
+            // so the presenter must not have started an import on the strength of the screen
+            // merely being open.
+            SetupCatalogue(3);
+            RaiseLoaded();
+
+            _games.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+            _view.DidNotReceive().ShowInfo(Arg.Any<string>());
+        }
+
+        [Fact]
+        public void ImportRequested_ValidFile_StoresEveryGameAndReportsTheCounts()
+        {
+            SetupCatalogue(0);
+            SetupImportFile(NewGame("Hades"), NewGame("Celeste"));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.Received(1).AddAsync(Arg.Is<Game>(g => g.Name == "Hades"), Arg.Any<CancellationToken>());
+            _games.Received(1).AddAsync(Arg.Is<Game>(g => g.Name == "Celeste"), Arg.Any<CancellationToken>());
+            _view.Received(1).ShowInfo(Arg.Is<string>(m =>
+                m.Contains("Imported 2 games.")
+                && m.Contains("Skipped 0 already in the catalogue.")
+                && m.Contains("Skipped 0 that broke a validation rule.")));
+        }
+
+        [Fact]
+        public void ImportRequested_OneGame_ReportsItInTheSingular()
+        {
+            SetupCatalogue(0);
+            SetupImportFile(NewGame("Hades"));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _view.Received(1).ShowInfo(Arg.Is<string>(m => m.Contains("Imported 1 game.")));
+        }
+
+        [Fact]
+        public void ImportRequested_NameAlreadyInTheCatalogue_SkipsThatGameAndLeavesTheStoredRowAlone()
+        {
+            // The catalogue holds "Game 1"; the file offers the same title in another case.
+            SetupCatalogue(1);
+            SetupImportFile(NewGame("game 1"), NewGame("Celeste"));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.DidNotReceive().AddAsync(Arg.Is<Game>(g => g.Name == "game 1"), Arg.Any<CancellationToken>());
+            _games.Received(1).AddAsync(Arg.Is<Game>(g => g.Name == "Celeste"), Arg.Any<CancellationToken>());
+            _games.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default);
+            _games.DidNotReceiveWithAnyArgs().DeleteAsync(default, default);
+            _view.Received(1).ShowInfo(Arg.Is<string>(m =>
+                m.Contains("Imported 1 game.")
+                && m.Contains("Skipped 1 already in the catalogue.")));
+        }
+
+        [Fact]
+        public void ImportRequested_SameTitleTwiceInOneFile_StoresItOnce()
+        {
+            SetupCatalogue(0);
+            SetupImportFile(NewGame("Hades"), NewGame("HADES"));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.Received(1).AddAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>());
+            _view.Received(1).ShowInfo(Arg.Is<string>(m =>
+                m.Contains("Imported 1 game.")
+                && m.Contains("Skipped 1 already in the catalogue.")));
+        }
+
+        [Fact]
+        public void ImportRequested_GameTheCatalogueRejects_IsCountedAsInvalidAndTheRestStillArrive()
+        {
+            SetupCatalogue(0);
+            SetupImportFile(NewGame("Broken"), NewGame("Celeste"));
+
+            _games.AddAsync(Arg.Is<Game>(g => g.Name == "Broken"), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result<int>.Invalid(
+                    new ValidationError(nameof(Game.Score), "Score must be between 0 and 10."))));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.Received(1).AddAsync(Arg.Is<Game>(g => g.Name == "Celeste"), Arg.Any<CancellationToken>());
+            _view.Received(1).ShowInfo(Arg.Is<string>(m =>
+                m.Contains("Imported 1 game.")
+                && m.Contains("Skipped 1 that broke a validation rule.")));
+        }
+
+        [Fact]
+        public void ImportRequested_FileIsNotOfThatFormat_ImportsNothingAndSaysSo()
+        {
+            SetupCatalogue(0);
+            _jsonImporter.ReadAsync(Arg.Any<TextReader>(), Arg.Any<CancellationToken>())
+                .Throws(new ImportFormatException("The file could not be read as JSON."));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.DidNotReceiveWithAnyArgs().AddAsync(default!, default);
+            _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("not in the expected format")));
+            _view.DidNotReceive().ShowInfo(Arg.Any<string>());
+        }
+
+        [Fact]
+        public void ImportRequested_FileCannotBeRead_ShowsAnImportFailureMessage()
+        {
+            SetupCatalogue(0);
+            _jsonImporter.ReadAsync(Arg.Any<TextReader>(), Arg.Any<CancellationToken>())
+                .Throws(new IOException("the file is locked"));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("import file could not be read")));
+        }
+
+        [Fact]
+        public void ImportRequested_FileIsNotThere_ShowsAnImportFailureMessage()
+        {
+            // Nothing is created, so opening the path fails before the importer is reached.
+            SetupCatalogue(0);
+
+            RaiseImport("JSON", Path.Combine(Path.GetTempPath(), "no-such-import-" + Guid.NewGuid().ToString("N") + ".json"));
+
+            _view.Received(1).ShowError(Arg.Is<string>(m => m.Contains("import file could not be read")));
+        }
+
+        [Fact]
+        public void ImportRequested_DatabaseFails_ShowsTheDatabaseMessageAndNotTheRawError()
+        {
+            SetupCatalogue(0);
+            SetupImportFile(NewGame("Hades"));
+            _games.AddAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>())
+                .Throws(new DataAccessException("The database could not be reached.", new InvalidOperationException("no route to host")));
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _view.Received(1).ShowError(Messages.DatabaseUnreachable);
+            _view.DidNotReceive().ShowError(Arg.Is<string>(m => m.Contains("no route to host")));
+        }
+
+        [Fact]
+        public void ImportRequested_WhenDone_ReadsTheLookupsAgainAndShowsTheFirstPage()
+        {
+            SetupCatalogue(2);
+            SetupImportFile(NewGame("Hades"));
+            RaiseLoaded();
+            _view.ClearReceivedCalls();
+            _games.ClearReceivedCalls();
+
+            WithTempFile(path => RaiseImport("JSON", path));
+
+            _games.Received(1).GetGenresAsync(Arg.Any<CancellationToken>());
+            _games.Received(1).GetPlatformsAsync(Arg.Any<CancellationToken>());
+            _games.Received().SearchAsync(
+                Arg.Any<GameFilter>(), 1, PageSize,
+                Arg.Any<GameSortField>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+            _view.Received().Games = Arg.Any<IReadOnlyList<Game>>();
+        }
+
         private void SetupCatalogue(int totalCount) =>
             _games.SearchAsync(
                     Arg.Any<GameFilter>(), Arg.Any<int>(), Arg.Any<int>(),
@@ -400,5 +591,54 @@ namespace VideoGameManager.Tests.Presenters
 
         private void RaiseExport(string format, string path) =>
             _view.ExportRequested += Raise.EventWith(new ExportRequestedEventArgs(format, path));
+
+        private void RaiseImport(string format, string path) =>
+            _view.ImportRequested += Raise.EventWith(new ImportRequestedEventArgs(format, path));
+
+        private List<IGameExporter> Exporters() => new List<IGameExporter> { _csvExporter };
+
+        private List<IGameImporter> Importers() => new List<IGameImporter> { _jsonImporter };
+
+        /// <summary>
+        /// Makes every add succeed with a made-up identity, which is what the catalogue does
+        /// for a game that passes validation.
+        /// </summary>
+        private void SetupAddSucceeds() =>
+            _games.AddAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Result<int>.Success(99)));
+
+        /// <summary>
+        /// Makes the substituted importer hand back these games, whatever the file holds. The
+        /// presenter still opens the real file, so the tests using this run inside
+        /// <see cref="WithTempFile"/>.
+        /// </summary>
+        private void SetupImportFile(params Game[] games) =>
+            _jsonImporter.ReadAsync(Arg.Any<TextReader>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult<IReadOnlyList<Game>>(new List<Game>(games)));
+
+        /// <summary>
+        /// Runs an action against a real, empty temporary file and deletes it afterwards.
+        /// </summary>
+        private static void WithTempFile(Action<string> act)
+        {
+            string path = Path.GetTempFileName();
+            try
+            {
+                act(path);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        private static Game NewGame(string name) => new Game
+        {
+            Name = name,
+            Genre = "Action",
+            Platforms = new List<string> { "PC" },
+            Score = 9.0,
+            Status = PlayStatus.Backlog,
+        };
     }
 }

@@ -55,6 +55,31 @@ namespace VideoGameManager.UI
         private const int CopyBufferSize = 81920;
 
         /// <summary>
+        /// Quality passed to the JPEG encoder for artwork that has no transparency.
+        /// </summary>
+        /// <remarks>
+        /// Chosen by encoding the catalogue's covers across the range. Below this the
+        /// savings flatten out while the artefacts do not: cover art carries titles,
+        /// logos and studio marks, and it is exactly those hard edges that pick up
+        /// ringing first, so a number tuned on photographs would be too low here. Above
+        /// it the file grows far faster than the picture improves - the same covers cost
+        /// roughly 40% more at 95 and three times as much at 100, for a difference no
+        /// one is going to see in a slot a couple of hundred pixels wide.
+        /// </remarks>
+        private const long JpegQuality = 90L;
+
+        /// <summary>
+        /// Extension used by cache files this build can no longer read.
+        /// </summary>
+        /// <remarks>
+        /// Entries used to be named for the address alone. They are now named for the
+        /// address and the stored size together, under a different extension, so nothing
+        /// written under the old scheme will ever be looked up again - it would only sit
+        /// in the cache folder taking up space. See <see cref="RemoveSupersededEntries"/>.
+        /// </remarks>
+        private const string SupersededCacheExtension = ".img";
+
+        /// <summary>
         /// Widest and tallest the cover slot is drawn on any screen, in pixels. Both
         /// windows are fixed size, so these do not move at runtime: the browse screen
         /// draws into 236x424 and the recommendation screen into 232x290, rounded up here
@@ -91,6 +116,12 @@ namespace VideoGameManager.UI
         private static readonly HttpClient SharedHttpClient = CreateHttpClient();
 
         /// <summary>
+        /// The JPEG encoder, looked up once. Null if the platform does not offer one, in
+        /// which case everything is stored as PNG exactly as it was before.
+        /// </summary>
+        private static readonly ImageCodecInfo? JpegCodec = FindJpegCodec();
+
+        /// <summary>
         /// Guards both caches. They are updated together often enough, and briefly enough,
         /// that one lock is simpler to reason about than two lock-free structures.
         /// </summary>
@@ -112,6 +143,11 @@ namespace VideoGameManager.UI
         private readonly Func<string, CancellationToken, Task<byte[]?>> _download;
 
         private bool _disposed;
+
+        /// <summary>
+        /// Zero until the one-off sweep for unreadable cache entries has been started.
+        /// </summary>
+        private int _sweptSupersededEntries;
 
         /// <summary>Initialises a provider that caches under the user's local application data folder.</summary>
         public CachedCoverImageProvider()
@@ -198,6 +234,10 @@ namespace VideoGameManager.UI
                 // simply have been unreachable at the time.
                 return null;
             }
+
+            // First time this run that anything is about to be read from or written to the
+            // cache folder, and therefore the cheapest moment to notice what is stale in it.
+            RemoveSupersededEntries();
 
             string cacheFilePath = GetDiskCachePath(coverReference);
 
@@ -483,6 +523,88 @@ namespace VideoGameManager.UI
             }
         }
 
+        /// <summary>
+        /// Deletes cache files this build can no longer read, once per provider.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Kept deliberately narrow, because it is the only thing here that destroys
+        /// anything: it looks in this provider's own cache folder and nowhere below it,
+        /// and it removes only files whose extension is exactly the superseded one. That
+        /// last condition is spelled out in the loop rather than left to the search
+        /// pattern alone. A pattern is a filter the file system interprets, and what it
+        /// admits has varied with the platform and the volume - short-name matching being
+        /// the usual reason a pattern returns more than it appears to ask for. Stating the
+        /// rule for deletion where the deletion happens costs one comparison per candidate
+        /// and makes the bound on this method readable without knowing any of that.
+        /// </para>
+        /// <para>
+        /// It runs at most once per instance, on the first request that reaches the disk,
+        /// so listing the folder is not repeated for every cover on a screen. Failure is
+        /// not propagated in any form: this reclaims space, and a cache folder that cannot
+        /// be tidied is not a reason for a screen to stop showing artwork.
+        /// </para>
+        /// </remarks>
+        private void RemoveSupersededEntries()
+        {
+            if (Interlocked.Exchange(ref _sweptSupersededEntries, 1) != 0)
+            {
+                return;
+            }
+
+            List<string> removed = new List<string>();
+
+            try
+            {
+                if (!Directory.Exists(_diskCacheDirectory))
+                {
+                    return;
+                }
+
+                foreach (string path in Directory.EnumerateFiles(
+                    _diskCacheDirectory, "*" + SupersededCacheExtension, SearchOption.TopDirectoryOnly))
+                {
+                    if (!string.Equals(
+                        Path.GetExtension(path), SupersededCacheExtension, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        File.Delete(path);
+                        removed.Add(Path.GetFileName(path));
+                    }
+                    catch (IOException)
+                    {
+                        // Held open by something else. It will still be here next run.
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // Read-only or not ours to delete. Left where it is.
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                // The folder could not be listed. Whatever is in it simply stays.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // As above: no permission to look, so nothing is reclaimed.
+            }
+
+            if (removed.Count > 0)
+            {
+                _logger.LogInformation(
+                    "Removed {Count} unreadable cover cache {Entries} from {Directory}: {Files}",
+                    removed.Count,
+                    removed.Count == 1 ? "entry" : "entries",
+                    _diskCacheDirectory,
+                    string.Join(", ", removed));
+            }
+        }
+
         private static async Task<byte[]?> ReadFromDiskAsync(string path, CancellationToken cancellationToken)
         {
             if (!File.Exists(path))
@@ -551,10 +673,10 @@ namespace VideoGameManager.UI
         /// something that can be read as an image.</returns>
         /// <remarks>
         /// Proportions are kept, so a portrait cover stays portrait, and nothing is ever
-        /// enlarged: scaling a small picture up would cost space and add no detail. The
-        /// scaled result is written as PNG so that artwork with transparent corners keeps
-        /// them; a picture that needed no scaling is stored in whatever format it arrived
-        /// in, because re-encoding it could only lose quality or add bytes.
+        /// enlarged: scaling a small picture up would cost space and add no detail. How the
+        /// scaled result is written depends on what is in it - see <see cref="Encode"/>. A
+        /// picture that needed no scaling is stored in whatever format it arrived in,
+        /// because re-encoding it could only lose quality or add bytes.
         /// </remarks>
         internal static byte[]? ReduceForDisplay(byte[] originalBytes)
         {
@@ -602,11 +724,7 @@ namespace VideoGameManager.UI
                             }
                         }
 
-                        using (MemoryStream output = new MemoryStream())
-                        {
-                            reduced.Save(output, ImageFormat.Png);
-                            return output.ToArray();
-                        }
+                        return Encode(reduced);
                     }
                 }
             }
@@ -621,6 +739,117 @@ namespace VideoGameManager.UI
                 // download: no artwork, and the caller shows its placeholder.
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Encodes a scaled cover in whichever format suits what is actually in it: JPEG
+        /// when it is opaque, PNG when any part of it is see-through.
+        /// </summary>
+        /// <param name="reduced">The scaled artwork, always 32 bits per pixel with alpha.</param>
+        /// <returns>The bytes to store.</returns>
+        /// <remarks>
+        /// <para>
+        /// PNG is lossless, and lossless is the wrong trade for a photograph or a painted
+        /// cover: reducing one to a fraction of its pixel count can still produce a file
+        /// several times larger than the original arrived as, so scaling down would cost
+        /// disk space rather than save it. JPEG is what those covers were published as and
+        /// what they compress well into. PNG is kept only where it earns its size, which is
+        /// artwork that is transparent somewhere - JPEG cannot store transparency at all,
+        /// and flattening it silently paints the see-through parts onto a solid background.
+        /// </para>
+        /// <para>
+        /// Which of the two applies is decided by looking at the pixels rather than at the
+        /// format the artwork declares. A picture may carry an alpha channel and use none
+        /// of it, and that is not a rare corner: covers published as PNG routinely arrive
+        /// with a fully opaque alpha channel, and trusting the declaration alone would keep
+        /// the very largest of them lossless for nothing. The check costs well under a
+        /// millisecond, once, on the same code path that just finished a download.
+        /// </para>
+        /// </remarks>
+        private static byte[] Encode(Bitmap reduced)
+        {
+            bool lossless = JpegCodec == null || HasTransparentPixels(reduced);
+
+            using (MemoryStream output = new MemoryStream())
+            {
+                if (lossless)
+                {
+                    reduced.Save(output, ImageFormat.Png);
+                }
+                else
+                {
+                    using (EncoderParameters parameters = new EncoderParameters(1))
+                    // Fully qualified: System.Text is in scope here and has an Encoder of
+                    // its own, which is an unrelated type.
+                    using (EncoderParameter quality =
+                        new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, JpegQuality))
+                    {
+                        parameters.Param[0] = quality;
+                        reduced.Save(output, JpegCodec!, parameters);
+                    }
+                }
+
+                return output.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Reports whether any pixel is less than fully opaque.
+        /// </summary>
+        /// <remarks>
+        /// Reads the alpha byte of every pixel and stops at the first one that is not
+        /// solid, so artwork with a transparent border - the common case - is settled
+        /// almost immediately and only a fully opaque picture is read all the way
+        /// through. The rows are copied out one at a time instead of being addressed
+        /// directly, which keeps this ordinary verifiable code rather than pointer
+        /// arithmetic, for a cost that does not matter at this size.
+        /// </remarks>
+        private static bool HasTransparentPixels(Bitmap reduced)
+        {
+            BitmapData data = reduced.LockBits(
+                new Rectangle(Point.Empty, reduced.Size),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format32bppArgb);
+
+            try
+            {
+                byte[] row = new byte[Math.Abs(data.Stride)];
+
+                for (int y = 0; y < data.Height; y++)
+                {
+                    // Signed arithmetic on purpose: a bottom-up bitmap reports a negative
+                    // stride, with Scan0 pointing at the last row rather than the first.
+                    Marshal.Copy(data.Scan0 + (y * data.Stride), row, 0, row.Length);
+
+                    // Alpha is the fourth byte of each pixel in this layout.
+                    for (int offset = 3; offset < data.Width * 4; offset += 4)
+                    {
+                        if (row[offset] != byte.MaxValue)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                reduced.UnlockBits(data);
+            }
+
+            return false;
+        }
+
+        private static ImageCodecInfo? FindJpegCodec()
+        {
+            foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageEncoders())
+            {
+                if (codec.FormatID == ImageFormat.Jpeg.Guid)
+                {
+                    return codec;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

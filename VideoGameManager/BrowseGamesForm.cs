@@ -25,10 +25,14 @@ namespace VideoGameManager
         private const string NoExportFormats =
             "No export format is available.";
 
+        private const string NoImportFormats =
+            "No import format is available.";
+
         private readonly Presenters.BrowseGamesPresenter? _presenter;
         private readonly IServiceProvider? _provider;
 
         private IReadOnlyList<ExportFormat> _exportFormats = new ExportFormat[0];
+        private IReadOnlyList<ImportFormat> _importFormats = new ImportFormat[0];
 
         /// <summary>
         /// Set while the filter controls are being filled from code. Every filter control
@@ -54,6 +58,7 @@ namespace VideoGameManager
         /// </param>
         /// <param name="games">The catalogue.</param>
         /// <param name="exporters">Every registered export format.</param>
+        /// <param name="importers">Every registered import format.</param>
         /// <param name="covers">
         /// The shared cover cache. It is handed in rather than created here so that every
         /// screen draws from the same one and artwork survives a window closing.
@@ -63,13 +68,14 @@ namespace VideoGameManager
             IServiceProvider provider,
             Services.IGameService games,
             IEnumerable<Services.IGameExporter> exporters,
+            IEnumerable<Services.IGameImporter> importers,
             ICoverImageProvider covers,
             ILogger<Presenters.BrowseGamesPresenter> presenterLogger)
             : this()
         {
             _provider = provider;
             picCover.Provider = covers;
-            _presenter = new Presenters.BrowseGamesPresenter(this, games, exporters, presenterLogger);
+            _presenter = new Presenters.BrowseGamesPresenter(this, games, exporters, importers, presenterLogger);
         }
 
         /// <inheritdoc />
@@ -95,6 +101,9 @@ namespace VideoGameManager
 
         /// <inheritdoc />
         public event EventHandler<ExportRequestedEventArgs>? ExportRequested;
+
+        /// <inheritdoc />
+        public event EventHandler<ImportRequestedEventArgs>? ImportRequested;
 
         IReadOnlyList<Game> Views.IGameListView.Games
         {
@@ -124,6 +133,11 @@ namespace VideoGameManager
         IReadOnlyList<ExportFormat> Views.IGameListView.ExportFormats
         {
             set { _exportFormats = value ?? new ExportFormat[0]; }
+        }
+
+        IReadOnlyList<ImportFormat> Views.IGameListView.ImportFormats
+        {
+            set { _importFormats = value ?? new ImportFormat[0]; }
         }
 
         /// <inheritdoc />
@@ -359,6 +373,47 @@ namespace VideoGameManager
             }
         }
 
+        private void btnImport_Click(object? sender, EventArgs e)
+        {
+            if (_importFormats.Count == 0)
+            {
+                ShowInfo(NoImportFormats);
+                return;
+            }
+
+            using (OpenFileDialog dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Import games";
+                dialog.Filter = BuildImportFilter(_importFormats);
+                dialog.FilterIndex = 1;
+
+                // One file at a time, and one that is really there: a path typed by hand into
+                // the dialog would otherwise reach the presenter and fail as a read error,
+                // which reads like a broken import rather than a misspelt name.
+                dialog.Multiselect = false;
+                dialog.CheckFileExists = true;
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    // The user closed the dialog without choosing. Nothing is raised, so
+                    // nothing happens.
+                    return;
+                }
+
+                // FilterIndex counts from one, and the dialog can hand back an index outside
+                // the list if the filter string was rejected, so it is clamped before use.
+                int index = dialog.FilterIndex - 1;
+                if (index < 0 || index >= _importFormats.Count)
+                {
+                    index = 0;
+                }
+
+                ImportRequested?.Invoke(
+                    this,
+                    new ImportRequestedEventArgs(_importFormats[index].Name, dialog.FileName));
+            }
+        }
+
         // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
@@ -447,20 +502,48 @@ namespace VideoGameManager
 
             for (int i = 0; i < formats.Count; i++)
             {
-                if (i > 0)
-                {
-                    filter.Append('|');
-                }
-
-                ExportFormat format = formats[i];
-                filter.Append(format.Name)
-                      .Append(" file (*")
-                      .Append(format.FileExtension)
-                      .Append(")|*")
-                      .Append(format.FileExtension);
+                AppendFilterEntry(filter, i, formats[i].Name, formats[i].FileExtension);
             }
 
             return filter.ToString();
+        }
+
+        /// <summary>
+        /// Builds an open dialog filter string out of the formats the presenter published.
+        /// </summary>
+        private static string BuildImportFilter(IReadOnlyList<ImportFormat> formats)
+        {
+            StringBuilder filter = new StringBuilder();
+
+            for (int i = 0; i < formats.Count; i++)
+            {
+                AppendFilterEntry(filter, i, formats[i].Name, formats[i].FileExtension);
+            }
+
+            return filter.ToString();
+        }
+
+        /// <summary>
+        /// Appends one entry to a file dialog filter, in the form the dialog expects: a
+        /// readable description and a pattern, separated by a bar, and each entry separated
+        /// from the last by another.
+        /// </summary>
+        /// <param name="filter">Filter being built.</param>
+        /// <param name="position">Zero-based position of this entry, which decides whether a separator is needed first.</param>
+        /// <param name="name">Name of the format.</param>
+        /// <param name="fileExtension">Extension, including the leading dot.</param>
+        private static void AppendFilterEntry(StringBuilder filter, int position, string name, string fileExtension)
+        {
+            if (position > 0)
+            {
+                filter.Append('|');
+            }
+
+            filter.Append(name)
+                  .Append(" file (*")
+                  .Append(fileExtension)
+                  .Append(")|*")
+                  .Append(fileExtension);
         }
 
         /// <summary>

@@ -7,7 +7,30 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## [Unreleased]
 
+### Added
+- Import the catalogue from a JSON file, on the browse screen beside Export.
+  `JsonGameImporter` reads back exactly what `JsonGameExporter` writes, so an export and an
+  import are a round trip - proven by a test that writes with one and reads with the other.
+  The stored `Id` is deliberately not read: an imported game is a new row, and a number from
+  another database either collides or means something else.
+
+  Importing is not destructive. A game whose title is already stored is skipped, compared
+  without regard to case, so importing the same file twice cannot duplicate or overwrite the
+  catalogue. A file that is not JSON, or not an array of games, imports nothing at all; a
+  single entry that breaks a domain rule is skipped while the rest still arrive. Every run
+  reports the three counts it produced - stored, already present, refused by the validator -
+  and the counts always add up to the number of entries in the file.
+
 ### Performance
+- A cached cover is stored in the format its content calls for: JPEG at quality 90 unless
+  the picture has transparent pixels, in which case PNG is kept. The decision is made by
+  inspecting the pixels rather than trusting the declared pixel format - cover art published
+  as PNG routinely carries a fully opaque alpha channel, and the catalogue's largest cover is
+  exactly such a file, so the cheap check would have kept it lossless for no benefit. The
+  three largest covers went from 1,887,210 bytes on disk to 236,646, and their decode time
+  roughly halved. The scan costs under a millisecond, once per download.
+- Cache files left under the previous naming scheme are deleted once per run, limited to the
+  cache folder's own top level and to that exact extension, with every failure swallowed.
 - Cover art is scaled to twice the size it is drawn at before it reaches the disk cache,
   and the target size is mixed into the cache key so an entry cannot outlive the size it
   was stored for. Decoding the largest cover in the sample data went from 71 ms to 4 ms,

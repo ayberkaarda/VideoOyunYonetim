@@ -59,6 +59,59 @@ namespace VideoGameManager.Views
     }
 
     /// <summary>
+    /// One file format the catalogue can be read back from, as far as the screen that opens
+    /// the file needs to know.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <see cref="ExportFormat"/>, kept as a separate type rather than shared
+    /// with it because the two lists are not the same: a format can be written without being
+    /// readable, and a screen that offered every export format for import would put files in
+    /// front of the user that nothing can read back.
+    /// </remarks>
+    public sealed class ImportFormat
+    {
+        /// <summary>Creates a format entry.</summary>
+        /// <param name="name">Name shown to the user, for example <c>JSON</c>.</param>
+        /// <param name="fileExtension">Extension including the leading dot, for example <c>.json</c>.</param>
+        public ImportFormat(string name, string fileExtension)
+        {
+            Name = name;
+            FileExtension = fileExtension;
+        }
+
+        /// <summary>Name shown to the user.</summary>
+        public string Name { get; }
+
+        /// <summary>File extension, including the leading dot.</summary>
+        public string FileExtension { get; }
+    }
+
+    /// <summary>
+    /// Says which format the user picked and which file should be read.
+    /// </summary>
+    /// <remarks>
+    /// Choosing the file is the view's business because it owns the dialog; opening it,
+    /// reading it and deciding what to do with what comes out is the presenter's.
+    /// </remarks>
+    public sealed class ImportRequestedEventArgs : EventArgs
+    {
+        /// <summary>Creates the arguments.</summary>
+        /// <param name="format">Name of the chosen format, matching an <see cref="ImportFormat.Name"/>.</param>
+        /// <param name="filePath">Full path of the file to read.</param>
+        public ImportRequestedEventArgs(string format, string filePath)
+        {
+            Format = format;
+            FilePath = filePath;
+        }
+
+        /// <summary>Name of the chosen format.</summary>
+        public string Format { get; }
+
+        /// <summary>Full path of the file to read.</summary>
+        public string FilePath { get; }
+    }
+
+    /// <summary>
     /// The "browse games" screen. The list carries game ids, so the presenter fetches
     /// details by id rather than looking a title back up.
     /// </summary>
@@ -89,6 +142,9 @@ namespace VideoGameManager.Views
 
         /// <summary>Formats the export dialog offers.</summary>
         IReadOnlyList<ExportFormat> ExportFormats { set; }
+
+        /// <summary>Formats the import dialog offers.</summary>
+        IReadOnlyList<ImportFormat> ImportFormats { set; }
 
         /// <summary>Text typed into the search field. Empty when nothing was typed.</summary>
         string SearchText { get; }
@@ -137,6 +193,9 @@ namespace VideoGameManager.Views
 
         /// <summary>The user picked a format and a file to export to.</summary>
         event EventHandler<ExportRequestedEventArgs>? ExportRequested;
+
+        /// <summary>The user picked a format and a file to import from.</summary>
+        event EventHandler<ImportRequestedEventArgs>? ImportRequested;
 
         /// <summary>Renders the detail panel, or empties it when passed <c>null</c>.</summary>
         void ShowDetails(Game? game);
