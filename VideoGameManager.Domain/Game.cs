@@ -60,5 +60,21 @@ namespace VideoGameManager.Domain
         /// the only place that can record its score and the moment it was written.
         /// </remarks>
         public string LatestReview { get; init; }
+
+        /// <summary>
+        /// How far the owner has got with this game. A game that has never been marked reads as
+        /// <see cref="PlayStatus.Backlog"/>.
+        /// </summary>
+        /// <remarks>
+        /// The default is deliberate rather than incidental. A catalogue that was kept before this
+        /// property existed says nothing about what its owner played, and "not started" is the
+        /// only answer that invents nothing.
+        /// </remarks>
+        public PlayStatus Status { get; set; }
+
+        /// <summary>
+        /// Whether the owner marked this game as a favourite. <c>false</c> until they do.
+        /// </summary>
+        public bool IsFavourite { get; set; }
     }
 }

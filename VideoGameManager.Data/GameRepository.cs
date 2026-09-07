@@ -35,7 +35,8 @@ namespace VideoGameManager.Data
         /// keeps the answer stable between two runs of the same query.
         /// </remarks>
         private const string SelectSql = @"
-SELECT      g.Id, g.Name, ge.Name AS Genre, g.Score, g.CoverUrl, lr.Body AS LatestReview
+SELECT      g.Id, g.Name, ge.Name AS Genre, g.Score, g.CoverUrl, g.[Status], g.IsFavourite,
+            lr.Body AS LatestReview
 FROM        dbo.Game AS g
 LEFT JOIN   dbo.Genre AS ge ON ge.Id = g.GenreId
 OUTER APPLY (SELECT TOP 1 r.Body
@@ -49,19 +50,23 @@ OUTER APPLY (SELECT TOP 1 r.Body
         /// strings.
         /// </summary>
         /// <remarks>
-        /// This predicate is repeated verbatim in <see cref="CountSql"/>. The two must stay in
-        /// step, or the reported total will not match the rows the pages actually contain.
+        /// The listing, the count beside it and the random pick all build on this one constant
+        /// rather than on copies of it. A copied predicate drifts the moment one of them gains a
+        /// clause: the count would then disagree with the rows the pages hold, and a suggestion
+        /// would be drawn from a set the user is not looking at. Neither failure announces itself.
         /// </remarks>
         private const string ListWhereSql = @"
-WHERE  (@NamePattern  IS NULL OR g.Name LIKE @NamePattern ESCAPE '\')
-  AND  (@Genre        IS NULL OR ge.Name = @Genre)
-  AND  (@PlatformName IS NULL OR EXISTS (
+WHERE  (@NamePattern    IS NULL OR g.Name LIKE @NamePattern ESCAPE '\')
+  AND  (@Genre          IS NULL OR ge.Name = @Genre)
+  AND  (@PlatformName   IS NULL OR EXISTS (
             SELECT 1
             FROM   dbo.GamePlatform AS gp
             INNER JOIN dbo.Platform AS p ON p.Id = gp.PlatformId
             WHERE  gp.GameId = g.Id AND p.Name = @PlatformName))
-  AND  (@MinScore     IS NULL OR g.Score >= @MinScore)
-  AND  (@MaxScore     IS NULL OR g.Score <= @MaxScore)";
+  AND  (@MinScore       IS NULL OR g.Score >= @MinScore)
+  AND  (@MaxScore       IS NULL OR g.Score <= @MaxScore)
+  AND  (@Status         IS NULL OR g.[Status] = @Status)
+  AND  (@OnlyFavourites IS NULL OR g.IsFavourite = 1)";
 
         private const string OrderByNameAscSql = @"
 ORDER BY g.Name ASC, g.Id ASC";
@@ -92,22 +97,20 @@ OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
         private const string ListByScoreDescSql = SelectSql + ListWhereSql + OrderByScoreDescSql + PageSql;
 
         /// <summary>
-        /// Total number of matching rows. The predicate matches the listing exactly; the newest
-        /// review is left out because counting rows does not need it.
+        /// Row source for the count: the same two tables the listing reads, without the newest
+        /// review, because counting rows does not need it.
         /// </summary>
-        private const string CountSql = @"
+        private const string CountFromSql = @"
 SELECT      COUNT(*)
 FROM        dbo.Game AS g
-LEFT JOIN   dbo.Genre AS ge ON ge.Id = g.GenreId
-WHERE  (@NamePattern  IS NULL OR g.Name LIKE @NamePattern ESCAPE '\')
-  AND  (@Genre        IS NULL OR ge.Name = @Genre)
-  AND  (@PlatformName IS NULL OR EXISTS (
-            SELECT 1
-            FROM   dbo.GamePlatform AS gp
-            INNER JOIN dbo.Platform AS p ON p.Id = gp.PlatformId
-            WHERE  gp.GameId = g.Id AND p.Name = @PlatformName))
-  AND  (@MinScore     IS NULL OR g.Score >= @MinScore)
-  AND  (@MaxScore     IS NULL OR g.Score <= @MaxScore);";
+LEFT JOIN   dbo.Genre AS ge ON ge.Id = g.GenreId";
+
+        /// <summary>
+        /// Total number of matching rows. It is built from the listing's own predicate rather
+        /// than from a copy of it, so the reported total cannot drift away from the rows the
+        /// pages actually contain.
+        /// </summary>
+        private const string CountSql = CountFromSql + ListWhereSql + ";";
 
         private const string GetWhereSql = @"
 WHERE  g.Id = @Id;";
@@ -120,12 +123,14 @@ WHERE  g.Id = @Id;";
         /// with OFFSET/FETCH rather than TOP so that the shared select body can be reused
         /// unchanged; both express the same one row.
         /// </summary>
-        private const string RandomWhereSql = @"
-WHERE  (@MinScore IS NULL OR g.Score >= @MinScore)
+        private const string RandomOrderSql = @"
 ORDER BY NEWID()
 OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;";
 
-        private const string RandomSql = SelectSql + RandomWhereSql;
+        /// <summary>
+        /// The random pick, over the listing's own row source and the listing's own predicate.
+        /// </summary>
+        private const string RandomSql = SelectSql + ListWhereSql + RandomOrderSql;
 
         /// <summary>
         /// Every genre on offer.
@@ -193,17 +198,74 @@ END
 SELECT @PlatformId;";
 
         private const string InsertGameSql = @"
-INSERT INTO dbo.Game (Name, GenreId, Score, CoverUrl)
+INSERT INTO dbo.Game (Name, GenreId, Score, CoverUrl, [Status], IsFavourite)
 OUTPUT INSERTED.Id
-VALUES (@Name, @GenreId, @Score, @CoverUrl);";
+VALUES (@Name, @GenreId, @Score, @CoverUrl, @Status, @IsFavourite);";
 
         private const string UpdateGameSql = @"
 UPDATE dbo.Game
-SET    Name     = @Name,
-       GenreId  = @GenreId,
-       Score    = @Score,
-       CoverUrl = @CoverUrl
+SET    Name        = @Name,
+       GenreId     = @GenreId,
+       Score       = @Score,
+       CoverUrl    = @CoverUrl,
+       [Status]    = @Status,
+       IsFavourite = @IsFavourite
 WHERE  Id = @Id;";
+
+        /// <summary>
+        /// Counts the scored reviews per genre and averages them.
+        /// </summary>
+        /// <remarks>
+        /// Reviews without a score are excluded before the grouping rather than averaged as
+        /// zero, which would drag every genre towards the bottom of the scale for no reason other
+        /// than someone having written prose without a number. The joins are inner ones on
+        /// purpose: a review of a game that belongs to no genre has no genre to be attributed to,
+        /// and a genre with no scored review has nothing to average, so neither produces a row.
+        /// </remarks>
+        private const string GenreAffinitiesSql = @"
+SELECT      ge.Name        AS Genre,
+            COUNT(*)       AS ScoredReviewCount,
+            AVG(r.Score)   AS AverageReviewScore
+FROM        dbo.Review AS r
+INNER JOIN  dbo.Game   AS g  ON g.Id  = r.GameId
+INNER JOIN  dbo.Genre  AS ge ON ge.Id = g.GenreId
+WHERE       r.Score IS NOT NULL
+GROUP BY    ge.Name
+ORDER BY    ge.Name;";
+
+        /// <summary>
+        /// The catalogue totals, as one row.
+        /// </summary>
+        /// <remarks>
+        /// The average is of the games' own scores. Unscored games are left out of it by the
+        /// aggregate itself, and an empty catalogue yields no average at all rather than a zero
+        /// that would read as "everything here is terrible".
+        /// </remarks>
+        private const string StatisticsTotalsSql = @"
+SELECT (SELECT COUNT(*)   FROM dbo.Game)   AS TotalGames,
+       (SELECT COUNT(*)   FROM dbo.Review) AS ReviewCount,
+       (SELECT AVG(Score) FROM dbo.Game)   AS AverageScore;";
+
+        /// <summary>
+        /// The per-genre breakdown of the catalogue.
+        /// </summary>
+        /// <remarks>
+        /// The join to the lookup is a left one, so games that belong to no genre are gathered
+        /// into a single row whose name is null instead of disappearing. Dropping them would make
+        /// the breakdown add up to less than the total beside it, and nothing on the screen would
+        /// say why. Largest group first is what a reader wants; the name settles ties so that two
+        /// runs over the same data give the same order.
+        /// </remarks>
+        private const string StatisticsByGenreSql = @"
+SELECT      ge.Name      AS Genre,
+            COUNT(*)     AS GameCount,
+            AVG(g.Score) AS AverageScore
+FROM        dbo.Game  AS g
+LEFT JOIN   dbo.Genre AS ge ON ge.Id = g.GenreId
+GROUP BY    ge.Name
+ORDER BY    COUNT(*) DESC, ge.Name;";
+
+        private const string StatisticsSql = StatisticsTotalsSql + StatisticsByGenreSql;
 
         /// <summary>
         /// Attaches a game to a platform. The existence check keeps the statement repeatable, so a
@@ -259,31 +321,8 @@ WHERE  Id = @Id;";
                 throw new ArgumentOutOfRangeException(nameof(pageSize), pageSize, "A page holds at least one row.");
             }
 
-            GameFilter effective = filter ?? GameFilter.None;
-
-            string namePattern = ToContainsPattern(effective.Name);
-            string genre = Normalise(effective.Genre);
-            string platformName = Normalise(effective.Platform);
-
-            var countParameters = new
-            {
-                NamePattern = namePattern,
-                Genre = genre,
-                PlatformName = platformName,
-                MinScore = effective.MinScore,
-                MaxScore = effective.MaxScore,
-            };
-
-            var pageParameters = new
-            {
-                NamePattern = namePattern,
-                Genre = genre,
-                PlatformName = platformName,
-                MinScore = effective.MinScore,
-                MaxScore = effective.MaxScore,
-                Offset = (page - 1) * pageSize,
-                PageSize = pageSize,
-            };
+            FilterArguments countParameters = ToArguments(filter);
+            PageArguments pageParameters = ToArguments(filter, page, pageSize);
 
             using (DbConnection connection = _connections.Create())
             {
@@ -345,6 +384,8 @@ WHERE  Id = @Id;";
                         GenreId = genreId,
                         Score = game.Score,
                         CoverUrl = game.CoverUrl,
+                        Status = (byte)game.Status,
+                        IsFavourite = game.IsFavourite,
                     };
 
                     int id = await connection
@@ -385,6 +426,8 @@ WHERE  Id = @Id;";
                         GenreId = genreId,
                         Score = game.Score,
                         CoverUrl = game.CoverUrl,
+                        Status = (byte)game.Status,
+                        IsFavourite = game.IsFavourite,
                     };
 
                     int affected = await connection
@@ -439,7 +482,7 @@ WHERE  Id = @Id;";
             ReadStringsAsync(PlatformsSql, ct);
 
         /// <inheritdoc />
-        public async Task<Game> GetRandomAsync(double minScore, CancellationToken ct = default)
+        public async Task<Game> GetRandomAsync(GameFilter filter, CancellationToken ct = default)
         {
             using (DbConnection connection = _connections.Create())
             {
@@ -447,12 +490,49 @@ WHERE  Id = @Id;";
 
                 Game game = await connection
                     .QueryFirstOrDefaultAsync<Game>(
-                        new CommandDefinition(RandomSql, new { MinScore = minScore }, cancellationToken: ct))
+                        new CommandDefinition(RandomSql, ToArguments(filter), cancellationToken: ct))
                     .ConfigureAwait(false);
 
                 await AttachPlatformsAsync(connection, ToList(game), ct).ConfigureAwait(false);
 
                 return game;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<GenreReviewSummary>> GetGenreAffinitiesAsync(CancellationToken ct = default)
+        {
+            using (DbConnection connection = _connections.Create())
+            {
+                await connection.OpenAsync(ct).ConfigureAwait(false);
+
+                return (await connection
+                    .QueryAsync<GenreReviewSummary>(new CommandDefinition(GenreAffinitiesSql, cancellationToken: ct))
+                    .ConfigureAwait(false)).AsList();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<CatalogueStatistics> GetStatisticsAsync(CancellationToken ct = default)
+        {
+            using (DbConnection connection = _connections.Create())
+            {
+                await connection.OpenAsync(ct).ConfigureAwait(false);
+
+                // Both questions travel in one command, so the totals and the breakdown are read
+                // from the same catalogue rather than from two moments a write could fall between.
+                using (SqlMapper.GridReader grid = await connection
+                    .QueryMultipleAsync(new CommandDefinition(StatisticsSql, cancellationToken: ct))
+                    .ConfigureAwait(false))
+                {
+                    CatalogueTotals totals = await grid.ReadSingleAsync<CatalogueTotals>().ConfigureAwait(false);
+
+                    List<GenreDistribution> byGenre =
+                        (await grid.ReadAsync<GenreDistribution>().ConfigureAwait(false)).AsList();
+
+                    return new CatalogueStatistics(
+                        totals.TotalGames, totals.ReviewCount, totals.AverageScore, byGenre);
+                }
             }
         }
 
@@ -625,6 +705,97 @@ WHERE  Id = @Id;";
                 .Replace("[", "\\[");
 
             return string.Concat("%", escaped, "%");
+        }
+
+        /// <summary>
+        /// Turns a filter into the bound values the shared predicate expects.
+        /// </summary>
+        private static FilterArguments ToArguments(GameFilter filter) =>
+            Fill(new FilterArguments(), filter);
+
+        /// <summary>
+        /// The same values, plus the window one page of the listing needs.
+        /// </summary>
+        private static PageArguments ToArguments(GameFilter filter, int page, int pageSize)
+        {
+            PageArguments arguments = Fill(new PageArguments(), filter);
+
+            arguments.Offset = (page - 1) * pageSize;
+            arguments.PageSize = pageSize;
+
+            return arguments;
+        }
+
+        /// <summary>
+        /// Copies a filter onto the argument object every statement that uses the shared
+        /// predicate binds.
+        /// </summary>
+        /// <remarks>
+        /// The values are typed rather than gathered into an untyped bag, so that a clause
+        /// comparing a number really does receive a number: an argument the provider has to guess
+        /// the type of arrives as text and makes the server convert on every row.
+        /// </remarks>
+        private static T Fill<T>(T arguments, GameFilter filter)
+            where T : FilterArguments
+        {
+            GameFilter effective = filter ?? GameFilter.None;
+
+            arguments.NamePattern = ToContainsPattern(effective.Name);
+            arguments.Genre = Normalise(effective.Genre);
+            arguments.PlatformName = Normalise(effective.Platform);
+            arguments.MinScore = effective.MinScore;
+            arguments.MaxScore = effective.MaxScore;
+            arguments.Status = effective.Status.HasValue ? (byte)effective.Status.Value : (byte?)null;
+
+            // Asking for favourites narrows the listing; not asking for them does not widen it to
+            // the games nobody marked. Both "no opinion" and "false" therefore switch the clause
+            // off, which is what a checkbox nobody ticked has to mean.
+            arguments.OnlyFavourites = effective.OnlyFavourites == true ? (bool?)true : null;
+
+            return arguments;
+        }
+
+        /// <summary>
+        /// The values bound to the shared listing predicate.
+        /// </summary>
+        private class FilterArguments
+        {
+            public string NamePattern { get; set; }
+
+            public string Genre { get; set; }
+
+            public string PlatformName { get; set; }
+
+            public double? MinScore { get; set; }
+
+            public double? MaxScore { get; set; }
+
+            public byte? Status { get; set; }
+
+            public bool? OnlyFavourites { get; set; }
+        }
+
+        /// <summary>
+        /// The listing predicate plus the page window. Inheriting keeps the two statements bound
+        /// to one set of filter values instead of two lists that have to be kept in step.
+        /// </summary>
+        private sealed class PageArguments : FilterArguments
+        {
+            public int Offset { get; set; }
+
+            public int PageSize { get; set; }
+        }
+
+        /// <summary>
+        /// The single row of catalogue totals, before the breakdown is attached to it.
+        /// </summary>
+        private sealed class CatalogueTotals
+        {
+            public int TotalGames { get; set; }
+
+            public int ReviewCount { get; set; }
+
+            public double? AverageScore { get; set; }
         }
 
         /// <summary>

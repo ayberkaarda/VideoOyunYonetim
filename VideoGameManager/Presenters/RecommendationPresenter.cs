@@ -28,7 +28,15 @@ namespace VideoGameManager.Presenters
             _recommendations = recommendations ?? throw new ArgumentNullException(nameof(recommendations));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
+            _view.Loaded += OnLoaded;
             _view.RecommendationRequested += OnRecommendationRequested;
+        }
+
+        // Filling the picker touches no database, only the service's in-memory list of
+        // registered strategies, so this stays synchronous and needs no try/catch of its own.
+        private void OnLoaded(object sender, EventArgs e)
+        {
+            _view.Strategies = _recommendations.AvailableStrategies;
         }
 
         // A failed pick renders inline where the pick is normally shown, rather than as a
@@ -52,12 +60,12 @@ namespace VideoGameManager.Presenters
             _view.IsBusy = true;
             try
             {
-                Game game = await _recommendations.RecommendAsync(null, ct).ConfigureAwait(true);
+                Game game = await _recommendations.RecommendAsync(_view.SelectedStrategy, ct).ConfigureAwait(true);
 
                 if (game is null)
                 {
                     _view.ShowGame(null);
-                    _view.ShowInfo("No games found in the database.");
+                    _view.ShowInfo("No game matched this recommendation strategy.");
                     return;
                 }
 

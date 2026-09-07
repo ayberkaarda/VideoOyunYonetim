@@ -37,7 +37,34 @@ namespace VideoGameManager
             picCover.LoadCompleted += PicCover_LoadCompleted;
         }
 
+        public event EventHandler Loaded;
+
         public event EventHandler RecommendationRequested;
+
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public IReadOnlyList<string> Strategies
+        {
+            set
+            {
+                cmbStrategy.Items.Clear();
+
+                if (value != null)
+                {
+                    foreach (string name in value)
+                    {
+                        cmbStrategy.Items.Add(new StrategyItem(name, DisplayNameFor(name)));
+                    }
+                }
+
+                if (cmbStrategy.Items.Count > 0)
+                {
+                    cmbStrategy.SelectedIndex = 0;
+                }
+            }
+        }
+
+        public string SelectedStrategy => cmbStrategy.SelectedItem is StrategyItem item ? item.Identifier : null;
 
         bool Views.IView.IsBusy
         {
@@ -149,6 +176,7 @@ namespace VideoGameManager
         private void RecommendationForm_Load(object sender, EventArgs e)
         {
             picCover.SizeMode = PictureBoxSizeMode.Zoom;
+            Loaded?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -162,6 +190,45 @@ namespace VideoGameManager
             return platforms is null || platforms.Count == 0
                 ? string.Empty
                 : string.Join(", ", platforms);
+        }
+
+        /// <summary>
+        /// Turns a strategy identifier into text a person reads comfortably. This is the one
+        /// place that mapping lives; an identifier with no entry here still shows up in the
+        /// picker, spelled exactly as the service returned it, rather than being dropped.
+        /// </summary>
+        private static string DisplayNameFor(string identifier)
+        {
+            switch (identifier)
+            {
+                case "Random":
+                    return "Random";
+                case "GenreWeighted":
+                    return "Genre weighted";
+                case "BacklogFirst":
+                    return "Backlog first";
+                default:
+                    return identifier;
+            }
+        }
+
+        /// <summary>
+        /// One entry in the strategy picker: the identifier the service expects, paired with
+        /// the text the combo box shows. <see cref="ToString"/> is what the combo box renders.
+        /// </summary>
+        private sealed class StrategyItem
+        {
+            internal StrategyItem(string identifier, string displayText)
+            {
+                Identifier = identifier;
+                DisplayText = displayText;
+            }
+
+            internal string Identifier { get; }
+
+            private string DisplayText { get; }
+
+            public override string ToString() => DisplayText;
         }
     }
 }

@@ -431,7 +431,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
             // about the query rather than about a lucky draw.
             for (int attempt = 0; attempt < 30; attempt++)
             {
-                Game picked = await _repository.GetRandomAsync(8.0);
+                Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 8.0));
 
                 picked.Should().NotBeNull();
                 picked.Score.Should().NotBeNull();
@@ -449,7 +449,7 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
             await _repository.AddAsync(NewGame("Low One", "Action", 4.0, "PC"));
             await _repository.AddAsync(NewGame("Unrated", "Action", null, "PC"));
 
-            Game picked = await _repository.GetRandomAsync(9.9);
+            Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 9.9));
 
             picked.Should().BeNull();
         }
@@ -459,10 +459,292 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
         {
             await _repository.AddAsync(NewGame("Only Choice", "Action", 9.0, "PC", "Switch"));
 
-            Game picked = await _repository.GetRandomAsync(1.0);
+            Game picked = await _repository.GetRandomAsync(new GameFilter(MinScore: 1.0));
 
             picked.Name.Should().Be("Only Choice");
             picked.Platforms.Should().BeEquivalentTo(new[] { "PC", "Switch" });
+        }
+
+        [Fact]
+        public async Task GetRandomAsync_WithNoFilterAtAll_MayPickAnUnratedGame()
+        {
+            // The predicate is the listing's, so a null bound switches its clause off entirely
+            // rather than quietly excluding the rows that have no score.
+            await _repository.AddAsync(NewGame("Unrated", "Action", null, "PC"));
+
+            Game picked = await _repository.GetRandomAsync(GameFilter.None);
+
+            picked.Should().NotBeNull();
+            picked.Name.Should().Be("Unrated");
+        }
+
+        [Fact]
+        public async Task GetRandomAsync_HonoursStatusGenreAndScoreTogether()
+        {
+            // Each of the three decoys breaks exactly one clause, so a filter that dropped any one
+            // of them would let a decoy through and this would fail rather than pass by luck.
+            await AddAsync(NewGame("The Only Match", "RPG", 9.0, "PC"), PlayStatus.Playing, false);
+            await AddAsync(NewGame("Wrong State", "RPG", 9.0, "PC"), PlayStatus.Backlog, false);
+            await AddAsync(NewGame("Wrong Genre", "Racing", 9.0, "PC"), PlayStatus.Playing, false);
+            await AddAsync(NewGame("Too Low", "RPG", 4.0, "PC"), PlayStatus.Playing, false);
+
+            GameFilter filter = new GameFilter(Genre: "RPG", MinScore: 8.0, Status: PlayStatus.Playing);
+
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                Game picked = await _repository.GetRandomAsync(filter);
+
+                picked.Should().NotBeNull();
+                picked.Name.Should().Be("The Only Match");
+            }
+        }
+
+        [Fact]
+        public async Task GetRandomAsync_WhenTheFilterMatchesNothing_ReturnsNull()
+        {
+            await AddAsync(NewGame("Backlogged", "RPG", 9.0, "PC"), PlayStatus.Backlog, false);
+
+            Game picked = await _repository.GetRandomAsync(new GameFilter(Status: PlayStatus.Finished));
+
+            picked.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetRandomAsync_AskedForFavouritesOnly_PicksOnlyFromThem()
+        {
+            await AddAsync(NewGame("Loved", "RPG", 5.0, "PC"), PlayStatus.Backlog, true);
+            await AddAsync(NewGame("Merely Owned", "RPG", 9.9, "PC"), PlayStatus.Backlog, false);
+
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                Game picked = await _repository.GetRandomAsync(new GameFilter(OnlyFavourites: true));
+
+                picked.Name.Should().Be("Loved");
+            }
+        }
+
+        [Fact]
+        public async Task AddAsync_ThenGetAsync_CarriesThePlayStateAndTheFavouriteFlagBothWays()
+        {
+            int id = await AddAsync(NewGame("Hades", "Roguelike", 9.6, "PC"), PlayStatus.Playing, true);
+
+            Game stored = await _repository.GetAsync(id);
+
+            stored.Status.Should().Be(PlayStatus.Playing);
+            stored.IsFavourite.Should().BeTrue();
+
+            stored.Status = PlayStatus.Finished;
+            stored.IsFavourite = false;
+
+            (await _repository.UpdateAsync(stored)).Should().BeTrue();
+
+            Game reread = await _repository.GetAsync(id);
+
+            reread.Status.Should().Be(PlayStatus.Finished);
+            reread.IsFavourite.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task AddAsync_WithoutSayingAnythingAboutTheState_StoresBacklogAndNotAFavourite()
+        {
+            int id = await _repository.AddAsync(NewGame("Fresh Arrival", "Action", 7.0, "PC"));
+
+            Game stored = await _repository.GetAsync(id);
+
+            stored.Status.Should().Be(PlayStatus.Backlog);
+            stored.IsFavourite.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(PlayStatus.Backlog, "Waiting")]
+        [InlineData(PlayStatus.Playing, "Underway")]
+        [InlineData(PlayStatus.Finished, "Done")]
+        public async Task ListAsync_FiltersByPlayState(PlayStatus status, string expected)
+        {
+            await AddAsync(NewGame("Waiting", "Action", 7.0, "PC"), PlayStatus.Backlog, false);
+            await AddAsync(NewGame("Underway", "Action", 7.0, "PC"), PlayStatus.Playing, false);
+            await AddAsync(NewGame("Done", "Action", 7.0, "PC"), PlayStatus.Finished, false);
+
+            PagedResult<Game> page = await _repository.ListAsync(new GameFilter(Status: status), 1, 10);
+
+            page.TotalCount.Should().Be(1);
+            page.Items.Single().Name.Should().Be(expected);
+        }
+
+        [Fact]
+        public async Task ListAsync_AskedForFavouritesOnly_KeepsOnlyTheMarkedGames()
+        {
+            await AddAsync(NewGame("Loved", "Action", 7.0, "PC"), PlayStatus.Backlog, true);
+            await AddAsync(NewGame("Also Loved", "Action", 7.0, "PC"), PlayStatus.Finished, true);
+            await AddAsync(NewGame("Merely Owned", "Action", 7.0, "PC"), PlayStatus.Backlog, false);
+
+            PagedResult<Game> page = await _repository.ListAsync(new GameFilter(OnlyFavourites: true), 1, 10);
+
+            page.TotalCount.Should().Be(2);
+            page.Items.Select(game => game.Name).Should().Equal("Also Loved", "Loved");
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData(false)]
+        public async Task ListAsync_NotAskedForFavourites_KeepsEverything(bool? onlyFavourites)
+        {
+            // Not asking for favourites is not the same as asking for the games nobody marked;
+            // there is no screen that wants those, so both readings of "no" keep the whole list.
+            await AddAsync(NewGame("Loved", "Action", 7.0, "PC"), PlayStatus.Backlog, true);
+            await AddAsync(NewGame("Merely Owned", "Action", 7.0, "PC"), PlayStatus.Backlog, false);
+
+            PagedResult<Game> page = await _repository.ListAsync(
+                new GameFilter(OnlyFavourites: onlyFavourites), 1, 10);
+
+            page.TotalCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task ListAsync_CombiningStateAndFavourite_AppliesBoth()
+        {
+            await AddAsync(NewGame("Wanted", "Action", 7.0, "PC"), PlayStatus.Playing, true);
+            await AddAsync(NewGame("Right State Only", "Action", 7.0, "PC"), PlayStatus.Playing, false);
+            await AddAsync(NewGame("Favourite Only", "Action", 7.0, "PC"), PlayStatus.Backlog, true);
+
+            PagedResult<Game> page = await _repository.ListAsync(
+                new GameFilter(Status: PlayStatus.Playing, OnlyFavourites: true), 1, 10);
+
+            page.TotalCount.Should().Be(1);
+            page.Items.Single().Name.Should().Be("Wanted");
+        }
+
+        [Fact]
+        public async Task GetGenreAffinitiesAsync_CountsAndAveragesTheScoredReviewsOfEachGenre()
+        {
+            int firstRpg = await _repository.AddAsync(NewGame("Disco Elysium", "RPG", 9.5, "PC"));
+            int secondRpg = await _repository.AddAsync(NewGame("Baldur's Gate 3", "RPG", 9.8, "PC"));
+            int racer = await _repository.AddAsync(NewGame("Forza Horizon 5", "Racing", 9.0, "Xbox"));
+
+            await AddReviewRowAsync(firstRpg, 8.0, "Long, and worth it.");
+            await AddReviewRowAsync(secondRpg, 9.0, "Longer still.");
+            await AddReviewRowAsync(racer, 6.0, "Pretty, shallow.");
+
+            IReadOnlyList<GenreReviewSummary> affinities = await _repository.GetGenreAffinitiesAsync();
+
+            affinities.Select(row => row.Genre).Should().Equal("Racing", "RPG");
+
+            GenreReviewSummary rpg = affinities.Single(row => row.Genre == "RPG");
+            rpg.ScoredReviewCount.Should().Be(2);
+            rpg.AverageReviewScore.Should().Be(8.5);
+
+            GenreReviewSummary racing = affinities.Single(row => row.Genre == "Racing");
+            racing.ScoredReviewCount.Should().Be(1);
+            racing.AverageReviewScore.Should().Be(6.0);
+        }
+
+        [Fact]
+        public async Task GetGenreAffinitiesAsync_IgnoresReviewsThatCarryNoScore()
+        {
+            // A review without a score is prose about a game, not an opinion that can be averaged.
+            // Counting it as a zero would drag its genre to the bottom of the scale for no reason.
+            int id = await _repository.AddAsync(NewGame("Disco Elysium", "RPG", 9.5, "PC"));
+
+            await AddReviewRowAsync(id, 8.0, "Long, and worth it.");
+            await AddReviewRowAsync(id, null, "No number for this one.");
+
+            GenreReviewSummary rpg = (await _repository.GetGenreAffinitiesAsync()).Single();
+
+            rpg.ScoredReviewCount.Should().Be(1);
+            rpg.AverageReviewScore.Should().Be(8.0);
+        }
+
+        [Fact]
+        public async Task GetGenreAffinitiesAsync_LeavesOutGenresNobodyHasScored()
+        {
+            int reviewed = await _repository.AddAsync(NewGame("Disco Elysium", "RPG", 9.5, "PC"));
+            await _repository.AddAsync(NewGame("Forza Horizon 5", "Racing", 9.0, "Xbox"));
+
+            await AddReviewRowAsync(reviewed, 8.0, "Long, and worth it.");
+
+            IReadOnlyList<GenreReviewSummary> affinities = await _repository.GetGenreAffinitiesAsync();
+
+            affinities.Should().ContainSingle().Which.Genre.Should().Be("RPG");
+        }
+
+        [Fact]
+        public async Task GetGenreAffinitiesAsync_OnAnEmptyCatalogue_ReturnsNothing()
+        {
+            IReadOnlyList<GenreReviewSummary> affinities = await _repository.GetGenreAffinitiesAsync();
+
+            affinities.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetStatisticsAsync_ReportsTheTotalsAndTheBreakdown()
+        {
+            int firstRpg = await _repository.AddAsync(NewGame("Disco Elysium", "RPG", 9.5, "PC"));
+            await _repository.AddAsync(NewGame("Baldur's Gate 3", "RPG", 9.9, "PC"));
+            await _repository.AddAsync(NewGame("Forza Horizon 5", "Racing", 9.0, "Xbox"));
+
+            await AddReviewRowAsync(firstRpg, 8.0, "Long, and worth it.");
+            await AddReviewRowAsync(firstRpg, null, "Still thinking about it.");
+
+            CatalogueStatistics statistics = await _repository.GetStatisticsAsync();
+
+            statistics.TotalGames.Should().Be(3);
+            statistics.ReviewCount.Should().Be(2, "a review without a score is still a review");
+            statistics.AverageScore.Should().BeApproximately((9.5 + 9.9 + 9.0) / 3.0, 0.000001);
+
+            // Largest group first, then by name, so two runs over the same data agree.
+            statistics.ByGenre.Select(row => row.Genre).Should().Equal("RPG", "Racing");
+
+            GenreDistribution rpg = statistics.ByGenre.Single(row => row.Genre == "RPG");
+            rpg.GameCount.Should().Be(2);
+            rpg.AverageScore.Should().BeApproximately(9.7, 0.000001);
+        }
+
+        [Fact]
+        public async Task GetStatisticsAsync_GamesWithNoGenre_GetARowOfTheirOwn()
+        {
+            // They are gathered under a null name rather than dropped, so the counts in the
+            // breakdown still add up to the total printed beside them.
+            await _repository.AddAsync(NewGame("Disco Elysium", "RPG", 9.5, "PC"));
+            await _repository.AddAsync(new Game
+            {
+                Name = "Uncategorised",
+                Genre = null,
+                Platforms = new[] { "PC" },
+                Score = 5.0,
+            });
+
+            CatalogueStatistics statistics = await _repository.GetStatisticsAsync();
+
+            statistics.TotalGames.Should().Be(2);
+            statistics.ByGenre.Sum(row => row.GameCount).Should().Be(statistics.TotalGames);
+
+            GenreDistribution none = statistics.ByGenre.Single(row => row.Genre == null);
+            none.GameCount.Should().Be(1);
+            none.AverageScore.Should().Be(5.0);
+        }
+
+        [Fact]
+        public async Task GetStatisticsAsync_WhenNoGameIsScored_ReportsNoAverageRatherThanZero()
+        {
+            await _repository.AddAsync(NewGame("Unrated One", "Action", null, "PC"));
+            await _repository.AddAsync(NewGame("Unrated Two", "Action", null, "PC"));
+
+            CatalogueStatistics statistics = await _repository.GetStatisticsAsync();
+
+            statistics.TotalGames.Should().Be(2);
+            statistics.AverageScore.Should().BeNull();
+            statistics.ByGenre.Single().AverageScore.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetStatisticsAsync_OnAnEmptyCatalogue_ReportsZerosAndNoBreakdown()
+        {
+            CatalogueStatistics statistics = await _repository.GetStatisticsAsync();
+
+            statistics.TotalGames.Should().Be(0);
+            statistics.ReviewCount.Should().Be(0);
+            statistics.AverageScore.Should().BeNull();
+            statistics.ByGenre.Should().NotBeNull().And.BeEmpty();
         }
 
         [Fact]
@@ -501,6 +783,18 @@ VALUES (@GameId, @Score, @Body, @CreatedAt);";
                 Score = score,
                 CoverUrl = "https://example.invalid/" + name.ToLowerInvariant().Replace(' ', '-') + ".png",
             };
+
+        /// <summary>
+        /// Stores a game in a chosen play state, which is what a test that filters on the state
+        /// needs and what the plain factory deliberately leaves at its default.
+        /// </summary>
+        private Task<int> AddAsync(Game game, PlayStatus status, bool isFavourite)
+        {
+            game.Status = status;
+            game.IsFavourite = isFavourite;
+
+            return _repository.AddAsync(game);
+        }
 
         /// <summary>
         /// Fills the catalogue with five games whose names and scores run in opposite directions,

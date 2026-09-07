@@ -1,3 +1,5 @@
+using VideoGameManager.Domain;
+
 namespace VideoGameManager.Data
 {
     /// <summary>
@@ -12,12 +14,21 @@ namespace VideoGameManager.Data
     /// <param name="Platform">Exact platform to keep, as picked from the platform list.</param>
     /// <param name="MinScore">Lowest score to keep, inclusive.</param>
     /// <param name="MaxScore">Highest score to keep, inclusive.</param>
+    /// <param name="Status">Play state to keep, or <c>null</c> to keep every state.</param>
+    /// <param name="OnlyFavourites">
+    /// <c>true</c> keeps only the games marked as favourites. <c>null</c> and <c>false</c> both
+    /// keep everything: the flag says which games to single out, and there is no screen that asks
+    /// for the games nobody marked, so <c>false</c> is read as "do not narrow" rather than as
+    /// "only the ones that are not favourites".
+    /// </param>
     public sealed record GameFilter(
         string Name = null,
         string Genre = null,
         string Platform = null,
         double? MinScore = null,
-        double? MaxScore = null)
+        double? MaxScore = null,
+        PlayStatus? Status = null,
+        bool? OnlyFavourites = null)
     {
         /// <summary>
         /// A filter that keeps everything.

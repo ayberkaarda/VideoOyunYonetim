@@ -7,22 +7,23 @@ using VideoGameManager.Domain;
 namespace VideoGameManager.Services
 {
     /// <summary>
-    /// Suggests a game picked uniformly at random from those scoring at least
-    /// <see cref="MinimumScore"/>.
+    /// Suggests a game the user has bought but not started yet, so the pile of unplayed games is
+    /// what the suggestion draws from first.
     /// </summary>
     /// <remarks>
-    /// <see cref="MinimumScore"/> defaults to <see cref="ScoreRange.Min"/>, which is no
-    /// threshold at all and reproduces exactly what the application has always done. The
-    /// project description used to promise a "random high-scoring game" while the query it
-    /// described applied no threshold; making the threshold a setting resolves that without
-    /// silently changing the behaviour anyone has seen.
+    /// An empty backlog is the normal state for a user who finishes what they start, so it is not
+    /// treated as a failure: the strategy then draws from the whole catalogue instead and the
+    /// button always answers.
     /// </remarks>
-    public sealed class RandomStrategy : IRecommendationStrategy
+    public sealed class BacklogFirstStrategy : IRecommendationStrategy
     {
         /// <summary>
         /// The name this strategy is selected by.
         /// </summary>
-        public const string StrategyName = "Random";
+        public const string StrategyName = "BacklogFirst";
+
+        private const string FailureMessage =
+            "A game could not be suggested because the catalogue could not be read.";
 
         private readonly IGameRepository _games;
 
@@ -38,7 +39,7 @@ namespace VideoGameManager.Services
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="minimumScore"/> falls outside the score range.
         /// </exception>
-        public RandomStrategy(IGameRepository games, double minimumScore = ScoreRange.Min)
+        public BacklogFirstStrategy(IGameRepository games, double minimumScore = ScoreRange.Min)
         {
             if (games == null)
             {
@@ -71,15 +72,33 @@ namespace VideoGameManager.Services
         /// A threshold at the bottom of the range is not a threshold. Asking the catalogue for
         /// games scoring at or above zero is not the same question as asking for every game: a
         /// game nobody has rated has no score to compare against, so it drops out of that
-        /// comparison without a word. An unrated game is unknown, not worthless, and leaving the
-        /// score out of the filter altogether is what keeps it a candidate.
+        /// comparison without a word. That matters most here, because a game the user has not
+        /// started is the one least likely to carry a score of its own, and hiding those would
+        /// empty the backlog of exactly what it is for.
         /// </remarks>
         private double? ScoreFilter => MinimumScore > ScoreRange.Min ? MinimumScore : (double?)null;
 
         /// <inheritdoc />
-        public Task<Game> PickAsync(CancellationToken ct = default) =>
+        public async Task<Game> PickAsync(CancellationToken ct = default)
+        {
+            Game fromBacklog = await PickAsync(PlayStatus.Backlog, ct).ConfigureAwait(false);
+
+            if (fromBacklog != null)
+            {
+                return fromBacklog;
+            }
+
+            // Nothing in the backlog reaches the threshold; suggest from the whole catalogue
+            // rather than leaving the request unanswered.
+            return await PickAsync(null, ct).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Asks the repository for a random game, optionally confined to one play status.
+        /// </summary>
+        private Task<Game> PickAsync(PlayStatus? status, CancellationToken ct) =>
             DatabaseCall.RunAsync(
-                () => _games.GetRandomAsync(new GameFilter(MinScore: ScoreFilter), ct),
-                "A game could not be suggested because the catalogue could not be read.");
+                () => _games.GetRandomAsync(new GameFilter(MinScore: ScoreFilter, Status: status), ct),
+                FailureMessage);
     }
 }

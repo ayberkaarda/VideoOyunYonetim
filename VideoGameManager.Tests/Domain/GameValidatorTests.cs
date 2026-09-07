@@ -349,5 +349,66 @@ namespace VideoGameManager.Tests.Domain
                 nameof(Game.CoverUrl),
             });
         }
+
+        [Theory]
+        [InlineData(PlayStatus.Backlog)]
+        [InlineData(PlayStatus.Playing)]
+        [InlineData(PlayStatus.Finished)]
+        public void Validate_EveryDefinedStatus_IsAccepted(PlayStatus status)
+        {
+            Game game = CreateValidGame();
+            game.Status = status;
+
+            ValidationResult result = GameValidator.Validate(game);
+
+            result.IsValid.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData(3)]
+        [InlineData(255)]
+        [InlineData(-1)]
+        public void Validate_StatusThatIsNotADefinedState_ReportsError(int raw)
+        {
+            // A cast from an arbitrary number produces an enum value with no name and no
+            // complaint, so this is the only way an invalid state can arrive. Left unchecked it
+            // would reach the database and be refused there by the check constraint.
+            Game game = CreateValidGame();
+            game.Status = (PlayStatus)raw;
+
+            ValidationResult result = GameValidator.Validate(game);
+
+            result.IsValid.Should().BeFalse();
+            result.Errors.Should().ContainSingle(e =>
+                e.Field == nameof(Game.Status) &&
+                e.Message == "Status must be one of backlog, playing or finished.");
+        }
+    }
+
+    /// <summary>
+    /// The state a game starts life in, which is also the state every row that predates these
+    /// properties is read back with.
+    /// </summary>
+    public class GameDefaultsTests
+    {
+        [Fact]
+        public void NewGame_WithoutAnyStateSet_IsInTheBacklogAndNotAFavourite()
+        {
+            Game game = new Game();
+
+            game.Status.Should().Be(PlayStatus.Backlog);
+            game.IsFavourite.Should().BeFalse();
+        }
+
+        [Fact]
+        public void PlayStatus_KeepsTheNumbersTheDatabaseColumnStores()
+        {
+            // The numbers are the storage format: the column holds them and its check constraint
+            // accepts exactly these three. Renumbering a member here would silently re-label every
+            // row already written.
+            ((int)PlayStatus.Backlog).Should().Be(0);
+            ((int)PlayStatus.Playing).Should().Be(1);
+            ((int)PlayStatus.Finished).Should().Be(2);
+        }
     }
 }

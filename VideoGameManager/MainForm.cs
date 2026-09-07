@@ -63,6 +63,11 @@ namespace VideoGameManager
             ShowDialog<ReviewGameForm>();
         }
 
+        private void btnStatistics_Click(object sender, EventArgs e)
+        {
+            ShowDialog<StatisticsForm>();
+        }
+
         private void btnExit_Click(object sender, EventArgs e)
         {
             Close();

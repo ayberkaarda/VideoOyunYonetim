@@ -4,8 +4,11 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using DbUp;
 using FluentAssertions;
+using Microsoft.Data.SqlClient;
 using VideoGameManager.Data;
+using VideoGameManager.Domain;
 using Xunit;
 
 namespace VideoGameManager.Tests.Integration
@@ -48,6 +51,76 @@ ORDER BY   s.name, t.name;";
 SELECT   ScriptName
 FROM     dbo.SchemaVersions
 ORDER BY ScriptName;";
+
+        /// <summary>
+        /// The type, nullability and default of named columns of a table.
+        /// </summary>
+        private const string ColumnShapeSql = @"
+SELECT      c.name          AS ColumnName,
+            t.name          AS TypeName,
+            c.is_nullable   AS IsNullable,
+            dc.definition   AS DefaultDefinition
+FROM        sys.columns AS c
+INNER JOIN  sys.types   AS t  ON t.user_type_id = c.user_type_id
+LEFT JOIN   sys.default_constraints AS dc ON dc.object_id = c.default_object_id
+WHERE       c.object_id = OBJECT_ID(@Table)
+  AND       c.name IN @Names
+ORDER BY    c.name;";
+
+        /// <summary>
+        /// One check constraint, and whether the server vouches for the rows already there.
+        /// </summary>
+        private const string CheckShapeSql = @"
+SELECT cc.definition      AS Definition,
+       cc.is_not_trusted  AS IsNotTrusted
+FROM   sys.check_constraints AS cc
+WHERE  cc.name = @Name
+  AND  cc.parent_object_id = OBJECT_ID(@Table);";
+
+        /// <summary>
+        /// Every index on a table.
+        /// </summary>
+        private const string IndexNamesSql = @"
+SELECT   i.name
+FROM     sys.indexes AS i
+WHERE    i.object_id = OBJECT_ID(@Table)
+  AND    i.name IS NOT NULL
+ORDER BY i.name;";
+
+        /// <summary>
+        /// Writes a game with a play state chosen by the caller, so a test can find out what the
+        /// server accepts rather than what the script says it should.
+        /// </summary>
+        private const string InsertWithStatusSql = @"
+INSERT INTO dbo.Game (Name, [Status])
+VALUES (@Name, @Status);";
+
+        /// <summary>
+        /// The table as it stood before any of these scripts existed: genre and platform as free
+        /// text on the row, one comment column, no journal anywhere.
+        /// </summary>
+        /// <remarks>
+        /// This is a copy of the original shape on purpose. A test that started from the migrated
+        /// schema could never show what a replay does to a catalogue that predates it, which is
+        /// the one path where existing data is at risk.
+        /// </remarks>
+        private const string CreateFlatGameTableSql = @"
+-- sql-guard: bypass-ok this rebuilds the historical table so a replay can be tested against it; it is not a schema change to any real database
+CREATE TABLE dbo.Game
+(
+    Id         INT            IDENTITY(1, 1) NOT NULL,
+    Name       NVARCHAR(100)  NULL,
+    Genre      NVARCHAR(50)   NULL,
+    [Platform] NVARCHAR(50)   NULL,
+    Score      FLOAT          NULL,
+    CoverUrl   NVARCHAR(MAX)  NULL,
+    Comment    NVARCHAR(MAX)  NULL,
+    CONSTRAINT PK_Game PRIMARY KEY CLUSTERED (Id)
+);";
+
+        private const string InsertFlatGameSql = @"
+INSERT INTO dbo.Game (Name, Genre, [Platform], Score, Comment)
+VALUES (@Name, @Genre, @Platform, @Score, @Comment);";
 
         private readonly SqlServerFixture _fixture;
 
@@ -178,6 +251,140 @@ ORDER BY c.name;";
             columns.Should().NotContain(new[] { "Genre", "Platform", "Comment" });
         }
 
+        [Fact]
+        public async Task CreateAndApply_OnACleanDatabase_AddsThePlayStateAndFavouriteColumns()
+        {
+            string databaseName = NewDatabaseName();
+            string connectionString = _fixture.ConnectionStringFor(databaseName);
+
+            MigrationOutcome outcome = DatabaseMigrator.ForConnectionString(connectionString).CreateAndApply();
+            outcome.Succeeded.Should().BeTrue(SqlServerFixture.Describe("The run failed.", outcome));
+
+            IReadOnlyList<ColumnShape> columns;
+
+            using (DbConnection connection = await OpenAsync(connectionString))
+            {
+                columns = (await connection.QueryAsync<ColumnShape>(new CommandDefinition(
+                    ColumnShapeSql,
+                    new { Table = "dbo.Game", Names = new[] { "Status", "IsFavourite" } }))).AsList();
+            }
+
+            ColumnShape status = columns.Single(column => column.ColumnName == "Status");
+            status.TypeName.Should().Be("tinyint");
+            status.IsNullable.Should().BeFalse();
+            status.DefaultDefinition.Should().Be("((0))");
+
+            ColumnShape favourite = columns.Single(column => column.ColumnName == "IsFavourite");
+            favourite.TypeName.Should().Be("bit");
+            favourite.IsNullable.Should().BeFalse();
+            favourite.DefaultDefinition.Should().Be("((0))");
+        }
+
+        [Fact]
+        public async Task CreateAndApply_OnACleanDatabase_ConstrainsThePlayStateToTheThreeKnownValues()
+        {
+            string databaseName = NewDatabaseName();
+            string connectionString = _fixture.ConnectionStringFor(databaseName);
+
+            MigrationOutcome outcome = DatabaseMigrator.ForConnectionString(connectionString).CreateAndApply();
+            outcome.Succeeded.Should().BeTrue(SqlServerFixture.Describe("The run failed.", outcome));
+
+            using (DbConnection connection = await OpenAsync(connectionString))
+            {
+                CheckShape check = await connection.QuerySingleOrDefaultAsync<CheckShape>(new CommandDefinition(
+                    CheckShapeSql, new { Table = "dbo.Game", Name = "CK_Game_Status" }));
+
+                check.Should().NotBeNull("the play state is only a number until something limits it");
+                check.IsNotTrusted.Should().BeFalse("the constraint was added WITH CHECK, so it also vouches for the rows already there");
+
+                // The definition is one thing; what the server actually refuses is another, and it
+                // is the second that protects the catalogue.
+                Func<Task> writeAFourthState = () => connection.ExecuteAsync(new CommandDefinition(
+                    InsertWithStatusSql, new { Name = "Out Of Range", Status = (byte)3 }));
+
+                await writeAFourthState.Should().ThrowAsync<SqlException>();
+
+                foreach (byte accepted in new byte[] { 0, 1, 2 })
+                {
+                    await connection.ExecuteAsync(new CommandDefinition(
+                        InsertWithStatusSql, new { Name = "In Range", Status = accepted }));
+                }
+            }
+        }
+
+        [Fact]
+        public async Task CreateAndApply_OnACleanDatabase_IndexesTheColumnsTheNewFiltersRead()
+        {
+            string databaseName = NewDatabaseName();
+            string connectionString = _fixture.ConnectionStringFor(databaseName);
+
+            MigrationOutcome outcome = DatabaseMigrator.ForConnectionString(connectionString).CreateAndApply();
+            outcome.Succeeded.Should().BeTrue(SqlServerFixture.Describe("The run failed.", outcome));
+
+            IReadOnlyList<string> indexes;
+
+            using (DbConnection connection = await OpenAsync(connectionString))
+            {
+                indexes = (await connection.QueryAsync<string>(new CommandDefinition(
+                    IndexNamesSql, new { Table = "dbo.Game" }))).AsList();
+            }
+
+            indexes.Should().Contain(new[] { "IX_Game_Status", "IX_Game_IsFavourite" });
+        }
+
+        [Fact]
+        public async Task CreateAndApply_OnADatabaseThatPredatesTheJournal_KeepsItsRowsAndDefaultsTheNewColumns()
+        {
+            // This is the case that actually matters: a catalogue someone has been keeping since
+            // before any of these scripts existed. It has the original flat table, it has rows,
+            // and it has no journal, so the whole chain replays over it. Nothing may be lost,
+            // rewritten or reordered, and the two new columns have to arrive filled in.
+            string databaseName = NewDatabaseName();
+            string connectionString = _fixture.ConnectionStringFor(databaseName);
+
+            // Created without a collation of its own, so it inherits the server's, which the
+            // fixture already set to the one the migrator requires.
+            EnsureDatabase.For.SqlDatabase(connectionString);
+
+            using (DbConnection connection = await OpenAsync(connectionString))
+            {
+                await connection.ExecuteAsync(new CommandDefinition(CreateFlatGameTableSql));
+
+                await connection.ExecuteAsync(new CommandDefinition(InsertFlatGameSql, new[]
+                {
+                    new { Name = "FIFA 24", Genre = "Sports", Platform = "PS5", Score = (double?)7.4, Comment = "Much like the last one." },
+                    new { Name = "Hades", Genre = "Roguelike", Platform = "PC", Score = (double?)9.6, Comment = (string)null },
+                    new { Name = "Unrated Thing", Genre = (string)null, Platform = (string)null, Score = (double?)null, Comment = (string)null },
+                }));
+            }
+
+            MigrationOutcome outcome = DatabaseMigrator.ForConnectionString(connectionString).CreateAndApply();
+
+            outcome.Succeeded.Should().BeTrue(SqlServerFixture.Describe("The replay failed.", outcome));
+            outcome.AppliedScripts.Select(FileNameOf).Should().Equal(SqlServerFixture.ExpectedScripts);
+
+            IGameRepository repository = new GameRepository(SqlConnectionFactory.ForConnectionString(connectionString));
+            PagedResult<Game> all = await repository.ListAsync(GameFilter.None, 1, 50);
+
+            all.TotalCount.Should().Be(3, "the replay must not lose a row");
+
+            Game fifa = all.Items.Single(game => game.Name == "FIFA 24");
+            fifa.Genre.Should().Be("Sports");
+            fifa.Platforms.Should().Equal("PS5");
+            fifa.Score.Should().Be(7.4);
+            fifa.LatestReview.Should().Be("Much like the last one.", "the old comment column became a review");
+
+            // Every row, including the one that carried nothing at all, comes out in the state the
+            // defaults promise rather than in one the migration invented.
+            all.Items.Should().OnlyContain(game => game.Status == PlayStatus.Backlog);
+            all.Items.Should().OnlyContain(game => !game.IsFavourite);
+
+            Game bare = all.Items.Single(game => game.Name == "Unrated Thing");
+            bare.Genre.Should().BeNull();
+            bare.Platforms.Should().BeEmpty();
+            bare.Score.Should().BeNull();
+        }
+
         /// <summary>
         /// A database name no other run can be using.
         /// </summary>
@@ -211,6 +418,30 @@ ORDER BY c.name;";
                 return (await connection
                     .QueryAsync<string>(new CommandDefinition(sql))).AsList();
             }
+        }
+
+        /// <summary>
+        /// How the server describes one column.
+        /// </summary>
+        private sealed class ColumnShape
+        {
+            public string ColumnName { get; set; }
+
+            public string TypeName { get; set; }
+
+            public bool IsNullable { get; set; }
+
+            public string DefaultDefinition { get; set; }
+        }
+
+        /// <summary>
+        /// How the server describes one check constraint.
+        /// </summary>
+        private sealed class CheckShape
+        {
+            public string Definition { get; set; }
+
+            public bool IsNotTrusted { get; set; }
         }
     }
 }

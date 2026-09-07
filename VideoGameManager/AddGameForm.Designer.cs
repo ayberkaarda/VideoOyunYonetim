@@ -40,6 +40,11 @@ namespace VideoGameManager
             this.cmbGenre = new System.Windows.Forms.ComboBox();
             this.frameScore = new VideoGameManager.UI.Controls.InputFrame();
             this.cmbScore = new System.Windows.Forms.ComboBox();
+            this.lblStatusCaption = new System.Windows.Forms.Label();
+            this.layoutStatusRow = new VideoGameManager.UI.Controls.LayoutGrid();
+            this.frameStatus = new VideoGameManager.UI.Controls.InputFrame();
+            this.cmbStatus = new System.Windows.Forms.ComboBox();
+            this.chkFavourite = new System.Windows.Forms.CheckBox();
             this.lblCoverUrlCaption = new System.Windows.Forms.Label();
             this.frameCoverUrl = new VideoGameManager.UI.Controls.InputFrame();
             this.txtCoverUrl = new System.Windows.Forms.TextBox();
@@ -51,6 +56,8 @@ namespace VideoGameManager
             this.framePlatform.SuspendLayout();
             this.frameGenre.SuspendLayout();
             this.frameScore.SuspendLayout();
+            this.layoutStatusRow.SuspendLayout();
+            this.frameStatus.SuspendLayout();
             this.frameCoverUrl.SuspendLayout();
             this.panelActions.SuspendLayout();
             this.SuspendLayout();
@@ -63,12 +70,15 @@ namespace VideoGameManager
             this.layoutRoot.Controls.Add(this.lblNameCaption, 0, 0);
             this.layoutRoot.Controls.Add(this.frameName, 1, 0);
             this.layoutRoot.Controls.Add(this.layoutSelections, 1, 1);
-            this.layoutRoot.Controls.Add(this.lblCoverUrlCaption, 0, 2);
-            this.layoutRoot.Controls.Add(this.frameCoverUrl, 1, 2);
-            this.layoutRoot.Controls.Add(this.panelActions, 1, 3);
+            this.layoutRoot.Controls.Add(this.lblStatusCaption, 0, 2);
+            this.layoutRoot.Controls.Add(this.layoutStatusRow, 1, 2);
+            this.layoutRoot.Controls.Add(this.lblCoverUrlCaption, 0, 3);
+            this.layoutRoot.Controls.Add(this.frameCoverUrl, 1, 3);
+            this.layoutRoot.Controls.Add(this.panelActions, 1, 4);
             this.layoutRoot.Dock = System.Windows.Forms.DockStyle.Fill;
             this.layoutRoot.Name = "layoutRoot";
-            this.layoutRoot.RowCount = 4;
+            this.layoutRoot.RowCount = 5;
+            this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.ListRow));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.ListRow));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.ListRow));
             this.layoutRoot.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, VideoGameManager.UI.Theming.Theme.Metrics.ListRow));
@@ -161,6 +171,60 @@ namespace VideoGameManager
             this.cmbScore.Name = "cmbScore";
             this.cmbScore.TabIndex = 0;
             //
+            // lblStatusCaption
+            //
+            this.lblStatusCaption.AutoSize = false;
+            this.lblStatusCaption.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblStatusCaption.Font = VideoGameManager.UI.Theming.Theme.Fonts.BodyStrong;
+            this.lblStatusCaption.ForeColor = VideoGameManager.UI.Theming.Theme.TextSecondary;
+            this.lblStatusCaption.Name = "lblStatusCaption";
+            this.lblStatusCaption.TabIndex = 0;
+            this.lblStatusCaption.Text = "Status";
+            this.lblStatusCaption.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            //
+            // layoutStatusRow
+            //
+            this.layoutStatusRow.ColumnCount = 2;
+            this.layoutStatusRow.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.layoutStatusRow.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.layoutStatusRow.Controls.Add(this.frameStatus, 0, 0);
+            this.layoutStatusRow.Controls.Add(this.chkFavourite, 1, 0);
+            this.layoutStatusRow.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.layoutStatusRow.Margin = new System.Windows.Forms.Padding(0);
+            this.layoutStatusRow.Name = "layoutStatusRow";
+            this.layoutStatusRow.RowCount = 1;
+            this.layoutStatusRow.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.layoutStatusRow.TabIndex = 2;
+            //
+            // frameStatus
+            //
+            this.frameStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.frameStatus.Controls.Add(this.cmbStatus);
+            this.frameStatus.Name = "frameStatus";
+            this.frameStatus.TabIndex = 0;
+            //
+            // cmbStatus
+            //
+            this.cmbStatus.AccessibleName = "Status";
+            this.cmbStatus.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbStatus.FormattingEnabled = true;
+            this.cmbStatus.Name = "cmbStatus";
+            this.cmbStatus.TabIndex = 0;
+            //
+            // chkFavourite
+            //
+            this.chkFavourite.AccessibleName = "Favourite";
+            this.chkFavourite.BackColor = System.Drawing.Color.Transparent;
+            this.chkFavourite.CheckAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.chkFavourite.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.chkFavourite.Font = VideoGameManager.UI.Theming.Theme.Fonts.Body;
+            this.chkFavourite.ForeColor = VideoGameManager.UI.Theming.Theme.TextPrimary;
+            this.chkFavourite.Name = "chkFavourite";
+            this.chkFavourite.TabIndex = 1;
+            this.chkFavourite.Text = "Favourite";
+            this.chkFavourite.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.chkFavourite.UseVisualStyleBackColor = false;
+            //
             // lblCoverUrlCaption
             //
             this.lblCoverUrlCaption.AutoSize = false;
@@ -177,7 +241,7 @@ namespace VideoGameManager
             this.frameCoverUrl.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
             this.frameCoverUrl.Controls.Add(this.txtCoverUrl);
             this.frameCoverUrl.Name = "frameCoverUrl";
-            this.frameCoverUrl.TabIndex = 2;
+            this.frameCoverUrl.TabIndex = 3;
             //
             // txtCoverUrl
             //
@@ -195,7 +259,7 @@ namespace VideoGameManager
             this.panelActions.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
             this.panelActions.Margin = new System.Windows.Forms.Padding(0, VideoGameManager.UI.Theming.Theme.Space.M, 0, 0);
             this.panelActions.Name = "panelActions";
-            this.panelActions.TabIndex = 3;
+            this.panelActions.TabIndex = 4;
             this.panelActions.WrapContents = false;
             //
             // btnSave
@@ -210,7 +274,7 @@ namespace VideoGameManager
             // AddGameForm
             //
             this.AcceptButton = this.btnSave;
-            this.ClientSize = new System.Drawing.Size(620, 292);
+            this.ClientSize = new System.Drawing.Size(620, 338);
             this.Controls.Add(this.layoutRoot);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "AddGameForm";
@@ -220,6 +284,8 @@ namespace VideoGameManager
             this.framePlatform.ResumeLayout(false);
             this.frameGenre.ResumeLayout(false);
             this.frameScore.ResumeLayout(false);
+            this.frameStatus.ResumeLayout(false);
+            this.layoutStatusRow.ResumeLayout(false);
             this.frameCoverUrl.ResumeLayout(false);
             this.layoutSelections.ResumeLayout(false);
             this.panelActions.ResumeLayout(false);
@@ -242,6 +308,11 @@ namespace VideoGameManager
         private System.Windows.Forms.ComboBox cmbGenre;
         private VideoGameManager.UI.Controls.InputFrame frameScore;
         private System.Windows.Forms.ComboBox cmbScore;
+        private System.Windows.Forms.Label lblStatusCaption;
+        private VideoGameManager.UI.Controls.LayoutGrid layoutStatusRow;
+        private VideoGameManager.UI.Controls.InputFrame frameStatus;
+        private System.Windows.Forms.ComboBox cmbStatus;
+        private System.Windows.Forms.CheckBox chkFavourite;
         private System.Windows.Forms.Label lblCoverUrlCaption;
         private VideoGameManager.UI.Controls.InputFrame frameCoverUrl;
         private System.Windows.Forms.TextBox txtCoverUrl;

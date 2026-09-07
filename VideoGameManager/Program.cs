@@ -215,6 +215,7 @@ namespace VideoGameManager
             services.AddTransient<BrowseGamesForm>();
             services.AddTransient<RecommendationForm>();
             services.AddTransient<ReviewGameForm>();
+            services.AddTransient<StatisticsForm>();
 
             return services.BuildServiceProvider();
         }

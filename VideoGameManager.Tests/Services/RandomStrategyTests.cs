@@ -18,6 +18,7 @@ namespace VideoGameManager.Tests.Services
     public class RandomStrategyTests
     {
         private readonly IGameRepository _games = Substitute.For<IGameRepository>();
+        private readonly List<GameFilter> _filters = new List<GameFilter>();
 
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
@@ -58,13 +59,54 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public async Task PickAsync_AsksTheRepositoryForExactlyTheConfiguredThreshold()
         {
+            GiveCatalogue();
             RandomStrategy strategy = new RandomStrategy(_games, 8.5);
-            _games.GetRandomAsync(Arg.Any<double>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult<Game>(null));
 
             await strategy.PickAsync();
 
-            await _games.Received(1).GetRandomAsync(8.5, Arg.Any<CancellationToken>());
+            GameFilter filter = _filters.Should().ContainSingle().Subject;
+            filter.MinScore.Should().Be(8.5);
+        }
+
+        [Fact]
+        public async Task PickAsync_NarrowsNothingButTheScore()
+        {
+            GiveCatalogue();
+            RandomStrategy strategy = new RandomStrategy(_games, 8.5);
+
+            await strategy.PickAsync();
+
+            // Every other member left alone: this strategy draws from the whole catalogue, and a
+            // stray genre or status here would quietly turn it into a different strategy.
+            GameFilter filter = _filters.Should().ContainSingle().Subject;
+            filter.Should().Be(new GameFilter(MinScore: 8.5));
+        }
+
+        [Fact]
+        public async Task PickAsync_ThresholdAtTheBottomOfTheRange_LeavesTheScoreOutOfTheFilter()
+        {
+            GiveCatalogue();
+            RandomStrategy strategy = new RandomStrategy(_games, ScoreRange.Min);
+
+            await strategy.PickAsync();
+
+            // A threshold at the bottom of the range is not a threshold. Sending it as one would
+            // narrow the catalogue to the games that carry a score at all.
+            GameFilter filter = _filters.Should().ContainSingle().Subject;
+            filter.MinScore.Should().BeNull();
+            filter.Should().Be(new GameFilter());
+        }
+
+        [Fact]
+        public async Task PickAsync_NoThresholdSet_CanSuggestAGameNobodyHasRated()
+        {
+            GiveCatalogue(new Game { Name = "Still Unrated", Score = null });
+            RandomStrategy strategy = new RandomStrategy(_games);
+
+            Game recommendation = await strategy.PickAsync();
+
+            recommendation.Should().NotBeNull();
+            recommendation.Name.Should().Be("Still Unrated");
         }
 
         [Fact]
@@ -72,11 +114,11 @@ namespace VideoGameManager.Tests.Services
         {
             CancellationToken ct = new CancellationTokenSource().Token;
             RandomStrategy strategy = new RandomStrategy(_games);
-            _games.GetRandomAsync(Arg.Any<double>(), ct).Returns(Task.FromResult<Game>(null));
+            _games.GetRandomAsync(Arg.Any<GameFilter>(), ct).Returns(Task.FromResult<Game>(null));
 
             await strategy.PickAsync(ct);
 
-            await _games.Received(1).GetRandomAsync(ScoreRange.Min, ct);
+            await _games.Received(1).GetRandomAsync(new GameFilter(), ct);
         }
 
         [Fact]
@@ -140,7 +182,7 @@ namespace VideoGameManager.Tests.Services
         public async Task PickAsync_RepositoryThrowsProviderFailure_ThrowsDataAccessException()
         {
             SqlException provider = SqlExceptionFactory.Create();
-            _games.GetRandomAsync(Arg.Any<double>(), Arg.Any<CancellationToken>()).Throws(provider);
+            _games.GetRandomAsync(Arg.Any<GameFilter>(), Arg.Any<CancellationToken>()).Throws(provider);
             RandomStrategy strategy = new RandomStrategy(_games);
 
             Func<Task> act = () => strategy.PickAsync();
@@ -153,7 +195,7 @@ namespace VideoGameManager.Tests.Services
         public async Task PickAsync_RepositoryThrowsSomethingElse_LetsItTravelUnchanged()
         {
             InvalidOperationException unrelated = new InvalidOperationException("not a provider failure");
-            _games.GetRandomAsync(Arg.Any<double>(), Arg.Any<CancellationToken>()).Throws(unrelated);
+            _games.GetRandomAsync(Arg.Any<GameFilter>(), Arg.Any<CancellationToken>()).Throws(unrelated);
             RandomStrategy strategy = new RandomStrategy(_games);
 
             Func<Task> act = () => strategy.PickAsync();
@@ -163,17 +205,24 @@ namespace VideoGameManager.Tests.Services
 
         /// <summary>
         /// Makes the repository behave like the real query: it hands back a game drawn at random
-        /// from those that reach the threshold it was asked for, and nothing when none do.
+        /// from those that reach the threshold it was asked for, and nothing when none do. Every
+        /// filter it is handed is recorded, so a test can assert what actually reached it.
         /// </summary>
         private void GiveCatalogue(params Game[] catalogue)
         {
             Random draw = new Random(20260906);
 
-            _games.GetRandomAsync(Arg.Any<double>(), Arg.Any<CancellationToken>()).Returns(call =>
+            _games.GetRandomAsync(Arg.Any<GameFilter>(), Arg.Any<CancellationToken>()).Returns(call =>
             {
-                double threshold = call.Arg<double>();
+                GameFilter filter = call.Arg<GameFilter>();
+                _filters.Add(filter);
+
+                // Mirrors the optional predicate the real query uses: with no threshold every
+                // game is a candidate, and with one the comparison itself removes the games
+                // that carry no score.
                 List<Game> qualifying = catalogue
-                    .Where(game => game.Score.HasValue && game.Score.Value >= threshold)
+                    .Where(game => !filter.MinScore.HasValue
+                        || (game.Score.HasValue && game.Score.Value >= filter.MinScore.Value))
                     .ToList();
 
                 return Task.FromResult(qualifying.Count == 0

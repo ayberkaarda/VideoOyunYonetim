@@ -91,6 +91,18 @@ namespace VideoGameManager.Domain
                         ScoreRange.Max)));
             }
 
+            if (!Enum.IsDefined(typeof(PlayStatus), game.Status))
+            {
+                // An enum in C# is a number that only usually carries one of the names, and a cast
+                // from an arbitrary integer produces a value with no name at all without any
+                // complaint. Such a value would reach the database and be refused there by the
+                // check constraint, as a failure the user cannot read; catching it here keeps the
+                // answer in the same shape as every other broken rule.
+                errors.Add(new ValidationError(
+                    nameof(Game.Status),
+                    "Status must be one of backlog, playing or finished."));
+            }
+
             if (!IsAcceptableCoverUrl(game.CoverUrl))
             {
                 errors.Add(new ValidationError(
