@@ -73,9 +73,12 @@ DELETE FROM dbo.[Platform]   WHERE Id > 0;";
 
         private readonly MsSqlContainer _container;
 
-        private string _connectionString;
+        // Filled in once the container is up, which happens before any test runs; the properties
+        // below still check for the unset state so that a misuse reports itself in words.
+        private string _connectionString = null!;
 
-        private SqlConnectionFactory _connections;
+        // Built alongside the connection string above, and unset for the same short window.
+        private SqlConnectionFactory _connections = null!;
 
         /// <summary>
         /// Creates the fixture. The container is described here and started by xunit.
@@ -253,7 +256,7 @@ DELETE FROM dbo.[Platform]   WHERE Id > 0;";
 
             string connectionString = builder.ConnectionString;
             DateTime deadline = DateTime.UtcNow.Add(CollationTimeout);
-            string collation = null;
+            string? collation = null;
 
             while (DateTime.UtcNow < deadline)
             {

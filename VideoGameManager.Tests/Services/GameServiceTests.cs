@@ -28,7 +28,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new GameService(null, NullLogger<GameService>.Instance);
+            Action act = () => new GameService(null!, NullLogger<GameService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -36,7 +36,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new GameService(_games, null);
+            Action act = () => new GameService(_games, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -107,9 +107,9 @@ namespace VideoGameManager.Tests.Services
         public async Task GetAsync_ReturnsWhatTheRepositoryFound()
         {
             Game stored = ValidGame();
-            _games.GetAsync(7, Arg.Any<CancellationToken>()).Returns(Task.FromResult(stored));
+            _games.GetAsync(7, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(stored));
 
-            Game found = await _service.GetAsync(7);
+            Game? found = await _service.GetAsync(7);
 
             found.Should().BeSameAs(stored);
         }
@@ -117,9 +117,9 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public async Task GetAsync_NoSuchGame_ReturnsNull()
         {
-            _games.GetAsync(7, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game>(null));
+            _games.GetAsync(7, Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(null));
 
-            Game found = await _service.GetAsync(7);
+            Game? found = await _service.GetAsync(7);
 
             found.Should().BeNull();
         }
@@ -127,7 +127,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public async Task AddAsync_NullGame_ThrowsArgumentNullException()
         {
-            Func<Task> act = () => _service.AddAsync(null);
+            Func<Task> act = () => _service.AddAsync(null!);
 
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("game");
         }
@@ -144,14 +144,14 @@ namespace VideoGameManager.Tests.Services
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain(e => e.Field == nameof(Game.Name));
             result.Errors.Should().Contain(e => e.Field == nameof(Game.Genre));
-            await _games.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Fact]
         public async Task AddAsync_RejectedGame_ProducesNoValue()
         {
             Game game = ValidGame();
-            game.Name = null;
+            game.Name = null!;
 
             Result<int> result = await _service.AddAsync(game);
 
@@ -230,7 +230,7 @@ namespace VideoGameManager.Tests.Services
         public async Task AddAsync_BlankPlatformEntries_AreDropped()
         {
             Game game = ValidGame();
-            game.Platforms = new string[] { "PC", "   ", "Switch", null };
+            game.Platforms = new string[] { "PC", "   ", "Switch", null! };
 
             Game stored = await CaptureAdd(game);
 
@@ -252,13 +252,13 @@ namespace VideoGameManager.Tests.Services
         public async Task AddAsync_PlatformListThatWasNeverSupplied_IsRejected()
         {
             Game game = ValidGame();
-            game.Platforms = null;
+            game.Platforms = null!;
 
             Result<int> result = await _service.AddAsync(game);
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Platforms));
-            await _games.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Fact]
@@ -326,7 +326,7 @@ namespace VideoGameManager.Tests.Services
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Status));
-            await _games.DidNotReceiveWithAnyArgs().AddAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().AddAsync(default!);
         }
 
         [Fact]
@@ -355,7 +355,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public async Task UpdateAsync_NullGame_ThrowsArgumentNullException()
         {
-            Func<Task> act = () => _service.UpdateAsync(null);
+            Func<Task> act = () => _service.UpdateAsync(null!);
 
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("game");
         }
@@ -369,13 +369,13 @@ namespace VideoGameManager.Tests.Services
 
             // The name is broken as well, so a single error on the identity proves the
             // identity check ran first and stopped before the validator did.
-            game.Name = null;
+            game.Name = null!;
 
             Result result = await _service.UpdateAsync(game);
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle().Which.Field.Should().Be(nameof(Game.Id));
-            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default!);
         }
 
         [Fact]
@@ -388,7 +388,7 @@ namespace VideoGameManager.Tests.Services
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Genre));
-            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default!);
         }
 
         [Fact]
@@ -397,7 +397,7 @@ namespace VideoGameManager.Tests.Services
             Game game = ValidGame(12);
             game.Name = "  Celeste  ";
 
-            Game stored = null;
+            Game? stored = null;
             _games.UpdateAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>()).Returns(call =>
             {
                 stored = call.Arg<Game>();
@@ -407,7 +407,7 @@ namespace VideoGameManager.Tests.Services
             Result result = await _service.UpdateAsync(game);
 
             result.IsSuccess.Should().BeTrue();
-            stored.Id.Should().Be(12);
+            stored!.Id.Should().Be(12);
             stored.Name.Should().Be("Celeste");
         }
 
@@ -445,7 +445,7 @@ namespace VideoGameManager.Tests.Services
 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().ContainSingle(e => e.Field == nameof(Game.Status));
-            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default);
+            await _games.DidNotReceiveWithAnyArgs().UpdateAsync(default!);
         }
 
         [Fact]
@@ -575,7 +575,7 @@ namespace VideoGameManager.Tests.Services
         /// </summary>
         private async Task<Game> CaptureAdd(Game game)
         {
-            Game stored = null;
+            Game? stored = null;
 
             _games.AddAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>()).Returns(call =>
             {
@@ -588,7 +588,7 @@ namespace VideoGameManager.Tests.Services
             result.IsSuccess.Should().BeTrue("the game under test is meant to pass validation");
             stored.Should().NotBeNull();
 
-            return stored;
+            return stored!;
         }
 
         /// <summary>
@@ -597,7 +597,7 @@ namespace VideoGameManager.Tests.Services
         /// </summary>
         private async Task<Game> CaptureUpdate(Game game)
         {
-            Game stored = null;
+            Game? stored = null;
 
             _games.UpdateAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>()).Returns(call =>
             {
@@ -610,7 +610,7 @@ namespace VideoGameManager.Tests.Services
             result.IsSuccess.Should().BeTrue("the game under test is meant to pass validation");
             stored.Should().NotBeNull();
 
-            return stored;
+            return stored!;
         }
 
         private static Game ValidGame(int id = 0) => new Game

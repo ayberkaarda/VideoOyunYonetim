@@ -18,7 +18,7 @@ namespace VideoGameManager.Tests.Data
         [Fact]
         public void Constructor_NullConfiguration_ThrowsArgumentNullException()
         {
-            Action act = () => new SqlConnectionFactory(null);
+            Action act = () => new SqlConnectionFactory(null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("configuration");
         }
@@ -40,7 +40,7 @@ namespace VideoGameManager.Tests.Data
         public void Constructor_ConnectionStringBlank_ThrowsInvalidOperationException(string value)
         {
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:VideoGameManager"] = value,
                 })
@@ -57,7 +57,7 @@ namespace VideoGameManager.Tests.Data
         {
             const string connectionString = "Server=localhost;Database=VideoGameManager;Trusted_Connection=True;";
             IConfiguration configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:VideoGameManager"] = connectionString,
                 })
@@ -74,9 +74,9 @@ namespace VideoGameManager.Tests.Data
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void ForConnectionString_BlankConnectionString_ThrowsArgumentException(string value)
+        public void ForConnectionString_BlankConnectionString_ThrowsArgumentException(string? value)
         {
-            Action act = () => SqlConnectionFactory.ForConnectionString(value);
+            Action act = () => SqlConnectionFactory.ForConnectionString(value!);
 
             act.Should().Throw<ArgumentException>().WithParameterName("connectionString");
         }

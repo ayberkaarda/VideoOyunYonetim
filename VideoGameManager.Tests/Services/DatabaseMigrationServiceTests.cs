@@ -24,7 +24,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullMigrator_ThrowsArgumentNullException()
         {
-            Action act = () => new DatabaseMigrationService(null, NullLogger<DatabaseMigrationService>.Instance);
+            Action act = () => new DatabaseMigrationService(null!, NullLogger<DatabaseMigrationService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("migrator");
         }
@@ -32,7 +32,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new DatabaseMigrationService(_migrator, null);
+            Action act = () => new DatabaseMigrationService(_migrator, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }

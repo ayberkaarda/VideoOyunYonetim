@@ -97,7 +97,7 @@ namespace VideoGameManager.UI.Dialogs
             "The check could not be completed. The details were written to the log file.";
 
         private readonly Func<Task<DatabaseStatus>> _probe;
-        private readonly ILogger _logger;
+        private readonly ILogger? _logger;
         private readonly Label _statusLabel;
         private readonly FlatButton _retryButton;
         private readonly FlatButton _continueButton;
@@ -114,10 +114,10 @@ namespace VideoGameManager.UI.Dialogs
         /// thread, so it must be safe to call more than once.</param>
         /// <param name="logger">Where a failed retry is recorded. May be null.</param>
         public ConnectionProblemDialog(
-            string message,
+            string? message,
             ConnectionTarget target,
             Func<Task<DatabaseStatus>> probe,
-            ILogger logger)
+            ILogger? logger)
         {
             if (probe == null)
             {
@@ -279,7 +279,7 @@ namespace VideoGameManager.UI.Dialogs
                 SecondTargetRowTop);
         }
 
-        private static void AddTargetRow(Control parent, string caption, string value, int top)
+        private static void AddTargetRow(Control parent, string caption, string? value, int top)
         {
             // The captions are aligned by giving them a fixed width rather than by
             // computing an x for each one from its text width: an edit to the wording
@@ -369,7 +369,7 @@ namespace VideoGameManager.UI.Dialogs
         // Behaviour
         // ------------------------------------------------------------------
 
-        private async void RetryClick(object sender, EventArgs e)
+        private async void RetryClick(object? sender, EventArgs e)
         {
             // An event handler is the one place where a method may return void and still
             // await. The whole body is guarded so a failure inside the check cannot
@@ -403,7 +403,7 @@ namespace VideoGameManager.UI.Dialogs
                         "Database is still unreachable after a retry from the startup dialog.");
                 }
 
-                string reported = status == null ? null : status.Message;
+                string? reported = status == null ? null : status.Message;
                 _statusLabel.Text = string.IsNullOrWhiteSpace(reported)
                     ? StillUnreachableMessage
                     : reported.Trim();

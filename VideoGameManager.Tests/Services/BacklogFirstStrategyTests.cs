@@ -23,7 +23,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new BacklogFirstStrategy(null);
+            Action act = () => new BacklogFirstStrategy(null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -72,9 +72,9 @@ namespace VideoGameManager.Tests.Services
                 new Game { Name = "Celeste", Score = 9.4, Status = PlayStatus.Finished });
             BacklogFirstStrategy strategy = new BacklogFirstStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Hollow Knight");
+            recommendation!.Name.Should().Be("Hollow Knight");
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace VideoGameManager.Tests.Services
                 new Game { Name = "Celeste", Score = 9.4, Status = PlayStatus.Finished });
             BacklogFirstStrategy strategy = new BacklogFirstStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().NotBeNull();
             recommendation.Name.Should().Be("Bought In A Sale");
@@ -127,9 +127,9 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Celeste", Score = 9.4, Status = status });
             BacklogFirstStrategy strategy = new BacklogFirstStrategy(_games, 7.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             _filters.Should().HaveCount(2);
             _filters[0].Status.Should().Be(PlayStatus.Backlog);
             _filters[1].Should().Be(new GameFilter(MinScore: 7.0));
@@ -143,9 +143,9 @@ namespace VideoGameManager.Tests.Services
                 new Game { Name = "Celeste", Score = 9.4, Status = PlayStatus.Finished });
             BacklogFirstStrategy strategy = new BacklogFirstStrategy(_games, 8.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             _filters.Should().HaveCount(2);
         }
 
@@ -155,7 +155,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue();
             BacklogFirstStrategy strategy = new BacklogFirstStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().BeNull();
         }

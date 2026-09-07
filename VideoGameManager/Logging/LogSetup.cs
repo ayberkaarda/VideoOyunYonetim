@@ -14,10 +14,10 @@ namespace VideoGameManager.Logging
     internal sealed class LogSetupResult
     {
         private readonly string _directory;
-        private readonly string _filePath;
-        private readonly Exception _failure;
+        private readonly string? _filePath;
+        private readonly Exception? _failure;
 
-        internal LogSetupResult(string directory, string filePath, Exception failure)
+        internal LogSetupResult(string directory, string? filePath, Exception? failure)
         {
             _directory = directory;
             _filePath = filePath;
@@ -34,7 +34,7 @@ namespace VideoGameManager.Logging
         /// Gets the file name pattern that is written to, or null when the file sink
         /// could not be opened.
         /// </summary>
-        public string FilePath
+        public string? FilePath
         {
             get { return _filePath; }
         }
@@ -42,7 +42,7 @@ namespace VideoGameManager.Logging
         /// <summary>
         /// Gets why the file sink could not be opened, or null when it was opened.
         /// </summary>
-        public Exception Failure
+        public Exception? Failure
         {
             get { return _failure; }
         }
@@ -65,7 +65,7 @@ namespace VideoGameManager.Logging
         /// </summary>
         /// <param name="configuration">The application configuration, which may be null.</param>
         /// <returns>Where the log went, and why it did not go to a file if it did not.</returns>
-        public static LogSetupResult Configure(IConfiguration configuration)
+        public static LogSetupResult Configure(IConfiguration? configuration)
         {
             LogOptions options = LogOptions.FromConfiguration(configuration);
 
@@ -73,8 +73,8 @@ namespace VideoGameManager.Logging
                 .MinimumLevel.Is(options.MinimumLevel)
                 .Enrich.FromLogContext();
 
-            string filePath = null;
-            Exception failure = null;
+            string? filePath = null;
+            Exception? failure = null;
 
             try
             {

@@ -32,7 +32,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullView_ThrowsArgumentNullException()
         {
-            Action act = () => new StatisticsPresenter(null, _statistics, NullLogger<StatisticsPresenter>.Instance);
+            Action act = () => new StatisticsPresenter(null!, _statistics, NullLogger<StatisticsPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("view");
         }
@@ -40,7 +40,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullStatisticsService_ThrowsArgumentNullException()
         {
-            Action act = () => new StatisticsPresenter(_view, null, NullLogger<StatisticsPresenter>.Instance);
+            Action act = () => new StatisticsPresenter(_view, null!, NullLogger<StatisticsPresenter>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("statistics");
         }
@@ -48,7 +48,7 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new StatisticsPresenter(_view, _statistics, null);
+            Action act = () => new StatisticsPresenter(_view, _statistics, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -68,12 +68,12 @@ namespace VideoGameManager.Tests.Presenters
         [Fact]
         public void Loaded_ServiceReturnsNull_ShowsUnavailable()
         {
-            _statistics.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<CatalogueStatistics>(null));
+            _statistics.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<CatalogueStatistics>(null!));
 
             RaiseLoaded();
 
             _view.Received(1).ShowUnavailable(Arg.Any<string>());
-            _view.DidNotReceiveWithAnyArgs().ShowStatistics(default);
+            _view.DidNotReceiveWithAnyArgs().ShowStatistics(default!);
         }
 
         [Fact]

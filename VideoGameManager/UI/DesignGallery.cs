@@ -36,7 +36,7 @@ namespace VideoGameManager.UI
         private const int CardPadding = Theme.Space.L;
         private const int HeaderHeight = 20;
 
-        private readonly PreviewButton _focusedButton;
+        private readonly PreviewButton? _focusedButton;
         private readonly SearchBox _searchBox;
         private readonly Label _searchEcho;
         private readonly Image _sampleCover;
@@ -94,7 +94,7 @@ namespace VideoGameManager.UI
             _captionPreviews[1].LockHover();
             _captionPreviews[2].LockPressed();
 
-            _focusedButton.Focus();
+            _focusedButton?.Focus();
         }
 
         /// <inheritdoc/>
@@ -112,7 +112,7 @@ namespace VideoGameManager.UI
         // Column one
         // ------------------------------------------------------------------
 
-        private PreviewButton BuildButtonCard()
+        private PreviewButton? BuildButtonCard()
         {
             const int cardHeight = 274;
             const int buttonWidth = 88;
@@ -131,7 +131,7 @@ namespace VideoGameManager.UI
 
             ButtonKind[] kinds = { ButtonKind.Primary, ButtonKind.Secondary, ButtonKind.Danger };
             string[] labels = { "Save", "Cancel", "Delete" };
-            PreviewButton focused = null;
+            PreviewButton? focused = null;
 
             int rowY = headerY + Theme.Fonts.Caption.Height + Theme.Space.S;
             for (int row = 0; row < kinds.Length; row++)
@@ -613,7 +613,7 @@ namespace VideoGameManager.UI
             return bitmap;
         }
 
-        private void SearchDebounced(object sender, EventArgs e)
+        private void SearchDebounced(object? sender, EventArgs e)
         {
             _searchEcho.Text = "SearchTextChanged: \"" + _searchBox.Text + "\"";
         }

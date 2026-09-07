@@ -16,7 +16,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullStrategies_ThrowsArgumentNullException()
         {
-            Action act = () => new RecommendationService(null, NullLogger<RecommendationService>.Instance);
+            Action act = () => new RecommendationService(null!, NullLogger<RecommendationService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("strategies");
         }
@@ -24,7 +24,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new RecommendationService(new IRecommendationStrategy[] { Strategy("Random") }, null);
+            Action act = () => new RecommendationService(new IRecommendationStrategy[] { Strategy("Random") }, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -40,7 +40,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_StrategyThatIsNull_ThrowsArgumentException()
         {
-            Action act = () => Build(Strategy("Random"), null);
+            Action act = () => Build(Strategy("Random"), null!);
 
             act.Should().Throw<ArgumentException>().WithParameterName("strategies");
         }
@@ -49,9 +49,9 @@ namespace VideoGameManager.Tests.Services
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Constructor_StrategyWithoutAName_ThrowsArgumentException(string name)
+        public void Constructor_StrategyWithoutAName_ThrowsArgumentException(string? name)
         {
-            Action act = () => Build(Strategy(name));
+            Action act = () => Build(Strategy(name!));
 
             act.Should().Throw<ArgumentException>().WithParameterName("strategies");
         }
@@ -80,7 +80,7 @@ namespace VideoGameManager.Tests.Services
             IRecommendationStrategy second = Strategy("GenreWeighted", new Game { Name = "Hades" });
             RecommendationService service = Build(first, second);
 
-            Game recommendation = await service.RecommendAsync();
+            Game? recommendation = await service.RecommendAsync();
 
             recommendation.Should().BeSameAs(expected);
             await second.DidNotReceiveWithAnyArgs().PickAsync();
@@ -94,7 +94,7 @@ namespace VideoGameManager.Tests.Services
             Game expected = new Game { Name = "Celeste" };
             RecommendationService service = Build(Strategy("Random", expected), Strategy("GenreWeighted"));
 
-            Game recommendation = await service.RecommendAsync(name);
+            Game? recommendation = await service.RecommendAsync(name);
 
             recommendation.Should().BeSameAs(expected);
         }
@@ -110,7 +110,7 @@ namespace VideoGameManager.Tests.Services
             IRecommendationStrategy first = Strategy("Random", new Game { Name = "Celeste" });
             RecommendationService service = Build(first, Strategy("GenreWeighted", expected));
 
-            Game recommendation = await service.RecommendAsync(name);
+            Game? recommendation = await service.RecommendAsync(name);
 
             recommendation.Should().BeSameAs(expected);
             await first.DidNotReceiveWithAnyArgs().PickAsync();
@@ -131,7 +131,7 @@ namespace VideoGameManager.Tests.Services
         {
             RecommendationService service = Build(Strategy("Random"));
 
-            Game recommendation = await service.RecommendAsync();
+            Game? recommendation = await service.RecommendAsync();
 
             recommendation.Should().BeNull();
         }
@@ -169,11 +169,11 @@ namespace VideoGameManager.Tests.Services
         /// A strategy that answers to <paramref name="name"/> and always suggests
         /// <paramref name="pick"/>, which may be <c>null</c> to mean nothing qualified.
         /// </summary>
-        private static IRecommendationStrategy Strategy(string name, Game pick = null)
+        private static IRecommendationStrategy Strategy(string name, Game? pick = null)
         {
             IRecommendationStrategy strategy = Substitute.For<IRecommendationStrategy>();
             strategy.Name.Returns(name);
-            strategy.PickAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(pick));
+            strategy.PickAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<Game?>(pick));
             return strategy;
         }
     }

@@ -76,7 +76,7 @@ namespace VideoGameManager.Presenters
         /// The game whose details are on screen, kept so that a confirmation prompt can name
         /// it. Cleared whenever the list is reloaded, because the highlight goes with it.
         /// </summary>
-        private Game _selected;
+        private Game? _selected;
 
         /// <summary>
         /// Wires the presenter to a view.
@@ -126,7 +126,7 @@ namespace VideoGameManager.Presenters
         // get a dialog, because there is nowhere else to report it and it happens once.
         // ------------------------------------------------------------------
 
-        private async void OnLoaded(object sender, EventArgs e)
+        private async void OnLoaded(object? sender, EventArgs e)
         {
             try
             {
@@ -141,7 +141,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnSelectionChanged(object sender, EventArgs e)
+        private async void OnSelectionChanged(object? sender, EventArgs e)
         {
             try
             {
@@ -154,7 +154,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnFilterChanged(object sender, EventArgs e)
+        private async void OnFilterChanged(object? sender, EventArgs e)
         {
             try
             {
@@ -170,7 +170,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnPreviousPageRequested(object sender, EventArgs e)
+        private async void OnPreviousPageRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -189,7 +189,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnNextPageRequested(object sender, EventArgs e)
+        private async void OnNextPageRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -208,7 +208,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnEditRequested(object sender, EventArgs e)
+        private async void OnEditRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -233,7 +233,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnDeleteRequested(object sender, EventArgs e)
+        private async void OnDeleteRequested(object? sender, EventArgs e)
         {
             try
             {
@@ -246,7 +246,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnExportRequested(object sender, ExportRequestedEventArgs e)
+        private async void OnExportRequested(object? sender, ExportRequestedEventArgs e)
         {
             try
             {
@@ -354,7 +354,7 @@ namespace VideoGameManager.Presenters
                 return;
             }
 
-            Game game = await _games.GetAsync(id.Value, ct).ConfigureAwait(true);
+            Game? game = await _games.GetAsync(id.Value, ct).ConfigureAwait(true);
             _selected = game;
             _view.ShowDetails(game);
         }
@@ -397,7 +397,7 @@ namespace VideoGameManager.Presenters
 
         private async Task ExportAsync(ExportRequestedEventArgs request, CancellationToken ct)
         {
-            IGameExporter exporter = FindExporter(request.Format);
+            IGameExporter? exporter = FindExporter(request.Format);
             if (exporter == null)
             {
                 _logger.LogWarning("No exporter is registered for the format {Format}.", request.Format);
@@ -501,7 +501,7 @@ namespace VideoGameManager.Presenters
                 OnlyFavourites: _view.OnlyFavourites ? true : (bool?)null);
         }
 
-        private IGameExporter FindExporter(string format)
+        private IGameExporter? FindExporter(string format)
         {
             foreach (IGameExporter exporter in _exporters)
             {
@@ -518,7 +518,7 @@ namespace VideoGameManager.Presenters
         {
             // The cached game is only trusted when it is the one that is highlighted; the
             // selection can have moved on since the details were fetched.
-            Game selected = _selected;
+            Game? selected = _selected;
             if (selected != null && selected.Id == gameId && !string.IsNullOrWhiteSpace(selected.Name))
             {
                 return string.Format(

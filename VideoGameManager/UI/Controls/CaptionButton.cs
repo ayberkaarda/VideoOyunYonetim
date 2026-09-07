@@ -111,7 +111,7 @@ namespace VideoGameManager.UI.Controls
         /// <inheritdoc/>
         protected override void OnMouseDown(MouseEventArgs mevent)
         {
-            if (mevent != null && mevent.Button == MouseButtons.Left)
+            if (mevent.Button == MouseButtons.Left)
             {
                 _pressed = true;
                 Invalidate();
@@ -174,7 +174,7 @@ namespace VideoGameManager.UI.Controls
                     return MinimizeGlyph;
 
                 case CaptionButtonKind.Maximize:
-                    Form form = FindForm();
+                    Form? form = FindForm();
                     return form != null && form.WindowState == FormWindowState.Maximized
                         ? RestoreGlyph
                         : MaximizeGlyph;

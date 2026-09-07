@@ -28,7 +28,7 @@ namespace VideoGameManager
 
         private const string LoadingText = "Loading\u2026";
 
-        private readonly Presenters.StatisticsPresenter _presenter;
+        private readonly Presenters.StatisticsPresenter? _presenter;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public StatisticsForm()
@@ -45,9 +45,9 @@ namespace VideoGameManager
             _presenter = new Presenters.StatisticsPresenter(this, statistics, presenterLogger);
         }
 
-        public event EventHandler Loaded;
+        public event EventHandler? Loaded;
 
-        public event EventHandler RefreshRequested;
+        public event EventHandler? RefreshRequested;
 
         bool Views.IView.IsBusy
         {

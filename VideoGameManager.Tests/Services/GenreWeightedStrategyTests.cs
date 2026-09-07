@@ -29,7 +29,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new GenreWeightedStrategy(null);
+            Action act = () => new GenreWeightedStrategy(null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -84,9 +84,9 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Disco Elysium", Genre = "RPG", Score = 9.5 });
             GenreWeightedStrategy strategy = new GenreWeightedStrategy(_games);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Genre.Should().Be("RPG");
+            recommendation!.Genre.Should().Be("RPG");
         }
 
         [Fact]
@@ -151,7 +151,7 @@ namespace VideoGameManager.Tests.Services
             const int draws = 2000;
             await Draw(strategy, draws);
 
-            List<string> chosen = ChosenGenres();
+            List<string?> chosen = ChosenGenres();
             chosen.Should().HaveCount(draws);
 
             double rpgShare = chosen.Count(genre => genre == "RPG") / (double)draws;
@@ -195,7 +195,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "An Unrated RPG", Genre = "RPG", Score = null });
             GenreWeightedStrategy strategy = Build();
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().NotBeNull();
             recommendation.Name.Should().Be("An Unrated RPG");
@@ -208,9 +208,9 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Celeste", Genre = "Platformer", Score = 9.0 });
             GenreWeightedStrategy strategy = Build(6.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             AssertUnfilteredPick(_filters.Should().ContainSingle().Subject, 6.0);
         }
 
@@ -220,13 +220,13 @@ namespace VideoGameManager.Tests.Services
             // Defensive: the repository contract promises a list, but a null must not take down
             // the recommendation screen.
             _games.GetGenreAffinitiesAsync(Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult<IReadOnlyList<GenreReviewSummary>>(null));
+                .Returns(Task.FromResult<IReadOnlyList<GenreReviewSummary>>(null!));
             GiveCatalogue(new Game { Name = "Celeste", Genre = "Platformer", Score = 9.0 });
             GenreWeightedStrategy strategy = Build();
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             AssertUnfilteredPick(_filters.Should().ContainSingle().Subject, null);
         }
 
@@ -237,9 +237,9 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue(new Game { Name = "Celeste", Genre = "Platformer", Score = 9.0 });
             GenreWeightedStrategy strategy = Build();
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             AssertUnfilteredPick(_filters.Should().ContainSingle().Subject, null);
         }
 
@@ -254,9 +254,9 @@ namespace VideoGameManager.Tests.Services
                 new Game { Name = "Celeste", Genre = "Platformer", Score = 9.0 });
             GenreWeightedStrategy strategy = Build(8.0);
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
-            recommendation.Name.Should().Be("Celeste");
+            recommendation!.Name.Should().Be("Celeste");
             _filters.Should().HaveCount(2);
             _filters[0].Genre.Should().Be("RPG");
             AssertUnfilteredPick(_filters[1], 8.0);
@@ -269,7 +269,7 @@ namespace VideoGameManager.Tests.Services
             GiveCatalogue();
             GenreWeightedStrategy strategy = Build();
 
-            Game recommendation = await strategy.PickAsync();
+            Game? recommendation = await strategy.PickAsync();
 
             recommendation.Should().BeNull();
         }
@@ -344,7 +344,7 @@ namespace VideoGameManager.Tests.Services
         /// <summary>
         /// The genre of every filter the strategy handed the repository.
         /// </summary>
-        private List<string> ChosenGenres() => _filters.Select(filter => filter.Genre).ToList();
+        private List<string?> ChosenGenres() => _filters.Select(filter => filter.Genre).ToList();
 
         /// <summary>
         /// A fallback pick narrows nothing but the score: no genre, and no other member touched.

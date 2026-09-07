@@ -33,13 +33,13 @@ namespace VideoGameManager.UI.Controls
 
         private readonly System.Windows.Forms.Timer _spinnerTimer;
 
-        private Image _image;
+        private Image? _image;
         private bool _isLoading;
         private int _spinnerAngle;
         private int _cornerRadius = Theme.Radius.Card;
         private string _placeholderText = "No cover";
-        private ICoverImageProvider _provider;
-        private CancellationTokenSource _pendingLoad;
+        private ICoverImageProvider? _provider;
+        private CancellationTokenSource? _pendingLoad;
 
         /// <summary>Initialises a new, empty cover box.</summary>
         public CoverImageBox()
@@ -68,7 +68,7 @@ namespace VideoGameManager.UI.Controls
         [Category("Appearance")]
         [DefaultValue(null)]
         [Description("The cover artwork to display.")]
-        public Image Image
+        public Image? Image
         {
             get { return _image; }
             set
@@ -141,7 +141,7 @@ namespace VideoGameManager.UI.Controls
         /// </summary>
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public ICoverImageProvider Provider
+        public ICoverImageProvider? Provider
         {
             get { return _provider; }
             set { _provider = value; }
@@ -160,14 +160,14 @@ namespace VideoGameManager.UI.Controls
         /// </summary>
         /// <param name="coverReference">The reference to hand to the provider.</param>
         /// <returns>A task that completes when the box has settled on a state.</returns>
-        public async Task LoadCoverAsync(string coverReference)
+        public async Task LoadCoverAsync(string? coverReference)
         {
             if (_provider == null)
             {
                 return;
             }
 
-            CancellationTokenSource previous = _pendingLoad;
+            CancellationTokenSource? previous = _pendingLoad;
             CancellationTokenSource current = new CancellationTokenSource();
             _pendingLoad = current;
 
@@ -183,7 +183,7 @@ namespace VideoGameManager.UI.Controls
 
             try
             {
-                Image loaded = await _provider.GetCoverAsync(coverReference, current.Token)
+                Image? loaded = await _provider.GetCoverAsync(coverReference, current.Token)
                     .ConfigureAwait(true);
 
                 if (!current.IsCancellationRequested && ReferenceEquals(_pendingLoad, current))
@@ -343,7 +343,7 @@ namespace VideoGameManager.UI.Controls
             g.SmoothingMode = previous;
         }
 
-        private void SpinnerTick(object sender, EventArgs e)
+        private void SpinnerTick(object? sender, EventArgs e)
         {
             _spinnerAngle = (_spinnerAngle + SpinnerStepDegrees) % 360;
             Invalidate();

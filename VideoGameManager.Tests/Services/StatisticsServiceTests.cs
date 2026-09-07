@@ -27,7 +27,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullRepository_ThrowsArgumentNullException()
         {
-            Action act = () => new StatisticsService(null, NullLogger<StatisticsService>.Instance);
+            Action act = () => new StatisticsService(null!, NullLogger<StatisticsService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("games");
         }
@@ -35,7 +35,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new StatisticsService(_games, null);
+            Action act = () => new StatisticsService(_games, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }

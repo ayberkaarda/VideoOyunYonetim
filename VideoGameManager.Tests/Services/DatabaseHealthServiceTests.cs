@@ -26,7 +26,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullProbe_ThrowsArgumentNullException()
         {
-            Action act = () => new DatabaseHealthService(null, NullLogger<DatabaseHealthService>.Instance);
+            Action act = () => new DatabaseHealthService(null!, NullLogger<DatabaseHealthService>.Instance);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("probe");
         }
@@ -34,7 +34,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Constructor_NullLogger_ThrowsArgumentNullException()
         {
-            Action act = () => new DatabaseHealthService(_probe, null);
+            Action act = () => new DatabaseHealthService(_probe, null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
         }
@@ -142,9 +142,9 @@ namespace VideoGameManager.Tests.Services
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Unreachable_WithoutAMessage_ThrowsArgumentException(string message)
+        public void Unreachable_WithoutAMessage_ThrowsArgumentException(string? message)
         {
-            Action act = () => DatabaseStatus.Unreachable(message, new InvalidOperationException("cause"));
+            Action act = () => DatabaseStatus.Unreachable(message!, new InvalidOperationException("cause"));
 
             act.Should().Throw<ArgumentException>().WithParameterName("message");
         }
@@ -152,7 +152,7 @@ namespace VideoGameManager.Tests.Services
         [Fact]
         public void Unreachable_WithoutAFailure_ThrowsArgumentNullException()
         {
-            Action act = () => DatabaseStatus.Unreachable("the server did not answer", null);
+            Action act = () => DatabaseStatus.Unreachable("the server did not answer", null!);
 
             act.Should().Throw<ArgumentNullException>().WithParameterName("failure");
         }

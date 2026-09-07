@@ -1,8 +1,8 @@
 # ADR 0007 - Defer the nullable reference context
 
-Status: accepted, and partly carried out. Domain, Data and Services now compile with the
-nullable context on. Presentation, the desktop project and the test project do not yet.
-See "Progress" at the end.
+Status: accepted, and now carried out in full. Every project in the solution compiles with
+the nullable context on. What follows is the reasoning for deferring it, kept because it
+explains the order the work was done in; see "Progress" at the end for how it finished.
 
 ## Context
 
@@ -125,7 +125,32 @@ What the annotations say, now that they say something:
   it is made once, in the type, and it pays the caller back: code that checks `IsSuccess`
   is then told by flow analysis that the value is there.
 
-**Still off:** Presentation, the desktop project and the test project - about 310 distinct
-diagnostics between them, three quarters of which are in the test project and the forms.
-The three enabled layers produce no diagnostics in the three that are not, which is what
-makes doing this one layer at a time safe rather than merely convenient.
+**2026-09-07, later the same day - the rest.** Presentation (29 diagnostics), the desktop
+project (106) and the test project (177) followed, and the migrator turned out to have none
+at all. The setting now lives in `Directory.Build.props` with no project overriding it: a
+new project inherits it rather than having to remember it.
+
+What the last three layers needed:
+
+- **Presentation.** Two view methods were taking a parameter the presenter genuinely passes
+  as `null` - `ShowDetails` when nothing is selected, `ShowGame` when no recommendation was
+  found. Both are `Game?` now. Sixteen events became `EventHandler?`, which is what the BCL
+  does with `INotifyPropertyChanged.PropertyChanged` and for the same reason.
+- **The desktop project.** No `#nullable disable` was needed in the designer files: the
+  compiler already treats them as generated code, and the designer wires handlers through
+  an explicit `new EventHandler(...)`, which does not raise the conversion warning that an
+  implicit method group would. So the count was real code - the cover image provider, which
+  legitimately returns no image; `SearchBox.Text`, which needed `[AllowNull]` because
+  `Control.Text` accepts null and the override was stricter than its base.
+- **The tests.** `null!` here is the point rather than a workaround: a test asserting that a
+  guard rejects `null` is asserting what happens when a caller ignores the annotation, so
+  the annotation has to be overridden rather than the test weakened. Enabling the context
+  also surfaced nine `xUnit1012` warnings - `[InlineData(null)]` against a non-nullable
+  theory parameter - which are invisible while the context is off.
+
+**One measurement worth keeping.** At every step, the layers already annotated produced no
+diagnostics in the layers that were not. A compilation with the context off is oblivious: it
+neither honours nor complains about the annotations in what it references. That is what made
+this safe to do a layer at a time rather than merely convenient, and it is why the two halves
+of the last round - the tests in one working tree, the presenters and forms in another -
+could be written in parallel and still compile clean when they were put together.

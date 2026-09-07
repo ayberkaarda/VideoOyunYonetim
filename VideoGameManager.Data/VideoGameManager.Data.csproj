@@ -5,13 +5,6 @@
     <RootNamespace>VideoGameManager.Data</RootNamespace>
     <AssemblyName>VideoGameManager.Data</AssemblyName>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- The nullable reference context is switched on one project at a time, in the
-         direction the dependencies run. The entity and validation project below this one
-         is already annotated, so the repository contracts here are written against a
-         settled vocabulary rather than a guess. The projects above - services,
-         presentation, desktop and tests - still carry the shared setting that turns the
-         context off, and compile without nullable diagnostics until their turn comes. -->
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

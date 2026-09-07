@@ -11,7 +11,7 @@ namespace VideoGameManager
     /// </summary>
     public partial class MainForm : VideoGameManager.UI.Controls.ChromelessForm
     {
-        private readonly IServiceProvider _provider;
+        private readonly IServiceProvider? _provider;
 
         /// <summary>Parameterless constructor for the Visual Studio designer only.</summary>
         public MainForm()

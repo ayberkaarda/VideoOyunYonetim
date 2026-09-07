@@ -24,6 +24,6 @@ namespace VideoGameManager.UI.Controls
         /// result, for example because the user selected a different game.</param>
         /// <returns>The image, or <see langword="null"/> when there is no artwork. The
         /// caller takes ownership of the returned image.</returns>
-        Task<Image> GetCoverAsync(string coverReference, CancellationToken cancellationToken);
+        Task<Image?> GetCoverAsync(string? coverReference, CancellationToken cancellationToken);
     }
 }

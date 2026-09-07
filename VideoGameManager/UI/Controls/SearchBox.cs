@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Windows.Forms;
 using VideoGameManager.UI.Theming;
@@ -75,13 +76,17 @@ namespace VideoGameManager.UI.Controls
         /// </summary>
         [Category("Action")]
         [Description("Raised once the user has paused typing.")]
-        public event EventHandler SearchTextChanged;
+        public event EventHandler? SearchTextChanged;
 
         /// <summary>Gets or sets the current search text.</summary>
         [Browsable(true)]
         [EditorBrowsable(EditorBrowsableState.Always)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         [Description("The current search text.")]
+
+        // Control.Text accepts null and stores it as an empty string; the override has to
+        // say the same thing or it would be promising callers more than the base class does.
+        [AllowNull]
         public override string Text
         {
             get { return _input.Text; }
@@ -335,7 +340,7 @@ namespace VideoGameManager.UI.Controls
             return new Rectangle(Width - Theme.Metrics.Input, 0, Theme.Metrics.Input, Height);
         }
 
-        private void InputTextChanged(object sender, EventArgs e)
+        private void InputTextChanged(object? sender, EventArgs e)
         {
             _debounceTimer.Stop();
             _debounceTimer.Start();
@@ -343,13 +348,13 @@ namespace VideoGameManager.UI.Controls
             Invalidate();
         }
 
-        private void InputFocusChanged(object sender, EventArgs e)
+        private void InputFocusChanged(object? sender, EventArgs e)
         {
             _focused = _input.Focused;
             Invalidate();
         }
 
-        private void DebounceElapsed(object sender, EventArgs e)
+        private void DebounceElapsed(object? sender, EventArgs e)
         {
             _debounceTimer.Stop();
             OnSearchTextChanged(EventArgs.Empty);

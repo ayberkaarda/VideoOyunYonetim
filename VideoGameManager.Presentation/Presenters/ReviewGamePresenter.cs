@@ -45,7 +45,7 @@ namespace VideoGameManager.Presenters
             _view.SaveRequested += OnSaveRequested;
         }
 
-        private async void OnLoaded(object sender, EventArgs e)
+        private async void OnLoaded(object? sender, EventArgs e)
         {
             try
             {
@@ -58,7 +58,7 @@ namespace VideoGameManager.Presenters
             }
         }
 
-        private async void OnSaveRequested(object sender, EventArgs e)
+        private async void OnSaveRequested(object? sender, EventArgs e)
         {
             try
             {

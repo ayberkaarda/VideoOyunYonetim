@@ -63,9 +63,9 @@ namespace VideoGameManager.Logging
         /// </summary>
         /// <param name="configuration">The application configuration, which may be null.</param>
         /// <returns>A usable set of options; never null.</returns>
-        public static LogOptions FromConfiguration(IConfiguration configuration)
+        public static LogOptions FromConfiguration(IConfiguration? configuration)
         {
-            IConfigurationSection section = configuration == null
+            IConfigurationSection? section = configuration == null
                 ? null
                 : configuration.GetSection(SectionName);
 
@@ -87,9 +87,9 @@ namespace VideoGameManager.Logging
             return Path.Combine(root ?? string.Empty, FolderName, LogFolderName);
         }
 
-        private static LogEventLevel ReadMinimumLevel(IConfigurationSection section)
+        private static LogEventLevel ReadMinimumLevel(IConfigurationSection? section)
         {
-            string configured = section == null ? null : section["MinimumLevel"];
+            string? configured = section == null ? null : section["MinimumLevel"];
             if (string.IsNullOrWhiteSpace(configured))
             {
                 return DefaultMinimumLevel;
@@ -105,9 +105,9 @@ namespace VideoGameManager.Logging
             return level;
         }
 
-        private static string ReadDirectory(IConfigurationSection section)
+        private static string ReadDirectory(IConfigurationSection? section)
         {
-            string configured = section == null ? null : section["Directory"];
+            string? configured = section == null ? null : section["Directory"];
             if (string.IsNullOrWhiteSpace(configured))
             {
                 return DefaultDirectory();
@@ -138,9 +138,9 @@ namespace VideoGameManager.Logging
             }
         }
 
-        private static int ReadRetainedFileCountLimit(IConfigurationSection section)
+        private static int ReadRetainedFileCountLimit(IConfigurationSection? section)
         {
-            string configured = section == null ? null : section["RetainedFileCountLimit"];
+            string? configured = section == null ? null : section["RetainedFileCountLimit"];
 
             int parsed;
             if (!int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))

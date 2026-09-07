@@ -25,8 +25,8 @@ namespace VideoGameManager
         private const string NoExportFormats =
             "No export format is available.";
 
-        private readonly Presenters.BrowseGamesPresenter _presenter;
-        private readonly IServiceProvider _provider;
+        private readonly Presenters.BrowseGamesPresenter? _presenter;
+        private readonly IServiceProvider? _provider;
 
         private IReadOnlyList<ExportFormat> _exportFormats = new ExportFormat[0];
 
@@ -72,28 +72,28 @@ namespace VideoGameManager
         }
 
         /// <inheritdoc />
-        public event EventHandler Loaded;
+        public event EventHandler? Loaded;
 
         /// <inheritdoc />
-        public event EventHandler SelectionChanged;
+        public event EventHandler? SelectionChanged;
 
         /// <inheritdoc />
-        public event EventHandler FilterChanged;
+        public event EventHandler? FilterChanged;
 
         /// <inheritdoc />
-        public event EventHandler PreviousPageRequested;
+        public event EventHandler? PreviousPageRequested;
 
         /// <inheritdoc />
-        public event EventHandler NextPageRequested;
+        public event EventHandler? NextPageRequested;
 
         /// <inheritdoc />
-        public event EventHandler EditRequested;
+        public event EventHandler? EditRequested;
 
         /// <inheritdoc />
-        public event EventHandler DeleteRequested;
+        public event EventHandler? DeleteRequested;
 
         /// <inheritdoc />
-        public event EventHandler<ExportRequestedEventArgs> ExportRequested;
+        public event EventHandler<ExportRequestedEventArgs>? ExportRequested;
 
         IReadOnlyList<Game> Views.IGameListView.Games
         {
@@ -132,10 +132,10 @@ namespace VideoGameManager
         public string SearchText => searchGames.Text;
 
         /// <inheritdoc />
-        public string SelectedGenre => SelectedLookup(cmbGenre);
+        public string? SelectedGenre => SelectedLookup(cmbGenre);
 
         /// <inheritdoc />
-        public string SelectedPlatform => SelectedLookup(cmbPlatform);
+        public string? SelectedPlatform => SelectedLookup(cmbPlatform);
 
         /// <inheritdoc />
         public PlayStatus? SelectedStatus =>
@@ -158,7 +158,7 @@ namespace VideoGameManager
         }
 
         /// <inheritdoc />
-        public void ShowDetails(Game game)
+        public void ShowDetails(Game? game)
         {
             if (game is null)
             {
@@ -274,22 +274,22 @@ namespace VideoGameManager
         // Event handlers. Each one raises a view event and decides nothing.
         // ------------------------------------------------------------------
 
-        private void btnClose_Click(object sender, EventArgs e)
+        private void btnClose_Click(object? sender, EventArgs e)
         {
             Close();
         }
 
-        private void BrowseGamesForm_Load(object sender, EventArgs e)
+        private void BrowseGamesForm_Load(object? sender, EventArgs e)
         {
             Loaded?.Invoke(this, EventArgs.Empty);
         }
 
-        private void lstGames_SelectedIndexChanged(object sender, EventArgs e)
+        private void lstGames_SelectedIndexChanged(object? sender, EventArgs e)
         {
             SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void filterControl_Changed(object sender, EventArgs e)
+        private void filterControl_Changed(object? sender, EventArgs e)
         {
             if (_fillingFilters)
             {
@@ -299,27 +299,27 @@ namespace VideoGameManager
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnPreviousPage_Click(object sender, EventArgs e)
+        private void btnPreviousPage_Click(object? sender, EventArgs e)
         {
             PreviousPageRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnNextPage_Click(object sender, EventArgs e)
+        private void btnNextPage_Click(object? sender, EventArgs e)
         {
             NextPageRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnEdit_Click(object sender, EventArgs e)
+        private void btnEdit_Click(object? sender, EventArgs e)
         {
             EditRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnDelete_Click(object sender, EventArgs e)
+        private void btnDelete_Click(object? sender, EventArgs e)
         {
             DeleteRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void btnExport_Click(object sender, EventArgs e)
+        private void btnExport_Click(object? sender, EventArgs e)
         {
             if (_exportFormats.Count == 0)
             {
@@ -432,7 +432,7 @@ namespace VideoGameManager
         /// The chosen entry of a lookup filter, or <c>null</c> when the "any" entry at the
         /// top is selected.
         /// </summary>
-        private static string SelectedLookup(ComboBox combo)
+        private static string? SelectedLookup(ComboBox combo)
         {
             return combo.SelectedIndex <= 0 ? null : combo.SelectedItem as string;
         }
@@ -549,9 +549,9 @@ namespace VideoGameManager
 
             public override string ToString() => _game.Name;
 
-            private static IEnumerable<string> Parts(params string[] values)
+            private static IEnumerable<string> Parts(params string?[] values)
             {
-                foreach (string value in values)
+                foreach (string? value in values)
                 {
                     if (!string.IsNullOrWhiteSpace(value))
                     {

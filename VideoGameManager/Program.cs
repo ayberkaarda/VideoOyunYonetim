@@ -50,10 +50,10 @@ namespace VideoGameManager
         /// run on a worker thread or on the finalizer thread, and a message box has to be
         /// shown from the thread that owns the windows or not at all.
         /// </summary>
-        private static Control _uiMarshal;
+        private static Control? _uiMarshal;
 
         /// <summary>Where the log files went, for the "see the log" line in a message box.</summary>
-        private static string _logFolder;
+        private static string? _logFolder;
 
         /// <summary>
         /// The main entry point for the application. It builds the configuration and the
@@ -90,8 +90,8 @@ namespace VideoGameManager
             // Reading the settings comes first but must not crash before there is
             // anywhere to record why: the logger falls back to its defaults when the
             // configuration is missing, so the failure below still reaches a file.
-            Exception configurationFailure;
-            IConfiguration configuration = BuildConfiguration(galleryOnly, out configurationFailure);
+            Exception? configurationFailure;
+            IConfiguration? configuration = BuildConfiguration(galleryOnly, out configurationFailure);
 
             LogSetupResult logging = LogSetup.Configure(configuration);
             _logFolder = logging.Directory;
@@ -112,7 +112,7 @@ namespace VideoGameManager
                         logging.Directory);
                 }
 
-                if (configurationFailure != null)
+                if (configurationFailure != null || configuration == null)
                 {
                     Log.Fatal(configurationFailure, "The settings file could not be read, so the application cannot start.");
                     ShowUserMessage(WithLogHint(SettingsUnreadable));
@@ -169,7 +169,7 @@ namespace VideoGameManager
         // Composition
         // ------------------------------------------------------------------
 
-        private static IConfiguration BuildConfiguration(bool galleryOnly, out Exception failure)
+        private static IConfiguration? BuildConfiguration(bool galleryOnly, out Exception? failure)
         {
             failure = null;
 
@@ -222,7 +222,7 @@ namespace VideoGameManager
 
         private static string ApplicationVersion()
         {
-            Version version = typeof(Program).Assembly.GetName().Version;
+            Version? version = typeof(Program).Assembly.GetName().Version;
             return version == null ? "unknown" : version.ToString();
         }
 
@@ -265,7 +265,7 @@ namespace VideoGameManager
                 return DatabaseAvailability.Reachable;
             }
 
-            string reported = status == null ? null : status.Message;
+            string? reported = status == null ? null : status.Message;
             Log.Error(
                 status == null ? null : status.Failure,
                 "The database did not answer the startup check. {Reason}",
@@ -393,7 +393,7 @@ namespace VideoGameManager
             ShowUserMessage(WithLogHint(FatalFailure));
         }
 
-        private static void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
             Log.Error(e.Exception, "A background task failed and nothing observed its result.");
 
@@ -408,7 +408,7 @@ namespace VideoGameManager
 
         private static string WithLogHint(string message)
         {
-            string folder = _logFolder;
+            string? folder = _logFolder;
             if (string.IsNullOrEmpty(folder))
             {
                 return message;
@@ -421,7 +421,7 @@ namespace VideoGameManager
         {
             try
             {
-                Control marshal = _uiMarshal;
+                Control? marshal = _uiMarshal;
                 if (marshal != null && marshal.IsHandleCreated && marshal.InvokeRequired)
                 {
                     marshal.Invoke(new Action<string>(ShowMessageBox), message);
@@ -442,7 +442,7 @@ namespace VideoGameManager
         {
             try
             {
-                Control marshal = _uiMarshal;
+                Control? marshal = _uiMarshal;
                 if (marshal != null && marshal.IsHandleCreated)
                 {
                     marshal.BeginInvoke(new Action<string>(ShowMessageBox), message);

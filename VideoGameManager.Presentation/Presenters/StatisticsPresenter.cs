@@ -39,7 +39,7 @@ namespace VideoGameManager.Presenters
         // A failed read renders inline where the figures normally are, rather than as a
         // dialog: the refresh action can be used repeatedly while the database is
         // unreachable, and a dialog on every attempt would repeat with it.
-        private async void OnLoadRequested(object sender, EventArgs e)
+        private async void OnLoadRequested(object? sender, EventArgs e)
         {
             try
             {

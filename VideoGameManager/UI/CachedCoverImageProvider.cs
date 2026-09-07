@@ -76,14 +76,14 @@ namespace VideoGameManager.UI
         }
 
         /// <inheritdoc/>
-        public async Task<Image> GetCoverAsync(string coverReference, CancellationToken cancellationToken)
+        public async Task<Image?> GetCoverAsync(string? coverReference, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(coverReference))
             {
                 return null;
             }
 
-            Image memoryHit;
+            Image? memoryHit;
             if (_memoryCache.TryGetValue(coverReference, out memoryHit))
             {
                 return memoryHit;
@@ -93,7 +93,7 @@ namespace VideoGameManager.UI
 
             try
             {
-                byte[] bytes = await ReadFromDiskAsync(cacheFilePath, cancellationToken).ConfigureAwait(false);
+                byte[]? bytes = await ReadFromDiskAsync(cacheFilePath, cancellationToken).ConfigureAwait(false);
 
                 if (bytes == null)
                 {
@@ -110,7 +110,7 @@ namespace VideoGameManager.UI
                     return null;
                 }
 
-                Image decoded = DecodeImage(bytes);
+                Image? decoded = DecodeImage(bytes);
                 if (decoded != null)
                 {
                     _memoryCache[coverReference] = decoded;
@@ -165,7 +165,7 @@ namespace VideoGameManager.UI
             }
         }
 
-        private static async Task<byte[]> ReadFromDiskAsync(string path, CancellationToken cancellationToken)
+        private static async Task<byte[]?> ReadFromDiskAsync(string path, CancellationToken cancellationToken)
         {
             if (!File.Exists(path))
             {
@@ -194,9 +194,9 @@ namespace VideoGameManager.UI
             }
         }
 
-        private static async Task<byte[]> DownloadAsync(string coverReference, CancellationToken cancellationToken)
+        private static async Task<byte[]?> DownloadAsync(string coverReference, CancellationToken cancellationToken)
         {
-            Uri coverUri;
+            Uri? coverUri;
             if (!Uri.TryCreate(coverReference, UriKind.Absolute, out coverUri))
             {
                 return null;
@@ -219,7 +219,7 @@ namespace VideoGameManager.UI
         {
             try
             {
-                string directory = Path.GetDirectoryName(path);
+                string? directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                 {
                     Directory.CreateDirectory(directory);
@@ -241,7 +241,7 @@ namespace VideoGameManager.UI
             }
         }
 
-        private static Image DecodeImage(byte[] bytes)
+        private static Image? DecodeImage(byte[] bytes)
         {
             try
             {

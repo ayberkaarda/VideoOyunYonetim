@@ -32,7 +32,7 @@ namespace VideoGameManager.Tests.Services
             using (ServiceProvider provider = BuildProvider())
             using (IServiceScope scope = provider.CreateScope())
             {
-                object resolved = scope.ServiceProvider.GetService(serviceType);
+                object? resolved = scope.ServiceProvider.GetService(serviceType);
 
                 resolved.Should().NotBeNull();
                 resolved.Should().BeAssignableTo(serviceType);
@@ -98,7 +98,7 @@ namespace VideoGameManager.Tests.Services
 
         private static ServiceProvider BuildProvider()
         {
-            Dictionary<string, string> settings = new Dictionary<string, string>
+            Dictionary<string, string?> settings = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:" + SqlConnectionFactory.ConnectionStringName] = UnusableConnectionString(),
             };

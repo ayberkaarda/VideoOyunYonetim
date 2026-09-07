@@ -94,10 +94,10 @@ namespace VideoGameManager.Views
         string SearchText { get; }
 
         /// <summary>Chosen genre, or <c>null</c> when the "any genre" entry is selected.</summary>
-        string SelectedGenre { get; }
+        string? SelectedGenre { get; }
 
         /// <summary>Chosen platform, or <c>null</c> when the "any platform" entry is selected.</summary>
-        string SelectedPlatform { get; }
+        string? SelectedPlatform { get; }
 
         /// <summary>Chosen play state, or <c>null</c> when every state is wanted.</summary>
         PlayStatus? SelectedStatus { get; }
@@ -112,34 +112,34 @@ namespace VideoGameManager.Views
         bool SortDescending { get; }
 
         /// <summary>The screen is on screen and wants its first page.</summary>
-        event EventHandler Loaded;
+        event EventHandler? Loaded;
 
         /// <summary>A different row was highlighted.</summary>
-        event EventHandler SelectionChanged;
+        event EventHandler? SelectionChanged;
 
         /// <summary>
         /// A filter or the sort order changed: the search text settled after the user
         /// stopped typing, a filter was picked, or the sort was changed.
         /// </summary>
-        event EventHandler FilterChanged;
+        event EventHandler? FilterChanged;
 
         /// <summary>The user asked for the page before the current one.</summary>
-        event EventHandler PreviousPageRequested;
+        event EventHandler? PreviousPageRequested;
 
         /// <summary>The user asked for the page after the current one.</summary>
-        event EventHandler NextPageRequested;
+        event EventHandler? NextPageRequested;
 
         /// <summary>The user asked to edit the highlighted game.</summary>
-        event EventHandler EditRequested;
+        event EventHandler? EditRequested;
 
         /// <summary>The user asked to delete the highlighted game.</summary>
-        event EventHandler DeleteRequested;
+        event EventHandler? DeleteRequested;
 
         /// <summary>The user picked a format and a file to export to.</summary>
-        event EventHandler<ExportRequestedEventArgs> ExportRequested;
+        event EventHandler<ExportRequestedEventArgs>? ExportRequested;
 
         /// <summary>Renders the detail panel, or empties it when passed <c>null</c>.</summary>
-        void ShowDetails(Game game);
+        void ShowDetails(Game? game);
 
         /// <summary>
         /// Reports where the user is in the result set and how big it is, so the paging

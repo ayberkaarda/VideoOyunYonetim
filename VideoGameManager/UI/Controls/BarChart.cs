@@ -251,7 +251,7 @@ namespace VideoGameManager.UI.Controls
         /// <param name="items">The bars to draw. <see langword="null"/> and null entries are
         /// treated as "nothing to chart" rather than as a failure, so a caller can pass a
         /// partially filled result straight through.</param>
-        public void SetItems(IEnumerable<BarChartItem> items)
+        public void SetItems(IEnumerable<BarChartItem>? items)
         {
             List<BarChartItem> accepted = new List<BarChartItem>();
 

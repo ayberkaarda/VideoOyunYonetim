@@ -133,10 +133,10 @@ namespace VideoGameManager.UI.Controls
 
             g.FillRoundedRect(background, fill, Theme.Radius.Control);
 
-            object item = Items[e.Index];
-            IGameListItem presentable = item as IGameListItem;
+            object? item = Items[e.Index];
+            IGameListItem? presentable = item as IGameListItem;
 
-            string primary = presentable != null ? presentable.PrimaryText : GetItemText(item);
+            string primary = presentable != null ? presentable.PrimaryText : (GetItemText(item) ?? string.Empty);
             string secondary = presentable != null ? presentable.SecondaryText : string.Empty;
             double? score = presentable != null ? presentable.Score : null;
 

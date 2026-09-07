@@ -23,8 +23,8 @@ namespace VideoGameManager
 
         private readonly ErrorProvider _errors;
 
-        private readonly Presenters.AddGamePresenter _presenter;
-        private readonly ILogger<AddGameForm> _logger;
+        private readonly Presenters.AddGamePresenter? _presenter;
+        private readonly ILogger<AddGameForm>? _logger;
 
         /// <summary>
         /// Set once a load requested through <see cref="LoadForEditing"/> fails. Saving stays
@@ -53,13 +53,13 @@ namespace VideoGameManager
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public event EventHandler SaveRequested;
+        public event EventHandler? SaveRequested;
 
-        public event EventHandler<GameEditRequestedEventArgs> EditRequested;
+        public event EventHandler<GameEditRequestedEventArgs>? EditRequested;
 
         public string GameName => txtName.Text;
 
-        public string Genre => Selected(cmbGenre, GenrePlaceholder);
+        public string? Genre => Selected(cmbGenre, GenrePlaceholder);
 
         /// <summary>
         /// The combo box below is single-select because today's catalogue holds one
@@ -73,14 +73,14 @@ namespace VideoGameManager
         {
             get
             {
-                string selected = Selected(cmbPlatform, PlatformPlaceholder);
+                string? selected = Selected(cmbPlatform, PlatformPlaceholder);
                 return selected is null ? Array.Empty<string>() : new[] { selected };
             }
         }
 
-        public string ScoreText => Selected(cmbScore, ScorePlaceholder);
+        public string? ScoreText => Selected(cmbScore, ScorePlaceholder);
 
-        public string CoverUrl => txtCoverUrl.Text;
+        public string? CoverUrl => txtCoverUrl.Text;
 
         /// <summary>
         /// The list holds the three <see cref="PlayStatus"/> names in declaration order, so
@@ -159,7 +159,7 @@ namespace VideoGameManager
         /// </summary>
         public void ShowFieldError(string field, string message)
         {
-            Control target = ControlFor(field);
+            Control? target = ControlFor(field);
             if (target is null)
             {
                 _logger?.LogWarning(
@@ -194,7 +194,7 @@ namespace VideoGameManager
                    == DialogResult.Yes;
         }
 
-        private Control ControlFor(string field)
+        private Control? ControlFor(string field)
         {
             if (field == nameof(Game.Name)) return frameName;
             if (field == nameof(Game.Genre)) return frameGenre;
@@ -206,7 +206,7 @@ namespace VideoGameManager
         }
 
         /// <summary>Returns the selection, or <c>null</c> while the placeholder is selected.</summary>
-        private static string Selected(ComboBox combo, string placeholder)
+        private static string? Selected(ComboBox combo, string placeholder)
         {
             string text = combo.Text;
             return string.IsNullOrEmpty(text) || text == placeholder ? null : text;
@@ -223,7 +223,7 @@ namespace VideoGameManager
         /// its items, and leaving the placeholder selected in that case would read back as
         /// "no value" and silently blank the real one out the next time the row is saved.
         /// </remarks>
-        private static void SelectOrAdd(ComboBox combo, string value)
+        private static void SelectOrAdd(ComboBox combo, string? value)
         {
             if (string.IsNullOrEmpty(value))
             {
@@ -240,12 +240,12 @@ namespace VideoGameManager
             combo.SelectedIndex = index;
         }
 
-        private void btnSave_Click(object sender, EventArgs e)
+        private void btnSave_Click(object? sender, EventArgs e)
         {
             SaveRequested?.Invoke(this, EventArgs.Empty);
         }
 
-        private void AddGameForm_Load(object sender, EventArgs e)
+        private void AddGameForm_Load(object? sender, EventArgs e)
         {
             cmbPlatform.Items.Clear();
             cmbPlatform.Items.Add(PlatformPlaceholder);

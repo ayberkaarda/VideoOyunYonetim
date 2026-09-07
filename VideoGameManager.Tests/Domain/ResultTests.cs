@@ -28,7 +28,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Invalid_WithNullValidationResult_Throws()
         {
-            Action act = () => Result.Invalid((VideoGameManager.Domain.ValidationResult)null);
+            Action act = () => Result.Invalid((VideoGameManager.Domain.ValidationResult)null!);
 
             act.Should().Throw<ArgumentNullException>();
         }
@@ -69,7 +69,7 @@ namespace VideoGameManager.Tests.Domain
         [Fact]
         public void Invalid_WithNullValidationResult_Throws()
         {
-            Action act = () => Result<string>.Invalid((VideoGameManager.Domain.ValidationResult)null);
+            Action act = () => Result<string>.Invalid((VideoGameManager.Domain.ValidationResult)null!);
 
             act.Should().Throw<ArgumentNullException>();
         }

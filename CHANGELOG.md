@@ -18,20 +18,34 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   `SqlConnectionFactory`'s connection-string validation and an integration test for
   `SqlDatabaseProbe` against both a reachable and an unreachable server, which lifted the
   data layer from 87% to 92%. The suite is 471 tests.
-- `Directory.Build.props`, holding the three settings every project repeated.
+- `Directory.Build.props`, holding the settings every project repeated - the language
+  version, implicit usings, and the nullable context.
 - `global.json`, pinning the SDK feature band with `rollForward: latestFeature`.
 - `README.tr.md`, a Turkish translation of the README. The English one remains the README
   the repository opens with; the two are updated together.
 
 ### Changed
-- The nullable reference context is on for Domain, Data and Services, turned on one layer
-  at a time in the direction the dependencies run. Absence is now annotated where absence
-  is a real answer - `Game.Genre`, `Game.CoverUrl`, `Game.LatestReview`, the text fields of
-  `GameFilter`, and every repository and service method that already returned `null` to mean
-  "no such game". Fields where absence is not a real answer start empty instead:
-  `Game.Name`, `Game.Platforms`, `Review.Body`. No null-forgiving operator, no `required`
-  modifier and no in-file pragma was used. Presentation, the desktop project and the test
-  project are still off (ADR 0007).
+- The nullable reference context is on for the whole solution, turned on one layer at a
+  time in the direction the dependencies run: entities, repositories, services, presenters,
+  then the forms and the tests. The setting lives in `Directory.Build.props` and no project
+  overrides it, so a new project inherits it rather than having to remember it (ADR 0007).
+
+  Absence is annotated where absence is a real answer - `Game.Genre`, `Game.CoverUrl`,
+  `Game.LatestReview`, the text fields of `GameFilter`, every repository and service method
+  that already returned `null` to mean "no such game", `IGameListView.ShowDetails` when
+  nothing is selected and `IRecommendationView.ShowGame` when no recommendation was found.
+  Fields where absence is not a real answer start empty instead: `Game.Name`,
+  `Game.Platforms`, `Review.Body`.
+
+  No null-forgiving operator, no `required` modifier and no in-file pragma appears in
+  production code. In the tests `null!` does appear, and deliberately: a test asserting that
+  a guard rejects `null` is asserting what happens when a caller ignores the annotation, so
+  the annotation is overridden rather than the test weakened.
+- `SearchBox.Text` carries `[AllowNull]`. `Control.Text` accepts `null`, and the override
+  was quietly stricter than the member it replaced.
+- Nine `[InlineData(null)]` theory parameters are `string?`. The mismatch was invisible
+  while the nullable context was off and became a build error under `-warnaserror` once it
+  was on.
 - The screen name recorded in log scopes is the presenter rather than the form, which no
   longer exists in that assembly. Log files written before and after this change use
   different names for the same screen.
