@@ -354,6 +354,7 @@ public interface IGameListView : IView
     IReadOnlyList<string> Genres { set; }
     IReadOnlyList<string> Platforms { set; }
     IReadOnlyList<ExportFormat> ExportFormats { set; }
+    IReadOnlyList<ImportFormat> ImportFormats { set; }
 
     string SearchText { get; }
     string SelectedGenre { get; }        // null means "any"
@@ -371,6 +372,7 @@ public interface IGameListView : IView
     event EventHandler? EditRequested;
     event EventHandler? DeleteRequested;
     event EventHandler<ExportRequestedEventArgs>? ExportRequested;
+    event EventHandler<ImportRequestedEventArgs>? ImportRequested;
 
     void ShowDetails(Game? game);
     void ShowPage(int page, int pageCount, int totalCount);
@@ -391,7 +393,14 @@ it to say so. Choosing the path belongs to the view, which owns the file dialog;
 the bytes belongs to the presenter, which owns no window.
 
 `ExportFormat` exists so the view can build a file-dialog filter without referencing
-`IGameExporter`; the presenter maps the chosen name back to the exporter.
+`IGameExporter`; the presenter maps the chosen name back to the exporter. `ImportFormat`
+and `IGameImporter` mirror that pair for the read side: an importer reads from a
+`TextReader` the caller owns and never touches a path or a dialog itself. Importing is
+additive only - a title already in the catalogue is left as it is and counted as skipped
+rather than overwritten, which is what makes importing the same file twice harmless. A
+row that breaks a validation rule is skipped and counted too, while the rest of the file is
+still read; a file that is not a well-formed document of the chosen format is refused
+whole, before anything is stored.
 
 Rules:
 
@@ -464,15 +473,25 @@ chain and can be built in parallel.
 
 ## Tests
 
-One project, `VideoGameManager.Tests`, targeting `net10.0` and referencing Domain, Data
-and Services. The package choices and the reasoning behind them are in ADR 0006.
+Two projects, split along the same Windows boundary as the projects they test. Almost
+everything lives in `VideoGameManager.Tests`, targeting `net10.0` and referencing Domain,
+Data, Services and Presentation - every layer a Linux build agent can run. The package
+choices and the reasoning behind them are in ADR 0006.
 
 ```
 Domain/         validation rules, the score range, the result types
+Data/           SqlConnectionFactory's connection-string validation
 Services/       every service, with the repository interfaces substituted
+Presenters/     every presenter, driven through its IView with a substituted view
 TestDoubles/    the one helper that manufactures a provider exception
 Integration/    the repositories and the migration chain, against a real SQL Server
 ```
+
+`VideoGameManager.Tests.Desktop` targets `net10.0-windows` and references the desktop
+project directly, for the part of it that a `net10.0` project structurally cannot reach:
+code sitting behind `System.Windows.Forms` or GDI+. Today that is the cover art cache,
+which resizes and re-encodes with `System.Drawing`. When a new test could run on Linux
+instead, it belongs in the first project (ADR 0009).
 
 ### Unit tests
 
@@ -530,6 +549,12 @@ rather than inside the desktop project (ADR 0008). A presenter is driven through
 screen does - which message a rejected save shows, that deleting the last row of a page
 steps back a page - without a window ever being created.
 
-The only code with no automated coverage is the desktop project itself: the forms, the
-designer output and the owner-drawn control library. That is deliberate. What is left
-there is the part that has to be looked at to be judged.
+Almost none of the desktop project carries automated coverage, and that is deliberate: the
+forms, the designer output and the owner-drawn control library are the part that has to be
+looked at to be judged, not asserted against. The one exception is what
+`VideoGameManager.Tests.Desktop` measures directly against `VideoGameManager` itself,
+which needed `PreserveCompilationContext` on the test project to work at all - without it,
+coverlet's instrumenter cannot resolve `System.Windows.Forms` while rewriting the assembly
+from reference assemblies alone, and used to drop it from the report rather than fail the
+build. A run could stay green while covering none of the one project the report was meant
+for, and did, until the reference was added.

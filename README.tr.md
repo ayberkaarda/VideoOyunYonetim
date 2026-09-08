@@ -345,9 +345,11 @@ fazlar halinde taşınıyor:
 
 Bilinen sınırlamalar gizlenmek yerine [`CHANGELOG.md`](CHANGELOG.md) dosyasında
 listeleniyor. Uygulama tasarım gereği DPI'dan bağımsız (DPI-unaware); formların çizildiği
-düzeni birebir koruyor. Ayrıca örnek verideki on beş kapak bağlantısından üçü kaynağında
-ölmüş durumda — uygulama bunları gizlemek yerine yer tutucu gösteriyor ve hatayı log'a
-yazıyor.
+düzeni birebir koruyor. Örnek verideki kapak bağlantılarının hepsi bugün çalışıyor, ama
+başka birinin sunucusunda barınan bir URL herhangi bir noktada ölebilir — seed verisi
+zaten birden fazla kez yeniden yönlendirilmek zorunda kaldı — ve uygulama tam da bunun
+için hazır: ölü bir bağlantı, resmin yüklendiğini varsaymak yerine bir yer tutucu gösterir
+ve hatayı log'a yazar.
 
 ## Geliştirme
 

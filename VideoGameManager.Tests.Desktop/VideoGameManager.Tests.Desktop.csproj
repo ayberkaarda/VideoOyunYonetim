@@ -16,6 +16,12 @@
     <!-- Tests are not a public API, so the missing-XML-comment warning that the other
          projects treat as useful noise here would only be noise. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Without this, coverlet's Mono.Cecil-based instrumenter cannot resolve
+         System.Windows.Forms while rewriting VideoGameManager.dll (it only sees
+         reference assemblies, not the runtime pack), fails with a
+         CecilAssemblyResolutionException, and silently drops that assembly from
+         the coverage report instead of failing the build. -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
