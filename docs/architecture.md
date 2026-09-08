@@ -558,3 +558,9 @@ coverlet's instrumenter cannot resolve `System.Windows.Forms` while rewriting th
 from reference assemblies alone, and used to drop it from the report rather than fail the
 build. A run could stay green while covering none of the one project the report was meant
 for, and did, until the reference was added.
+
+That same report lists the portable assemblies at 0%, which is correct rather than a gap:
+the desktop tests never call into them, and their coverage is the Linux job's report. The
+distinction is worth keeping - a package shown at 0% has been looked at and not exercised,
+while a package missing from the report has not been looked at at all, which is the failure
+described above. Filtering the empty ones out would make the two look the same.
