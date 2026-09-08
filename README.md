@@ -338,9 +338,11 @@ in numbered phases:
 | 6 | CI & documentation — GitHub Actions, `.editorconfig`, `CHANGELOG.md` | ✅ done |
 
 Known limitations are listed in [`CHANGELOG.md`](CHANGELOG.md) rather than hidden. The
-application is DPI-unaware by design, matching the layout the forms were drawn against, and
-three of the fifteen sample cover links have gone dead upstream — the app shows a
-placeholder and logs the failure rather than pretending otherwise.
+application is DPI-unaware by design, matching the layout the forms were drawn against.
+Every cover link in the sample data resolves today, but a URL hosted on someone else's
+server can go dead at any point after that — the seed data itself has already needed
+re-pointing more than once — and the application is built for exactly that: a dead link
+shows a placeholder and logs the failure rather than pretending the picture loaded.
 
 ## Development
 

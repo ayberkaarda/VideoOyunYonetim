@@ -5,7 +5,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-09-08
+
+A round of work on top of the first release. The presentation layer moved into a project of
+its own so it could be tested, the nullable reference context was turned on everywhere, the
+cover art pipeline stopped re-downloading full-size images, and the catalogue can now be
+read back in from a file as well as written out.
 
 ### Added
 - Import the catalogue from a JSON file, on the browse screen beside Export.
@@ -20,35 +25,6 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   single entry that breaks a domain rule is skipped while the rest still arrive. Every run
   reports the three counts it produced - stored, already present, refused by the validator -
   and the counts always add up to the number of entries in the file.
-
-### Performance
-- A cached cover is stored in the format its content calls for: JPEG at quality 90 unless
-  the picture has transparent pixels, in which case PNG is kept. The decision is made by
-  inspecting the pixels rather than trusting the declared pixel format - cover art published
-  as PNG routinely carries a fully opaque alpha channel, and the catalogue's largest cover is
-  exactly such a file, so the cheap check would have kept it lossless for no benefit. The
-  three largest covers went from 1,887,210 bytes on disk to 236,646, and their decode time
-  roughly halved. The scan costs under a millisecond, once per download.
-- Cache files left under the previous naming scheme are deleted once per run, limited to the
-  cache folder's own top level and to that exact extension, with every failure swallowed.
-- Cover art is scaled to twice the size it is drawn at before it reaches the disk cache,
-  and the target size is mixed into the cache key so an entry cannot outlive the size it
-  was stored for. Decoding the largest cover in the sample data went from 71 ms to 4 ms,
-  because what is decoded is now a 480-pixel image rather than a 2600-pixel one.
-- The recommendation screen goes through the same cached path as the browse screen. Its
-  cover slot was a plain `PictureBox` calling `LoadAsync`, so every recommendation
-  downloaded the full-size artwork again: measured at 1024 ms for the largest cover, now
-  paid once and then 5 ms from disk or nothing at all from memory.
-- `ICoverImageProvider` is a singleton in the composition root rather than something each
-  form constructs for itself. The in-memory cache used to be discarded every time a window
-  closed, and `BrowseGamesForm` built two providers and threw the first away.
-- An address that fails is remembered for the rest of the run, so a dead cover link costs
-  one timeout rather than one per selection. The request timeout is 6 seconds, down from
-  10.
-- The in-memory cache holds 32 covers and disposes what it evicts. It had no bound, which
-  did not matter while it died with the window and would have as a singleton.
-
-### Added
 - `VideoGameManager.Presentation`, a `net10.0` project holding the view interfaces and the
   presenters, which used to sit inside the desktop project. They mentioned no WinForms type
   even then, but a `net10.0` test project cannot reference a `net10.0-windows` one, so the
@@ -64,6 +40,9 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - `global.json`, pinning the SDK feature band with `rollForward: latestFeature`.
 - `README.tr.md`, a Turkish translation of the README. The English one remains the README
   the repository opens with; the two are updated together.
+- ADR 0010, recording why `README.md` stays the primary document and `README.tr.md` a
+  translation kept beside it, rather than the other way around, which is what an earlier
+  phase of the brief had called for.
 - `VideoGameManager.Tests.Desktop`, a second test project targeting `net10.0-windows`, for
   code that cannot be reached from a portable one. It holds nine tests covering the cover
   art pipeline - scaling, cache keys, negative caching and the cache bound - and the
@@ -101,6 +80,33 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   `actions/upload-artifact@v6` - the oldest versions of each that run on Node 24, now that
   GitHub is retiring Node 20.
 
+### Performance
+- A cached cover is stored in the format its content calls for: JPEG at quality 90 unless
+  the picture has transparent pixels, in which case PNG is kept. The decision is made by
+  inspecting the pixels rather than trusting the declared pixel format - cover art published
+  as PNG routinely carries a fully opaque alpha channel, and the catalogue's largest cover is
+  exactly such a file, so the cheap check would have kept it lossless for no benefit. The
+  three largest covers went from 1,887,210 bytes on disk to 236,646, and their decode time
+  roughly halved. The scan costs under a millisecond, once per download.
+- Cache files left under the previous naming scheme are deleted once per run, limited to the
+  cache folder's own top level and to that exact extension, with every failure swallowed.
+- Cover art is scaled to twice the size it is drawn at before it reaches the disk cache,
+  and the target size is mixed into the cache key so an entry cannot outlive the size it
+  was stored for. Decoding the largest cover in the sample data went from 71 ms to 4 ms,
+  because what is decoded is now a 480-pixel image rather than a 2600-pixel one.
+- The recommendation screen goes through the same cached path as the browse screen. Its
+  cover slot was a plain `PictureBox` calling `LoadAsync`, so every recommendation
+  downloaded the full-size artwork again: measured at 1024 ms for the largest cover, now
+  paid once and then 5 ms from disk or nothing at all from memory.
+- `ICoverImageProvider` is a singleton in the composition root rather than something each
+  form constructs for itself. The in-memory cache used to be discarded every time a window
+  closed, and `BrowseGamesForm` built two providers and threw the first away.
+- An address that fails is remembered for the rest of the run, so a dead cover link costs
+  one timeout rather than one per selection. The request timeout is 6 seconds, down from
+  10.
+- The in-memory cache holds 32 covers and disposes what it evicts. It had no bound, which
+  did not matter while it died with the window and would have as a singleton.
+
 ### Fixed
 - ADR 0007 reported roughly twice as many nullable diagnostics as there were. MSBuild prints
   every diagnostic twice, once where it occurs and once in the project summary, so counting
@@ -114,8 +120,20 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   `.webp`, which `System.Drawing` cannot decode, and the FIFA 24 link is genuinely gone.
   Existing databases keep the old values - the seed script only inserts rows that are
   missing, it does not update rows that are there.
+- The FIFA 24 and Hollow Knight seed rows, the two links the fix above left alone for want
+  of anything better. FIFA 24's answered 404 and Hollow Knight's answered 400. Both now
+  point at Steam's CDN, which answers with the image itself. As before, an existing
+  database keeps whatever it already has - the seed script only inserts rows that are
+  missing.
 - Two unreachable null checks in the exporters, left over from before `Game.Platforms` was
   guaranteed never to be null.
+- `VideoGameManager.Tests.Desktop`'s coverage report never showed the assembly it exists to
+  measure. Coverlet's Mono.Cecil-based instrumenter cannot resolve `System.Windows.Forms`
+  while rewriting `VideoGameManager.dll` - it sees reference assemblies only, not the
+  runtime pack - and dropped that assembly from the report instead of failing the build, so
+  the run stayed green while covering nothing in the one project the report was for.
+  `PreserveCompilationContext` on the test project fixes the resolution; `VideoGameManager`
+  now appears in the report, with `CachedCoverImageProvider` at 81.0% line coverage.
 
 ## [1.0.0] - 2026-09-07
 
@@ -368,5 +386,5 @@ hard-coded connection string into a layered, tested and documented application.
   `.vs/`, compiled binaries under `bin/` and `obj/`, and the 4.7 MB database backup. They
   remain on disk.
 
-[Unreleased]: https://github.com/ayberkaarda/VideoOyunYonetim/compare/v1.0.0...HEAD
+[1.1.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.1.0
 [1.0.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.0.0
