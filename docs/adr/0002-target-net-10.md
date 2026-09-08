@@ -30,6 +30,8 @@ test container runs.
 - WinForms on .NET does not default to DPI-unaware the way .NET Framework 4.7.2 did. The
   forms are fixed-size and pixel-aligned, so `ApplicationHighDpiMode` is pinned to
   `DpiUnaware` to keep the layout identical. The cost is blurry rendering on scaled
-  displays; moving to `PerMonitorV2` is deferred and tracked separately.
+  displays; moving to `PerMonitorV2` is not planned. The forms were drawn against
+  different scaling assumptions, so it is layout work across all five of them, and
+  verifying it means looking at each one - a large change for a cosmetic gain.
 - `BinaryFormatter` was removed in .NET 9. The form `.resx` files were checked and store
   their images through a type converter, not `BinaryFormatter`, so they still load.

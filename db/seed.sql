@@ -56,6 +56,10 @@ INSERT INTO @Source (Id, Name, Genre, [Platform], Score, CoverUrl) VALUES
     ( 1, N'The Witcher 3: Wild Hunt',        N'RPG',        N'PC',          9.5, N'https://image.api.playstation.com/vulcan/ap/rnd/202211/0711/kh4MUIuMmHlktOHar3lVl6rY.png'),
     ( 2, N'God of War',                      N'Action',     N'PlayStation', 9.8, N'https://cdn1.epicgames.com/offer/3ddd6a590da64e3686042d108968a6b2/EGS_GodofWar_SantaMonicaStudio_S2_1200x1600-fbdf3cbc2980749091d52751ffabb7b7_1200x1600-fbdf3cbc2980749091d52751ffabb7b7'),
     ( 3, N'Minecraft',                       N'Sandbox',    N'PC',          8.9, N'https://image.api.playstation.com/vulcan/ap/rnd/202407/0401/670c294ded3baf4fa11068db2ec6758c63f7daeb266a35a1.png'),
+    /* The cover below is Steam's listing for EA Sports FC 24, which is what the
+       catalogue's owner calls "FIFA 24": the series was renamed that year and no
+       product was released under the old name. The title is kept as entered; it
+       is also the row the collation note in schema.sql refers to. */
     ( 4, N'FIFA 24',                         N'Sports',     N'PlayStation', 7.5, N'https://cdn.cloudflare.steamstatic.com/steam/apps/2195250/library_600x900.jpg'),
     ( 5, N'Hades',                           N'Roguelike',  N'Switch',      9.0, N'https://cdn.mos.cms.futurecdn.net/8pJ6jtcbVmYK2PwGXTo7pJ.jpg'),
     ( 6, N'Alan Wake 2',                     N'Action',     N'PS5',         9.0, N'https://cdn1.epicgames.com/offer/c4763f236d08423eb47b4c3008779c84/EGS_AlanWake2_RemedyEntertainment_S2_1200x1600-c7c8091ddac0f9669c8e5905bca88aaa'),
