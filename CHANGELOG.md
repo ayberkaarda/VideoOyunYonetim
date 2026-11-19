@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- The unused third-party background image and its `Properties/Resources` entry.
+- The browse and recommendation screenshots, which showed publishers' cover art. The
+  README marks where they were until they can be captured with original artwork.
+
+### Changed
+- The history was rewritten before publishing, see
+  [ADR 0012](docs/adr/0012-rewrite-the-history-before-publishing.md). Every commit hash
+  changed and the release tags point at the rewritten commits.
+
 ## [1.1.0] - 2026-09-08
 
 A round of work on top of the first release. The presentation layer moved into a project of
@@ -386,5 +398,6 @@ hard-coded connection string into a layered, tested and documented application.
   `.vs/`, compiled binaries under `bin/` and `obj/`, and the 4.7 MB database backup. They
   remain on disk.
 
+[Unreleased]: https://github.com/ayberkaarda/VideoOyunYonetim/compare/v1.1.0...HEAD
 [1.1.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.1.0
 [1.0.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.0.0

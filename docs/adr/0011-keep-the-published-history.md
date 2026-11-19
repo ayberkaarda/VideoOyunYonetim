@@ -1,6 +1,6 @@
 # ADR 0011 - Keep the published history as it is
 
-Status: accepted. Records a deliberate deviation from the modernisation brief.
+Status: superseded by [ADR 0012](0012-rewrite-the-history-before-publishing.md).
 
 ## Context
 
@@ -9,7 +9,7 @@ Studio cache directory `.vs/` and the 4.7 MB SQL Server backup. It asked for the
 from the history as well as from the working tree, by rewriting the history and
 force-pushing the result.
 
-The working tree half was done at the time. Commit `64e7ea9` untracked both, and they stay
+The working tree half was done at the time. A commit untracked both, and they stay
 on the developer's disk. The history half was not, and the question of whether to do it has
 come back at the close of every round since. This record closes it.
 
