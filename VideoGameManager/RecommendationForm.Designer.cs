@@ -28,7 +28,6 @@ namespace VideoGameManager
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RecommendationForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.coverCard = new VideoGameManager.UI.Controls.RoundedPanel();
             this.picCover = new VideoGameManager.UI.Controls.CoverImageBox();
@@ -273,7 +272,6 @@ namespace VideoGameManager
             this.AcceptButton = this.btnRecommend;
             this.ClientSize = new System.Drawing.Size(760, 460);
             this.Controls.Add(this.layoutRoot);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "RecommendationForm";
             this.Text = "Video Game Manager | Recommendation";
             this.Load += new System.EventHandler(this.RecommendationForm_Load);

@@ -28,7 +28,6 @@ namespace VideoGameManager
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AddGameForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.lblNameCaption = new System.Windows.Forms.Label();
             this.frameName = new VideoGameManager.UI.Controls.InputFrame();
@@ -276,7 +275,6 @@ namespace VideoGameManager
             this.AcceptButton = this.btnSave;
             this.ClientSize = new System.Drawing.Size(620, 338);
             this.Controls.Add(this.layoutRoot);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "AddGameForm";
             this.Text = "Video Game Manager | Add Game";
             this.Load += new System.EventHandler(this.AddGameForm_Load);

@@ -28,7 +28,6 @@ namespace VideoGameManager
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BrowseGamesForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.layoutFilters = new VideoGameManager.UI.Controls.LayoutGrid();
             this.searchGames = new VideoGameManager.UI.Controls.SearchBox();
@@ -586,7 +585,6 @@ namespace VideoGameManager
             this.CancelButton = this.btnClose;
             this.ClientSize = new System.Drawing.Size(1120, 640);
             this.Controls.Add(this.layoutRoot);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "BrowseGamesForm";
             this.Text = "Video Game Manager | Browse Games";
             this.Load += new System.EventHandler(this.BrowseGamesForm_Load);

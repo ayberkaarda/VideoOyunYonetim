@@ -60,6 +60,7 @@ namespace VideoGameManager.UI.Controls
             Font = Theme.Fonts.Body;
             KeyPreview = true;
             ShowInTaskbar = true;
+            Icon = AppIcon.Window;
             AutoScaleMode = AutoScaleMode.None;
 
             _titleBar = new TitleBar();
