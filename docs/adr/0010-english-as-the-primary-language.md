@@ -47,8 +47,8 @@ twice.
 Only one of the two files can be the default, and the default should match the code.
 
 **The translation has a real maintenance cost, and it has already been paid once.** The
-Turkish README was deleted outright in `e66b46b`: it had fallen behind its English
-counterpart and five of its image references were broken. It was reinstated in `0790d3f`,
+Turkish README was deleted outright in `80c30c6`: it had fallen behind its English
+counterpart and five of its image references were broken. It was reinstated in `35f2938`,
 in full, because being able to read the project in Turkish was worth the upkeep. What made
 it rot was drift, not translation - so the rule attached to it is that a change to
 `README.md` is incomplete until the same change is in `README.tr.md`.

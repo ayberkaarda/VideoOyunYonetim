@@ -36,6 +36,11 @@ The history was rewritten once, before the project was presented:
 The repository was re-created from the rewritten history, so the old commits are no longer
 served by the host.
 
+The history was rewritten a second time, the same way, to also remove the gamepad form icon of
+unknown origin that old revisions of the form `.resx` files still embedded; the old
+`icon.ico` files now hold the project's own logo in every commit, and the two hashes in ADR
+0010 were updated again.
+
 ## Consequences
 
 - Every commit hash changed. The two hashes cited in ADR 0010 were updated; the commit that
