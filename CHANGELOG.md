@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 
 ### Removed
 - The unused third-party background image and its `Properties/Resources` entry.
@@ -15,13 +15,13 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 ### Changed
 - The history was rewritten before publishing, see
   [ADR 0012](docs/adr/0012-rewrite-the-history-before-publishing.md). Every commit hash
-  changed and the release tags point at the rewritten commits.
+  changed. The repository carries no release tags.
 
 ### Security
 - Pin `System.Security.Cryptography.Pkcs` to 10.0.13. Microsoft.Data.SqlClient brought in
   9.0.11, which has known vulnerabilities (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7).
 
-## [1.1.0] - 2026-09-08
+## 1.1.0 - 2026-09-08
 
 A round of work on top of the first release. The presentation layer moved into a project of
 its own so it could be tested, the nullable reference context was turned on everywhere, the
@@ -151,7 +151,7 @@ read back in from a file as well as written out.
   `PreserveCompilationContext` on the test project fixes the resolution; `VideoGameManager`
   now appears in the report, with `CachedCoverImageProvider` at 81.0% line coverage.
 
-## [1.0.0] - 2026-09-07
+## 1.0.0 - 2026-09-07
 
 The first release. It collects the six phases that turned a single-project prototype with a
 hard-coded connection string into a layered, tested and documented application.
@@ -401,7 +401,3 @@ hard-coded connection string into a layered, tested and documented application.
 - Untracked 32 files that should never have been versioned: Visual Studio caches under
   `.vs/`, compiled binaries under `bin/` and `obj/`, and the 4.7 MB database backup. They
   remain on disk.
-
-[Unreleased]: https://github.com/ayberkaarda/VideoOyunYonetim/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.1.0
-[1.0.0]: https://github.com/ayberkaarda/VideoOyunYonetim/releases/tag/v1.0.0
