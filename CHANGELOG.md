@@ -17,6 +17,10 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   [ADR 0012](docs/adr/0012-rewrite-the-history-before-publishing.md). Every commit hash
   changed and the release tags point at the rewritten commits.
 
+### Security
+- Pin `System.Security.Cryptography.Pkcs` to 10.0.13. Microsoft.Data.SqlClient brought in
+  9.0.11, which has known vulnerabilities (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7).
+
 ## [1.1.0] - 2026-09-08
 
 A round of work on top of the first release. The presentation layer moved into a project of
