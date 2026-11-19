@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🎮 Video Game Manager
+<img src="assets/logo.svg" alt="Video Game Manager logo" width="96">
+
+# Video Game Manager
 
 **A Windows desktop app for cataloguing, rating and discovering video games.**
 
@@ -257,6 +259,7 @@ A few consequences worth naming:
 .
 ├── .github/workflows/ci.yml     # build, test and format checks
 ├── .editorconfig                # coding style, read by `dotnet format`
+├── assets/                      # the logo: logo.svg, app.ico, logo-256.png
 ├── db/
 │   ├── docker-compose.yml       # local SQL Server 2022 container
 │   ├── .env.example             # template for the SA password
@@ -266,6 +269,7 @@ A few consequences worth naming:
 │   ├── architecture.md          # layer contract: interfaces, rules, schema
 │   └── adr/                     # architecture decision records
 ├── screenshots/                 # images used by this README
+├── tools/LogoRenderer/          # draws the logo and writes app.ico and logo-256.png
 ├── VideoGameManager.Domain/     # entities and validation, no dependencies
 ├── VideoGameManager.Data/       # Dapper repositories, connection factory
 │   └── Migrations/              # DbUp scripts, embedded in the assembly
