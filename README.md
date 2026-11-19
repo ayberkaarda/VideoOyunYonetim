@@ -59,7 +59,7 @@ list exports to CSV or JSON.
 
 **Browse games** — `BrowseGamesForm`
 
-<img src="screenshots/browse_games.png" alt="Browse games screen" width="100%">
+*Screenshot withdrawn: the seeded catalogue displays publishers' cover art, which this repository has no licence to publish. It will return once it can be captured with original artwork.*
 
 </td>
 </tr>
@@ -68,7 +68,7 @@ list exports to CSV or JSON.
 
 **Recommendation** — `RecommendationForm`
 
-<img src="screenshots/recommendation.png" alt="Recommendation screen" width="100%">
+*Screenshot withdrawn: the seeded catalogue displays publishers' cover art, which this repository has no licence to publish. It will return once it can be captured with original artwork.*
 
 </td>
 <td width="50%">

@@ -59,7 +59,7 @@ türlere göre dağılımını gösterir ve tüm liste CSV veya JSON olarak dı�
 
 **Oyunlara göz atma** — `BrowseGamesForm`
 
-<img src="screenshots/browse_games.png" alt="Oyunlara göz atma ekranı" width="100%">
+*Ekran görüntüsü kaldırıldı: örnek katalog, yayıncılara ait kapak görsellerini gösteriyor ve bu deponun bunları yayımlama lisansı yok. Özgün görsellerle çekildiğinde geri gelecek.*
 
 </td>
 </tr>
@@ -68,7 +68,7 @@ türlere göre dağılımını gösterir ve tüm liste CSV veya JSON olarak dı�
 
 **Öneri** — `RecommendationForm`
 
-<img src="screenshots/recommendation.png" alt="Öneri ekranı" width="100%">
+*Ekran görüntüsü kaldırıldı: örnek katalog, yayıncılara ait kapak görsellerini gösteriyor ve bu deponun bunları yayımlama lisansı yok. Özgün görsellerle çekildiğinde geri gelecek.*
 
 </td>
 <td width="50%">

@@ -59,15 +59,5 @@ namespace VideoGameManager.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap _30th_anniversary_hub_background_desktop_04_en_02oct24 {
-            get {
-                object obj = ResourceManager.GetObject("30th-anniversary-hub-background-desktop-04-en-02oct24", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
     }
 }
