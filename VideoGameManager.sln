@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoGameManager.Presentati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoGameManager.Tests.Desktop", "VideoGameManager.Tests.Desktop\VideoGameManager.Tests.Desktop.csproj", "{7C1B0B0E-2E3A-4E9C-9D2C-6F1B5A7E4C21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogoRenderer", "tools\LogoRenderer\LogoRenderer.csproj", "{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{7C1B0B0E-2E3A-4E9C-9D2C-6F1B5A7E4C21}.Release|x64.Build.0 = Release|Any CPU
 		{7C1B0B0E-2E3A-4E9C-9D2C-6F1B5A7E4C21}.Release|x86.ActiveCfg = Release|Any CPU
 		{7C1B0B0E-2E3A-4E9C-9D2C-6F1B5A7E4C21}.Release|x86.Build.0 = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|x64.Build.0 = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Debug|x86.Build.0 = Debug|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|x64.ActiveCfg = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|x64.Build.0 = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|x86.ActiveCfg = Release|Any CPU
+		{5A4A46CB-C8BC-43B6-BEE4-66A9C46C1B77}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
