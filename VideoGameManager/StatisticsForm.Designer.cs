@@ -28,7 +28,6 @@ namespace VideoGameManager
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(StatisticsForm));
             this.layoutRoot = new VideoGameManager.UI.Controls.LayoutGrid();
             this.headlineCard = new VideoGameManager.UI.Controls.RoundedPanel();
             this.layoutHeadline = new VideoGameManager.UI.Controls.LayoutGrid();
@@ -273,7 +272,6 @@ namespace VideoGameManager
             this.AcceptButton = this.btnRefresh;
             this.ClientSize = new System.Drawing.Size(720, 640);
             this.Controls.Add(this.layoutRoot);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "StatisticsForm";
             this.Text = "Video Game Manager | Statistics";
             this.Load += new System.EventHandler(this.StatisticsForm_Load);

@@ -7,15 +7,28 @@ project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 
 ## Unreleased
 
+### Added
+- The project's own logo: three game cases fanned out like a collection, the front one
+  carrying a controller, on a tile in the application's accent blue. `assets/logo.svg` is
+  the vector; `assets/app.ico` (16 to 256 px) and `assets/logo-256.png` are drawn by
+  `tools/LogoRenderer`, which renders off-screen and never opens a window.
+- Desktop tests for the application icon: its frames, that every window shows it, that the
+  executable carries the same picture, and that no form brings back an icon of its own.
+
 ### Removed
 - The unused third-party background image and its `Properties/Resources` entry.
 - The browse and recommendation screenshots, which showed publishers' cover art. The
   README marks where they were until they can be captured with original artwork.
+- The gamepad icon of unknown origin: both `icon.ico` files and the copies embedded in
+  every form's `.resx` file.
 
 ### Changed
 - The history was rewritten before publishing, see
   [ADR 0012](docs/adr/0012-rewrite-the-history-before-publishing.md). Every commit hash
   changed. The repository carries no release tags.
+- The executable and every window use the new logo as their icon. Windows take it from one
+  embedded copy through `ChromelessForm` instead of each form carrying its own, and the
+  README headers show the logo in place of the gamepad emoji.
 
 ### Security
 - Pin `System.Security.Cryptography.Pkcs` to 10.0.13. Microsoft.Data.SqlClient brought in

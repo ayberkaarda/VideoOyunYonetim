@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🎮 Video Game Manager
+<img src="assets/logo.svg" alt="Video Game Manager logosu" width="96">
+
+# Video Game Manager
 
 **Video oyunu kataloglamak, puanlamak ve keşfetmek için bir Windows masaüstü uygulaması.**
 
@@ -261,6 +263,7 @@ Anılmaya değer birkaç sonuç:
 .
 ├── .github/workflows/ci.yml     # derleme, test ve biçim kontrolleri
 ├── .editorconfig                # `dotnet format`'ın okuduğu kod stili
+├── assets/                      # logo: logo.svg, app.ico, logo-256.png
 ├── db/
 │   ├── docker-compose.yml       # yerel SQL Server 2022 konteyneri
 │   ├── .env.example             # SA şifresi için şablon
@@ -270,6 +273,7 @@ Anılmaya değer birkaç sonuç:
 │   ├── architecture.md          # katman sözleşmesi: arayüzler, kurallar, şema
 │   └── adr/                     # mimari karar kayıtları
 ├── screenshots/                 # bu README'nin kullandığı görseller
+├── tools/LogoRenderer/          # logoyu çizer, app.ico ve logo-256.png dosyalarını üretir
 ├── VideoGameManager.Domain/     # entity'ler ve doğrulama, bağımlılık yok
 ├── VideoGameManager.Data/       # Dapper repository'leri, bağlantı fabrikası
 │   └── Migrations/              # DbUp script'leri, derlemeye gömülü
