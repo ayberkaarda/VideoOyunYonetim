@@ -31,7 +31,7 @@ The history was rewritten once, before the project was presented:
   every commit.
 - Commit, tag and author identities were mapped to the account's no-reply address, and the
   machine's SQL Server instance name was replaced with `localhost`.
-- The release tags `v1.0.0` and `v1.1.0` were re-pointed at the rewritten commits.
+- The release tags `v1.0.0` and `v1.1.0` were not recreated. The repository publishes no tags; the versions are listed in the changelog only.
 
 The repository was re-created from the rewritten history, so the old commits are no longer
 served by the host.
